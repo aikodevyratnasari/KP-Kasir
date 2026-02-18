@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      context: ./docker/php
+    container_name: pos_app
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+    depends_on:
+      - postgres
+    networks:
+      - pos_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: pos_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./backend:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - pos_network
+
+  postgres:
+    image: postgres:15
+    container_name: pos_postgres
+    environment:
+      POSTGRES_DB: pos_db
+      POSTGRES_USER: pos_user
+      POSTGRES_PASSWORD: pos_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - pos_network
+
+volumes:
+  pgdata:
+
+networks:
+  pos_network:
+    driver: bridge
