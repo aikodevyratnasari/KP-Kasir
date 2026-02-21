@@ -1,7 +1,11 @@
 services:
   app:
+    user: "${UID}:${GID}"
     build:
       context: ./docker/php
+      args:
+        UID: ${UID}
+        GID: ${GID}
     container_name: pos_app
     working_dir: /var/www
     volumes:
@@ -27,12 +31,26 @@ services:
   postgres:
     image: postgres:15
     container_name: pos_postgres
+    ports:
+    - "5432:5432"
     environment:
       POSTGRES_DB: pos_db
       POSTGRES_USER: pos_user
       POSTGRES_PASSWORD: pos_password
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - pos_network
+  
+  node:
+    image: node:20-alpine
+    container_name: node
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+    command: sh -c "npm install && npm run dev"
+    ports :
+      - "5173:5173"
     networks:
       - pos_network
 

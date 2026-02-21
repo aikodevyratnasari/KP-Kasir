@@ -12,3 +12,16 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 CMD ["php-fpm"]
+
+# Buat user non-root (samakan dengan host)
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd -g ${GID} appuser \
+ && useradd -u ${UID} -g appuser -m appuser
+
+# Set permission workdir
+RUN chown -R appuser:appuser /var/www
+
+USER appuser
+

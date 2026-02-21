@@ -1,11 +1,78 @@
-@import 'tailwindcss';
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+/* ── Custom DePOS utilities ───────────────────────────────────────────────── */
+@layer components {
+    /* Navigation link */
+    .nav-link {
+        @apply px-3 py-2 rounded-lg text-sm font-medium text-gray-600
+               hover:bg-indigo-50 hover:text-indigo-700 transition-colors duration-150;
+    }
+    .nav-link.active {
+        @apply bg-indigo-100 text-indigo-700;
+    }
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Card */
+    .card {
+        @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+    }
+
+    /* Status badges */
+    .badge {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+    }
+    .badge-pending   { @apply badge bg-yellow-100 text-yellow-800; }
+    .badge-cooking   { @apply badge bg-orange-100 text-orange-800; }
+    .badge-ready     { @apply badge bg-blue-100   text-blue-800;   }
+    .badge-completed { @apply badge bg-green-100  text-green-800;  }
+    .badge-cancelled { @apply badge bg-red-100    text-red-600;    }
+
+    /* Table status */
+    .table-available { @apply bg-green-100 border-green-300 text-green-800; }
+    .table-occupied  { @apply bg-red-100   border-red-300   text-red-800;   }
+    .table-reserved  { @apply bg-yellow-100 border-yellow-300 text-yellow-800; }
+
+    /* Form input base style */
+    .form-input {
+        @apply w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm
+               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent;
+    }
+    .form-input-error {
+        @apply form-input border-red-400 bg-red-50;
+    }
+
+    /* Button variants */
+    .btn-primary {
+        @apply inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white
+               text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors
+               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2;
+    }
+    .btn-secondary {
+        @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700
+               text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50
+               transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300;
+    }
+    .btn-danger {
+        @apply inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white
+               text-sm font-medium rounded-lg hover:bg-red-700 transition-colors
+               focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+    }
+    .btn-success {
+        @apply inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white
+               text-sm font-medium rounded-lg hover:bg-green-700 transition-colors;
+    }
+
+    /* Kitchen waiting color classes */
+    .kitchen-green  { @apply border-l-4 border-green-500  bg-green-50; }
+    .kitchen-yellow { @apply border-l-4 border-yellow-500 bg-yellow-50; }
+    .kitchen-red    { @apply border-l-4 border-red-500    bg-red-50 animate-pulse; }
+
+    /* Page header */
+    .page-header {
+        @apply flex items-center justify-between mb-6;
+    }
+    .page-title {
+        @apply text-2xl font-bold text-gray-900;
+    }
 }
