@@ -15,8 +15,15 @@ class ReportController extends Controller
 
     public function dashboard(Request $request): View
     {
-        $data = $this->reportService->dashboardToday($request->get('_store_id'));
-        return view('manager.dashboard', $data);
+        // 1. Ambil tanggal dari input (pake fungsi parseDates yang sudah kamu punya di bawah)
+    [$from, $to] = $this->parseDates($request);
+
+    // 2. Suruh Service (koki) memasak data berdasarkan tanggal tersebut
+    // Pastikan nanti di ReportService, function dashboardToday diubah agar menerima $from dan $to
+    $data = $this->reportService->dashboardAnalytics($request->get('_store_id'), $from, $to);
+
+    // 3. Kirim ke view beserta variabel tanggalnya agar filter tidak hilang saat di-refresh
+    return view('manager.dashboard', array_merge($data, compact('from', 'to')));
     }
 
     public function sales(ReportFilterRequest $request): View
@@ -47,11 +54,41 @@ class ReportController extends Controller
         $data = $this->reportService->cashierReport($request->get('_store_id'), $from, $to);
         return view('manager.reports.cashiers', compact('data', 'from', 'to'));
     }
+    public function dashboardFilter(Request $request)
+{
+    $period  = $request->query('period', 'today');
+    $storeId = $request->get('_store_id');
 
-    private function parseDates(Request $request): array
-    {
-        $from = $request->from ? Carbon::parse($request->from)->startOfDay() : now()->startOfMonth();
-        $to   = $request->to   ? Carbon::parse($request->to)->endOfDay()     : now()->endOfDay();
-        return [$from, $to];
+    [$from, $to] = match($period) {
+        'week'  => [now()->startOfWeek(),  now()->endOfWeek()],
+        'month' => [now()->startOfMonth(), now()->endOfMonth()],
+        default => [now()->startOfDay(),   now()->endOfDay()],
+    };
+
+    $data = $this->reportService->dashboardAnalytics($storeId, $from, $to);
+
+    return response()->json($data);
+}
+private function parseDates(Request $request): array
+{
+    try {
+        $from = $request->from
+            ? Carbon::parse($request->from)->startOfDay()
+            : now()->startOfMonth();
+
+        $to = $request->to
+            ? Carbon::parse($request->to)->endOfDay()
+            : now()->endOfDay();
+
+        // Pastikan from tidak lebih besar dari to
+        if ($from->gt($to)) {
+            [$from, $to] = [$to, $from];
+        }
+    } catch (\Exception $e) {
+        $from = now()->startOfMonth();
+        $to   = now()->endOfDay();
     }
+
+    return [$from, $to];
+}
 }

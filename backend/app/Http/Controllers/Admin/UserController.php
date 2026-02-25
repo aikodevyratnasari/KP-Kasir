@@ -8,6 +8,7 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Models\Role;
 use App\Models\Store;
 use App\Models\User;
+use App\Notifications\VerifyEmailNotification;
 use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,7 +41,12 @@ class UserController extends Controller
     {
         $user = User::create($request->validated());
         ActivityLogService::logCreated($user);
-        return redirect()->route('admin.users.index')->with('success', "User {$user->name} berhasil dibuat.");
+
+        // Kirim email verifikasi ke user yang baru dibuat
+        $user->notify(new VerifyEmailNotification());
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "User {$user->name} berhasil dibuat. Email verifikasi telah dikirim ke {$user->email}.");
     }
 
     public function edit(User $user): View
@@ -57,7 +63,8 @@ class UserController extends Controller
         $old = $user->toArray();
         $user->update($request->validated());
         ActivityLogService::logUpdated($user, $old, $user->toArray());
-        return redirect()->route('admin.users.index')->with('success', "User {$user->name} berhasil diperbarui.");
+        return redirect()->route('admin.users.index')
+            ->with('success', "User {$user->name} berhasil diperbarui.");
     }
 
     public function toggleStatus(User $user): RedirectResponse
@@ -67,5 +74,17 @@ class UserController extends Controller
         ActivityLogService::log('toggle_user_status', $user, description: "User {$user->email} status changed to {$user->status}");
         $label = $user->status === 'active' ? 'diaktifkan' : 'dinonaktifkan';
         return back()->with('success', "User {$user->name} telah {$label}.");
+    }
+
+    /**
+     * Kirim ulang email verifikasi dari halaman admin.
+     */
+    public function resendVerification(User $user): RedirectResponse
+    {
+        abort_if($user->hasVerifiedEmail(), 422, 'Email user ini sudah diverifikasi.');
+
+        $user->notify(new VerifyEmailNotification());
+
+        return back()->with('success', "Email verifikasi telah dikirim ulang ke {$user->email}.");
     }
 }
