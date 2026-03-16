@@ -25,9 +25,12 @@
     <input type="file" name="image" id="imageInputKategori" accept="image/jpeg,image/png" class="hidden">
     <button type="button"
         onclick="document.getElementById('imageInputKategori').click()"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-lg transition-colors"
-        onmouseover="this.style.backgroundColor='#e5e7eb'"
-        onmouseout="this.style.backgroundColor='#f3f4f6'">
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+        style="border: 1px solid #2D54BF; background-color: #2D54BF; color: white;"
+        onmouseover="this.style.backgroundColor='#1e3d8f'"
+        onmouseout="this.style.backgroundColor='#2D54BF'"
+        onmousedown="this.style.transform='scale(0.98)'"
+        onmouseup="this.style.transform='scale(1)'">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4l4 4"/>
         </svg>
@@ -42,12 +45,19 @@
                 <div class="flex items-center gap-2">
                     <input type="hidden" name="is_active" value="0">
                     <input type="checkbox" name="is_active" id="is_active" value="1"
-                           {{ old('is_active', 1) ? 'checked' : '' }}
-                           class="rounded border-gray-300 text-indigo-600">
+                           {{ old('is_active') ? 'checked' : '' }}
+                           class="rounded border-gray-300 accent-[#2D54BF]"
                     <label for="is_active" class="text-sm text-gray-700">Aktif</label>
                 </div>
             </div>
-            <button type="submit" class="btn-primary w-full justify-center mt-4">Simpan Kategori</button>
+            <button type="submit" class="w-full justify-center mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                onmouseout="this.style.backgroundColor='#2D54BF'"
+                onmousedown="this.style.transform='scale(0.98)'"
+                onmouseup="this.style.transform='scale(1)'">
+                Simpan Kategori
+            </button>
         </form>
     </div>
 

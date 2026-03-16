@@ -54,8 +54,8 @@
             <div x-show="method === 'cash'" class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Uang Diterima</label>
                 <input type="number" name="amount_received" x-model="received" min="0" step="1000" class="form-input">
-                <div x-show="received > 0" class="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p class="text-sm text-green-700">Kembalian: <span class="font-bold text-base" x-text="'Rp ' + formatRp(Math.max(0, received - amount))"></span></p>
+                <div x-show="Number(received) > 0" class="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p class="text-sm text-green-700">Kembalian: <span class="font-bold text-base" x-text="'Rp ' + formatRp(Math.max(0, Number(received) - Number(amount)))"></span></p>
                 </div>
                 @error('amount_received') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>

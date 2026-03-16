@@ -10,10 +10,10 @@
 
     <form method="POST" action="{{ route('cashier.orders.store') }}">
         @csrf
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
             {{-- Menu --}}
-            <div class="lg:col-span-2 space-y-4">
+            <div class="md:col-span-2 space-y-4">
                 {{-- Tipe & Meja --}}
                 <div class="card">
                     <div class="grid grid-cols-2 gap-4">
@@ -29,7 +29,10 @@
                             <select name="table_id" class="form-input">
                                 <option value="">Pilih Meja</option>
                                 @foreach($tables as $table)
-                                    <option value="{{ $table->id }}">Meja {{ $table->number }} ({{ $table->capacity }} kursi)</option>
+                                    <option value="{{ $table->id }}"
+                                        {{ (request('table') == $table->id || old('table_id') == $table->id) ? 'selected' : '' }}>
+                                        Meja {{ $table->number }} ({{ $table->capacity }} kursi)
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -72,15 +75,15 @@
             </div>
 
             {{-- Keranjang --}}
-            <div class="lg:col-span-1">
-                <div class="card sticky top-6">
+            <div class="md:col-span-1">
+                <div class="card sticky top-6 max-h-[calc(100vh-120px)] overflow-y-auto">
                     <h3 class="font-semibold text-gray-800 mb-4">🧺 Keranjang</h3>
 
                     <div x-show="items.length === 0" class="text-center py-8 text-gray-400 text-sm">
                         Klik menu untuk menambahkan
                     </div>
 
-                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                    <div class="space-y-3">
                         <template x-for="(item, index) in items" :key="item.product_id">
                             <div class="border border-gray-100 rounded-lg p-3">
                                 <input type="hidden" :name="'items['+index+'][product_id]'" :value="item.product_id">
@@ -92,7 +95,7 @@
                                 </div>
                                 <div class="flex items-center justify-between mt-2">
                                     <div class="flex items-center gap-2">
-                                        <button type="button" @click="item.quantity = Math.max(1, item.quantity - 1)"
+                                        <button type="button" @click="item.quantity > 1 ? item.quantity-- : removeItem(index)"
                                                 class="w-6 h-6 rounded-full bg-gray-100 text-gray-600 text-xs hover:bg-gray-200">−</button>
                                         <span class="text-sm font-semibold w-6 text-center" x-text="item.quantity"></span>
                                         <button type="button" @click="item.quantity++"
@@ -127,7 +130,7 @@
 <script>
 function orderForm() {
     return {
-        orderType: 'dine_in',
+        orderType: '{{ request('table') ? 'dine_in' : old('order_type', 'dine_in') }}',
         items: [],
         get total() {
             return this.items.reduce((s, i) => s + (i.price * i.quantity), 0);

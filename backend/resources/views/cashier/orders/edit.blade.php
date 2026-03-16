@@ -53,7 +53,7 @@
                                 </div>
                                 <div class="flex items-center justify-between mt-2">
                                     <div class="flex items-center gap-2">
-                                        <button type="button" @click="item.quantity = Math.max(1, item.quantity - 1)" class="w-6 h-6 rounded-full bg-gray-100 text-xs">−</button>
+                                        <button type="button" @click="item.quantity > 1 ? item.quantity-- : removeItem(index)" class="w-6 h-6 rounded-full bg-gray-100 text-xs">−</button>
                                         <span class="text-sm font-semibold w-6 text-center" x-text="item.quantity"></span>
                                         <button type="button" @click="item.quantity++" class="w-6 h-6 rounded-full bg-gray-100 text-xs">+</button>
                                     </div>

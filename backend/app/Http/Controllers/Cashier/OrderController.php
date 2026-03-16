@@ -49,7 +49,8 @@ class OrderController extends Controller
     {
         $order = $this->orderService->create($request->validated(), $request->get('_store_id'));
         ActivityLogService::logCreated($order, ['order_number' => $order->order_number]);
-        return redirect()->route('cashier.orders.show', $order)->with('success', "Pesanan #{$order->order_number} berhasil dibuat.");
+        return redirect()->route('cashier.orders.show', $order)
+            ->with('success', "Pesanan #{$order->order_number} berhasil dibuat. Silakan proses pembayaran.");
     }
 
     public function show(Order $order): View
@@ -68,24 +69,38 @@ class OrderController extends Controller
 
     public function update(UpdateOrderRequest $request, Order $order): RedirectResponse
     {
-        $this->authorize('update', $order);
         $this->orderService->update($order, $request->validated());
         ActivityLogService::log('order_updated', $order, description: "Order #{$order->order_number} modified.");
-        return redirect()->route('cashier.orders.show', $order)->with('success', 'Pesanan berhasil diperbarui.');
+        return redirect()->route('cashier.orders.show', $order)
+            ->with('success', 'Pesanan berhasil diperbarui.');
     }
 
     public function cancel(CancelOrderRequest $request, Order $order): RedirectResponse
     {
-        $this->authorize('cancel', $order);
         $this->orderService->cancel($order, $request->cancel_reason, auth()->id());
-        return redirect()->route('cashier.orders.index')->with('success', "Pesanan #{$order->order_number} dibatalkan.");
+        return redirect()->route('cashier.orders.index')
+            ->with('success', "Pesanan #{$order->order_number} dibatalkan.");
     }
 
     public function updateStatus(Request $request, Order $order): JsonResponse
     {
-        $this->authorize('updateStatus', $order);
         $request->validate(['status' => 'required|in:cooking,ready,completed']);
         $order = $this->orderService->updateStatus($order, $request->status, auth()->id());
-        return response()->json(['success' => true, 'status' => $order->status, 'order_number' => $order->order_number]);
+        return response()->json(['success' => true, 'status' => $order->status]);
+    }
+
+    /**
+     * Kasir konfirmasi meja kosong → order completed → meja hijau kembali.
+     * Dipanggil saat status = 'ready'.
+     */
+    public function complete(Order $order): RedirectResponse
+    {
+        abort_if($order->status !== 'ready', 422, 'Pesanan belum siap untuk diselesaikan.');
+
+        $this->orderService->updateStatus($order, 'completed', auth()->id());
+        ActivityLogService::log('order_completed', $order, description: "Order #{$order->order_number} selesai, meja dikosongkan.");
+
+        return redirect()->route('cashier.tables.index')
+            ->with('success', "✅ Pesanan #{$order->order_number} selesai. Meja {$order->table?->number} kembali tersedia.");
     }
 }
