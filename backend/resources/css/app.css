@@ -39,7 +39,12 @@
 
     /* ── Form inputs ──────────────────────────────────── */
     .form-input {
-        @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition;
+        @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition;
+        --tw-ring-color: #2D54BF;
+    }
+    .form-input:focus {
+        border-color: #2D54BF;
+        box-shadow: 0 0 0 2px rgba(45, 84, 191, 0.25);
     }
     .form-input-error {
         @apply border-red-400 focus:ring-red-400;

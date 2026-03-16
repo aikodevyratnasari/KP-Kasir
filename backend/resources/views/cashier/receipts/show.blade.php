@@ -38,7 +38,15 @@
                     <span>{{ $item->quantity }} x Rp {{ number_format($item->unit_price,0,',','.') }}</span>
                     <span>Rp {{ number_format($item->subtotal,0,',','.') }}</span>
                 </div>
+                @if($item->special_notes)
+                    <div class="pl-2 text-xs text-orange-600 italic">→ {{ $item->special_notes }}</div>
+                @endif
             @endforeach
+            @if($payment->order->notes)
+                <div class="mt-2 pt-2 border-t border-dashed border-gray-200 text-xs text-gray-500">
+                    <span class="font-medium">Catatan:</span> {{ $payment->order->notes }}
+                </div>
+            @endif
         </div>
 
         {{-- Total --}}

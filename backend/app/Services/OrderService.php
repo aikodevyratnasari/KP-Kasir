@@ -16,11 +16,6 @@ class OrderService
 {
     public function __construct(private StockService $stock) {}
 
-    /**
-     * Create a brand-new order from cashier input.
-     *
-     * @param array $data  {order_type, table_id?, notes?, items: [{product_id, quantity, special_notes?}]}
-     */
     public function create(array $data, int $storeId): Order
     {
         return DB::transaction(function () use ($data, $storeId) {
@@ -58,19 +53,22 @@ class OrderService
                 ]);
             }
 
-            // Mark table as occupied
-            if ($order->isDineIn() && $order->table_id) {
-                Table::where('id', $order->table_id)->update(['status' => 'occupied']);
+            // Meja belum occupied saat order dibuat —
+            // occupied setelah makanan ready (tamu mulai makan)
+            // Tapi jika dine_in, tandai meja "reserved" agar tidak bisa dibuat order lain
+            if (($data['order_type'] ?? '') === 'dine_in' && ! empty($data['table_id'])) {
+                Table::where('id', $data['table_id'])->update(['status' => 'occupied']);
             }
 
-            // Create kitchen queue entry
+            // Buat kitchen_order dengan status 'waiting_payment' — belum muncul di dapur
+            // queued_at diisi now() karena kolom NOT NULL,
+            // akan di-update ulang saat pembayaran lunas
             KitchenOrder::create([
                 'order_id'  => $order->id,
-                'status'    => 'queued',
+                'status'    => 'waiting_payment',
                 'queued_at' => now(),
             ]);
 
-            // Deduct stock
             $this->stock->deductForOrder($order->load('items.product'));
 
             event(new OrderCreated($order));
@@ -79,18 +77,12 @@ class OrderService
         });
     }
 
-    /**
-     * Modify a pending order (add/remove/change items).
-     */
     public function update(Order $order, array $data): Order
     {
         abort_if(! $order->isPending(), 422, 'Hanya pesanan dengan status Pending yang dapat diubah.');
 
         return DB::transaction(function () use ($order, $data) {
-            // Restore stock for old items before recalculating
             $this->stock->restoreForOrder($order);
-
-            // Delete existing items
             $order->items()->delete();
 
             $taxRate = $order->tax_rate;
@@ -125,9 +117,6 @@ class OrderService
         });
     }
 
-    /**
-     * Cancel an order (manager/admin only for non-pending; cashier for pending).
-     */
     public function cancel(Order $order, string $reason, int $cancelledBy): Order
     {
         abort_if($order->isCompleted(), 422, 'Pesanan yang sudah selesai tidak dapat dibatalkan.');
@@ -137,20 +126,18 @@ class OrderService
             $old = $order->status;
 
             $order->update([
-                'status'       => 'cancelled',
+                'status'        => 'cancelled',
                 'cancel_reason' => $reason,
                 'cancelled_by'  => $cancelledBy,
                 'cancelled_at'  => now(),
             ]);
 
-            // Release table
+            // Bebaskan meja saat dibatalkan
             if ($order->table_id) {
                 Table::where('id', $order->table_id)->update(['status' => 'available']);
             }
 
-            // Restore stock
             $this->stock->restoreForOrder($order->load('items.product'));
-
             event(new OrderStatusChanged($order, $old, 'cancelled'));
 
             return $order->fresh();
@@ -158,7 +145,10 @@ class OrderService
     }
 
     /**
-     * Update kitchen status: pending → cooking → ready → completed (by cashier after payment).
+     * Transisi status:
+     *  pending  → cooking  : dapur mulai masak
+     *  cooking  → ready    : dapur selesai masak (makanan siap, tamu makan di meja)
+     *  ready    → completed: kasir confirm meja kosong → meja available kembali
      */
     public function updateStatus(Order $order, string $newStatus, int $userId): Order
     {
@@ -168,9 +158,14 @@ class OrderService
             'ready'    => 'completed',
         ];
 
-        abort_if(($transitions[$order->status] ?? null) !== $newStatus, 422, "Tidak dapat pindah dari {$order->status} ke {$newStatus}.");
+        abort_if(
+            ($transitions[$order->status] ?? null) !== $newStatus,
+            422,
+            "Tidak dapat pindah dari {$order->status} ke {$newStatus}."
+        );
 
         $old = $order->status;
+
         $timestamps = [
             'cooking'   => 'cooking_at',
             'ready'     => 'ready_at',
@@ -184,7 +179,7 @@ class OrderService
 
         $order->update($updateData);
 
-        // Sync kitchen_orders table
+        // Sync kitchen_orders
         $kitchenStatMap = ['cooking' => 'cooking', 'ready' => 'ready'];
         if (isset($kitchenStatMap[$newStatus])) {
             $kitchenUpdate = ['status' => $kitchenStatMap[$newStatus]];
@@ -192,12 +187,14 @@ class OrderService
                 $kitchenUpdate['cooking_started_at'] = now();
                 $kitchenUpdate['started_by']         = $userId;
             } elseif ($newStatus === 'ready') {
-                $kitchenUpdate['ready_at']      = now();
-                $kitchenUpdate['completed_by']  = $userId;
+                $kitchenUpdate['ready_at']     = now();
+                $kitchenUpdate['completed_by'] = $userId;
             }
             $order->kitchenOrder?->update($kitchenUpdate);
         }
 
+        // ready → meja tetap occupied (tamu sedang makan)
+        // completed → meja kembali available (tamu sudah pergi)
         if ($newStatus === 'completed' && $order->table_id) {
             Table::where('id', $order->table_id)->update(['status' => 'available']);
         }
@@ -207,28 +204,20 @@ class OrderService
         return $order->fresh();
     }
 
-    /**
-     * Transfer an order to a different table.
-     */
     public function transferTable(Order $order, int $newTableId): Order
     {
         abort_if($order->isCompleted() || $order->isCancelled(), 422, 'Tidak dapat memindahkan pesanan ini.');
 
         DB::transaction(function () use ($order, $newTableId) {
-            // Free old table
             if ($order->table_id) {
                 Table::where('id', $order->table_id)->update(['status' => 'available']);
             }
-            // Occupy new table
             Table::where('id', $newTableId)->update(['status' => 'occupied']);
-
             $order->update(['table_id' => $newTableId]);
         });
 
         return $order->fresh();
     }
-
-    // ── Private helpers ───────────────────────────────────────────────────
 
     private function resolveItems(array $rawItems): array
     {

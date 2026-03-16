@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Report\ReportFilterRequest;
 use App\Services\ReportService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -13,34 +13,86 @@ class ReportController extends Controller
 {
     public function __construct(private ReportService $reportService) {}
 
+    // ── Dashboard ────────────────────────────────────────────────────────
     public function dashboard(Request $request): View
     {
-        // 1. Ambil tanggal dari input (pake fungsi parseDates yang sudah kamu punya di bawah)
-    [$from, $to] = $this->parseDates($request);
+        $storeId = $request->get('_store_id');
+        $raw     = $this->reportService->dashboardToday($storeId);
 
-    // 2. Suruh Service (koki) memasak data berdasarkan tanggal tersebut
-    // Pastikan nanti di ReportService, function dashboardToday diubah agar menerima $from dan $to
-    $data = $this->reportService->dashboardAnalytics($request->get('_store_id'), $from, $to);
+        // Rename agar cocok dengan variable yang dipakai dashboard view
+        $data = array_merge($raw, [
+            'totalSalesToday'  => $raw['totalSales']  ?? 0,
+            'totalOrdersToday' => $raw['totalOrders'] ?? 0,
+            'avgOrderValue'    => $raw['avgOrder']    ?? 0,
+            'weeklyTrend'      => collect($raw['trend'] ?? [])->map(fn($r) => (object)[
+                'date'  => $r->date,
+                'total' => $r->total,
+            ])->values()->toArray(),
+            'lowStockProducts' => $raw['lowStock'] ?? collect(),
+        ]);
 
-    // 3. Kirim ke view beserta variabel tanggalnya agar filter tidak hilang saat di-refresh
-    return view('manager.dashboard', array_merge($data, compact('from', 'to')));
+        return view('manager.dashboard', $data);
     }
 
-    public function sales(ReportFilterRequest $request): View
+    // ── Dashboard filter (AJAX) ──────────────────────────────────────────
+    public function dashboardFilter(Request $request): JsonResponse
+    {
+        $storeId = $request->get('_store_id');
+        $period  = $request->period ?? 'today';
+
+        [$from, $to] = match ($period) {
+            'week'  => [now()->startOfWeek(), now()->endOfWeek()],
+            'month' => [now()->startOfMonth(), now()->endOfMonth()],
+            default => [now()->startOfDay(), now()->endOfDay()],
+        };
+
+        $raw = $this->reportService->dashboardAnalytics($storeId, $from, $to);
+
+        return response()->json([
+            'totalSales'   => $raw['totalSales']  ?? 0,
+            'totalOrders'  => $raw['totalOrders'] ?? 0,
+            'avgOrder'     => $raw['avgOrder']    ?? 0,
+            'activeOrders' => $raw['activeOrders'] ?? [],
+            'topProducts'  => $raw['topProducts']  ?? [],
+            'recentOrders' => $raw['recentOrders'] ?? [],
+            'trend'        => collect($raw['trend'] ?? [])->map(fn($r) => [
+                'date'  => $r->date,
+                'total' => $r->total,
+            ])->values(),
+        ]);
+    }
+
+    // ── Sales Report ─────────────────────────────────────────────────────
+    public function sales(Request $request): View
     {
         [$from, $to] = $this->parseDates($request);
-        $data = $this->reportService->salesReport($request->get('_store_id'), $from, $to);
-        return view('manager.reports.sales', array_merge($data, compact('from', 'to')));
+        $raw = $this->reportService->salesReport($request->get('_store_id'), $from, $to);
+
+        // Rename agar cocok dengan sales view
+        $data = [
+            'from'             => $from,
+            'to'               => $to,
+            'totalSales'       => $raw['totalSales']  ?? 0,
+            'totalOrders'      => $raw['orderCount']  ?? 0,   // view pakai $totalOrders
+            'avgTransaction'   => $raw['avgSale']     ?? 0,   // view pakai $avgTransaction
+            'byPaymentMethod'  => collect($raw['byMethod'] ?? [])->values(), // view pakai $byPaymentMethod
+            'byOrderType'      => $raw['byType']      ?? collect(), // view pakai $byOrderType
+            'dailyTrend'       => $raw['daily']       ?? collect(), // view pakai $dailyTrend
+        ];
+
+        return view('manager.reports.sales', $data);
     }
 
-    public function products(ReportFilterRequest $request): View
+    // ── Product Report ───────────────────────────────────────────────────
+    public function products(Request $request): View
     {
         [$from, $to] = $this->parseDates($request);
         $data = $this->reportService->productReport($request->get('_store_id'), $from, $to);
         return view('manager.reports.products', array_merge($data, compact('from', 'to')));
     }
 
-    public function revenue(ReportFilterRequest $request): View
+    // ── Revenue Report ───────────────────────────────────────────────────
+    public function revenue(Request $request): View
     {
         [$from, $to] = $this->parseDates($request);
         $period = $request->period ?? 'daily';
@@ -48,47 +100,23 @@ class ReportController extends Controller
         return view('manager.reports.revenue', compact('data', 'from', 'to', 'period'));
     }
 
-    public function cashiers(ReportFilterRequest $request): View
+    // ── Cashier Report ───────────────────────────────────────────────────
+    public function cashiers(Request $request): View
     {
         [$from, $to] = $this->parseDates($request);
         $data = $this->reportService->cashierReport($request->get('_store_id'), $from, $to);
         return view('manager.reports.cashiers', compact('data', 'from', 'to'));
     }
-    public function dashboardFilter(Request $request)
-{
-    $period  = $request->query('period', 'today');
-    $storeId = $request->get('_store_id');
 
-    [$from, $to] = match($period) {
-        'week'  => [now()->startOfWeek(),  now()->endOfWeek()],
-        'month' => [now()->startOfMonth(), now()->endOfMonth()],
-        default => [now()->startOfDay(),   now()->endOfDay()],
-    };
-
-    $data = $this->reportService->dashboardAnalytics($storeId, $from, $to);
-
-    return response()->json($data);
-}
-private function parseDates(Request $request): array
-{
-    try {
+    // ── Helpers ──────────────────────────────────────────────────────────
+    private function parseDates(Request $request): array
+    {
         $from = $request->from
             ? Carbon::parse($request->from)->startOfDay()
-            : now()->startOfMonth();
-
+            : now()->copy()->startOfMonth();
         $to = $request->to
             ? Carbon::parse($request->to)->endOfDay()
-            : now()->endOfDay();
-
-        // Pastikan from tidak lebih besar dari to
-        if ($from->gt($to)) {
-            [$from, $to] = [$to, $from];
-        }
-    } catch (\Exception $e) {
-        $from = now()->startOfMonth();
-        $to   = now()->endOfDay();
+            : now()->copy()->endOfDay();
+        return [$from, $to];
     }
-
-    return [$from, $to];
-}
 }

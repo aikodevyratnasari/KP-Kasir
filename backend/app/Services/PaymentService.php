@@ -3,19 +3,15 @@
 namespace App\Services;
 
 use App\Events\PaymentProcessed;
+use App\Models\KitchenOrder;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
-    /**
-     * Process a single payment (or one leg of a split bill).
-     *
-     * @param array $data {payment_method, amount, amount_received?, card_type?, card_last_four?,
-     *                     approval_code?, ewallet_type?, reference_number?}
-     */
     public function process(Order $order, array $data): Payment
     {
         abort_if($order->isCancelled(), 422, 'Pesanan telah dibatalkan.');
@@ -46,12 +42,26 @@ class PaymentService
                 'status'           => 'paid',
             ]);
 
-            // Mark order completed if fully paid
-            if ($order->fresh()->isFullyPaid()) {
-                $order->update([
-                    'status'       => 'completed',
-                    'completed_at' => now(),
-                ]);
+            // Cek apakah sudah lunas
+            $freshOrder = $order->fresh();
+            if ($freshOrder->isFullyPaid()) {
+                // Tandai sudah dikirim ke dapur
+                $freshOrder->update(['sent_to_kitchen_at' => now()]);
+
+                // Aktifkan kitchen_order agar muncul di tampilan dapur
+                if ($freshOrder->kitchenOrder) {
+                    $freshOrder->kitchenOrder->update([
+                        'status'    => 'queued',
+                        'queued_at' => now(),
+                    ]);
+                } else {
+                    // Buat kitchen_order jika belum ada
+                    KitchenOrder::create([
+                        'order_id'  => $freshOrder->id,
+                        'status'    => 'queued',
+                        'queued_at' => now(),
+                    ]);
+                }
             }
 
             event(new PaymentProcessed($payment));
@@ -60,9 +70,6 @@ class PaymentService
         });
     }
 
-    /**
-     * Refund a payment (full or partial). Only within 24 hours.
-     */
     public function refund(Payment $payment, float $amount, string $reason): Payment
     {
         abort_if($payment->isRefunded(), 422, 'Pembayaran sudah dikembalikan.');

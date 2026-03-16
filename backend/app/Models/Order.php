@@ -14,17 +14,19 @@ class Order extends Model
         'order_type', 'status', 'subtotal', 'tax_rate', 'tax_amount',
         'total_amount', 'notes', 'cancel_reason', 'cancelled_by',
         'cancelled_at', 'cooking_at', 'ready_at', 'completed_at',
+        'sent_to_kitchen_at',
     ];
 
     protected $casts = [
-        'subtotal'      => 'decimal:2',
-        'tax_rate'      => 'decimal:2',
-        'tax_amount'    => 'decimal:2',
-        'total_amount'  => 'decimal:2',
-        'cancelled_at'  => 'datetime',
-        'cooking_at'    => 'datetime',
-        'ready_at'      => 'datetime',
-        'completed_at'  => 'datetime',
+        'subtotal'            => 'decimal:2',
+        'tax_rate'            => 'decimal:2',
+        'tax_amount'          => 'decimal:2',
+        'total_amount'        => 'decimal:2',
+        'cancelled_at'        => 'datetime',
+        'cooking_at'          => 'datetime',
+        'ready_at'            => 'datetime',
+        'completed_at'        => 'datetime',
+        'sent_to_kitchen_at'  => 'datetime',
     ];
 
     // ── Relationships ────────────────────────────────────────────────────
