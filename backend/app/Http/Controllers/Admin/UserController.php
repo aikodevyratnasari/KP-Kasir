@@ -12,6 +12,8 @@ use App\Notifications\VerifyEmailNotification;
 use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -41,8 +43,6 @@ class UserController extends Controller
     {
         $user = User::create($request->validated());
         ActivityLogService::logCreated($user);
-
-        // Kirim email verifikasi ke user yang baru dibuat
         $user->notify(new VerifyEmailNotification());
 
         return redirect()->route('admin.users.index')
@@ -63,6 +63,7 @@ class UserController extends Controller
         $old = $user->toArray();
         $user->update($request->validated());
         ActivityLogService::logUpdated($user, $old, $user->toArray());
+
         return redirect()->route('admin.users.index')
             ->with('success', "User {$user->name} berhasil diperbarui.");
     }
@@ -73,18 +74,44 @@ class UserController extends Controller
         $user->update(['status' => $user->status === 'active' ? 'inactive' : 'active']);
         ActivityLogService::log('toggle_user_status', $user, description: "User {$user->email} status changed to {$user->status}");
         $label = $user->status === 'active' ? 'diaktifkan' : 'dinonaktifkan';
+
         return back()->with('success', "User {$user->name} telah {$label}.");
     }
 
-    /**
-     * Kirim ulang email verifikasi dari halaman admin.
-     */
     public function resendVerification(User $user): RedirectResponse
     {
         abort_if($user->hasVerifiedEmail(), 422, 'Email user ini sudah diverifikasi.');
-
         $user->notify(new VerifyEmailNotification());
 
         return back()->with('success', "Email verifikasi telah dikirim ulang ke {$user->email}.");
+    }
+
+    /**
+     * Tampilkan form reset password (admin)
+     */
+    public function showResetPassword(User $user): View
+    {
+        return view('auth.admin-reset-password', compact('user'));
+    }
+
+    /**
+     * Proses reset password oleh admin — tanpa perlu email
+     */
+    public function resetPassword(Request $request, User $user): RedirectResponse
+    {
+        $request->validate([
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+        ], [
+            'password' => 'Password minimal 8 karakter, mengandung huruf besar, kecil, dan angka.',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        ActivityLogService::log('reset_password', $user, description: "Password {$user->email} direset oleh admin.");
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "Password {$user->name} berhasil direset.");
     }
 }

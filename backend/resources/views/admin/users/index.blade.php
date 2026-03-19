@@ -125,6 +125,10 @@
                             <a href="{{ route('admin.users.edit', $user) }}"
                                class="text-xs text-indigo-600 hover:underline font-medium">Edit</a>
 
+                            {{-- TAMBAHAN: Reset Password --}}
+                            <a href="{{ route('admin.users.reset-password', $user) }}"
+                               class="text-xs text-orange-500 hover:underline font-medium">Reset PW</a>
+
                             @if($user->id !== auth()->id())
                                 <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
                                       onsubmit="return confirm('{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }} user {{ addslashes($user->name) }}?')">

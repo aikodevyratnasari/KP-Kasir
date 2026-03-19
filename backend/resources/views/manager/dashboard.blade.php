@@ -1,4 +1,4 @@
-{{-- resources/views/cashier/dashboard.blade.php --}}
+{{-- resources/views/manager/dashboard.blade.php --}}
 @extends('layouts.app')
 @section('title', 'Dashboard')
 
@@ -17,25 +17,9 @@
     cursor: pointer;
     transition: all 0.15s ease;
 }
-.filter-btn:hover {
-    border-color: #6366f1;
-    color: #6366f1;
-}
-.filter-btn.active {
-    background: #6366f1;
-    color: white;
-    border-color: #6366f1;
-}
-
-/* Loading state */
-.card-loading {
-    opacity: 0.5;
-    pointer-events: none;
-    transition: opacity 0.2s;
-}
-.stat-value {
-    transition: all 0.3s ease;
-}
+.filter-btn:hover { border-color: #6366f1; color: #6366f1; }
+.filter-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+.stat-value { transition: all 0.3s ease; }
 </style>
 
 <div class="space-y-6">
@@ -51,23 +35,15 @@
                 @endif
             </p>
         </div>
-
-        {{-- TOMBOL FILTER --}}
         <div class="flex gap-2">
-            <button onclick="loadDashboard('today')" id="btn-today" class="filter-btn active">
-                Hari Ini
-            </button>
-            <button onclick="loadDashboard('week')" id="btn-week" class="filter-btn">
-                Minggu Ini
-            </button>
-            <button onclick="loadDashboard('month')" id="btn-month" class="filter-btn">
-                Bulan Ini
-            </button>
+            <button onclick="loadDashboard('today')" id="btn-today" class="filter-btn active">Hari Ini</button>
+            <button onclick="loadDashboard('week')"  id="btn-week"  class="filter-btn">Minggu Ini</button>
+            <button onclick="loadDashboard('month')" id="btn-month" class="filter-btn">Bulan Ini</button>
         </div>
     </div>
 
     {{-- Stats Cards --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="stats-section">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="card">
             <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Penjualan</p>
             <p class="text-2xl font-bold text-gray-900 mt-1 stat-value" id="stat-sales">
@@ -102,7 +78,6 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         {{-- Top Products --}}
         <div class="card">
             <h2 class="font-semibold text-gray-800 mb-4">🏆 Top Produk</h2>
@@ -121,11 +96,11 @@
             </div>
         </div>
 
-        {{-- 7-day / Period Trend --}}
+        {{-- Chart --}}
         <div class="card lg:col-span-2">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="font-semibold text-gray-800" id="chart-title">📈 Tren Penjualan 7 Hari Terakhir</h2>
-                {{-- Loading spinner --}}
+                {{-- FIX: judul sesuai filter aktif (default: Hari Ini) --}}
+                <h2 class="font-semibold text-gray-800" id="chart-title">📈 Tren Penjualan Hari Ini</h2>
                 <div id="chart-loading" class="hidden">
                     <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -137,11 +112,9 @@
                 <canvas id="salesChart"></canvas>
             </div>
         </div>
-
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         {{-- Recent Orders --}}
         <div class="card lg:col-span-2">
             <div class="flex items-center justify-between mb-4">
@@ -190,19 +163,17 @@
                 <p class="text-sm text-green-600 text-center py-6">✅ Semua stok aman</p>
             @endforelse
         </div>
-
     </div>
 </div>
 
 <script>
 let salesChart = null;
 
-// ==========================================
-// INISIALISASI CHART PERTAMA KALI
-// ==========================================
 document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('salesChart').getContext('2d');
-    const trendData = @json($weeklyTrend ?? []);
+
+    // Data awal dari server (hari ini)
+    const trendData = @json($trend ?? []);
 
     salesChart = new Chart(ctx, {
         type: 'line',
@@ -210,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function () {
             labels: formatLabels(trendData),
             datasets: [{
                 label: 'Total Penjualan (Rp)',
-                data: trendData.map(i => i.total),
+                data: trendData.map(i => Number(i.total)),
                 borderColor: '#6366f1',
                 backgroundColor: 'rgba(99, 102, 241, 0.1)',
                 borderWidth: 3,
@@ -224,18 +195,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// ==========================================
-// FUNGSI LOAD DATA FILTER VIA AJAX
-// ==========================================
 function loadDashboard(period) {
-    // 1. Update tombol aktif
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById('btn-' + period).classList.add('active');
-
-    // 2. Tampilkan loading
     setLoading(true);
 
-    // 3. Fetch ke endpoint controller
     fetch(`{{ route('manager.dashboard.filter') }}?period=${period}`, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -243,10 +207,7 @@ function loadDashboard(period) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(res => {
-        if (!res.ok) throw new Error('Network error');
-        return res.json();
-    })
+    .then(res => { if (!res.ok) throw new Error('Network error'); return res.json(); })
     .then(data => {
         updateStats(data);
         updateChart(data.trend, period);
@@ -257,39 +218,24 @@ function loadDashboard(period) {
     .catch(err => {
         console.error('Error:', err);
         setLoading(false);
-        alert('Gagal memuat data. Silakan coba lagi.');
     });
 }
 
-// ==========================================
-// UPDATE STAT CARDS
-// ==========================================
 function updateStats(data) {
-    document.getElementById('stat-sales').textContent =
-        'Rp ' + Number(data.totalSales).toLocaleString('id-ID');
+    document.getElementById('stat-sales').textContent   = 'Rp ' + formatRp(data.totalSales);
+    document.getElementById('stat-orders').textContent  = data.totalOrders;
+    document.getElementById('stat-avg').textContent     = 'Rp ' + formatRp(data.avgOrder);
 
-    document.getElementById('stat-orders').textContent = data.totalOrders;
-
-    document.getElementById('stat-avg').textContent =
-        'Rp ' + Number(data.avgOrder).toLocaleString('id-ID');
-
-    // Active orders
     const el = document.getElementById('stat-active-orders');
     if (data.activeOrders && Object.keys(data.activeOrders).length > 0) {
-        el.innerHTML = Object.entries(data.activeOrders).map(([status, count]) => `
-            <div class="text-center">
-                <p class="text-xl font-bold text-gray-900">${count}</p>
-                <p class="text-xs text-gray-400 capitalize">${status}</p>
-            </div>
-        `).join('');
+        el.innerHTML = Object.entries(data.activeOrders).map(([s, c]) =>
+            `<div class="text-center"><p class="text-xl font-bold text-gray-900">${c}</p><p class="text-xs text-gray-400 capitalize">${s}</p></div>`
+        ).join('');
     } else {
         el.innerHTML = '<p class="text-2xl font-bold text-green-500">0</p>';
     }
 }
 
-// ==========================================
-// UPDATE CHART
-// ==========================================
 function updateChart(trendData, period) {
     const titles = {
         today: '📈 Tren Penjualan Hari Ini',
@@ -299,13 +245,10 @@ function updateChart(trendData, period) {
     document.getElementById('chart-title').textContent = titles[period] ?? '📈 Tren Penjualan';
 
     salesChart.data.labels = formatLabels(trendData);
-    salesChart.data.datasets[0].data = trendData.map(i => i.total);
+    salesChart.data.datasets[0].data = (trendData || []).map(i => Number(i.total));
     salesChart.update('active');
 }
 
-// ==========================================
-// UPDATE TOP PRODUCTS
-// ==========================================
 function updateTopProducts(products) {
     const el = document.getElementById('top-products-list');
     if (!products || products.length === 0) {
@@ -315,7 +258,7 @@ function updateTopProducts(products) {
     el.innerHTML = products.map((p, i) => `
         <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
             <div class="flex items-center gap-2">
-                <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">${i + 1}</span>
+                <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">${i+1}</span>
                 <span class="text-sm text-gray-700">${p.product_name}</span>
             </div>
             <span class="text-sm font-semibold">${p.total_qty} pcs</span>
@@ -323,34 +266,26 @@ function updateTopProducts(products) {
     `).join('');
 }
 
-// ==========================================
-// UPDATE RECENT ORDERS
-// ==========================================
 function updateRecentOrders(orders) {
     const el = document.getElementById('recent-orders-body');
     if (!orders || orders.length === 0) {
         el.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada pesanan</td></tr>';
         return;
     }
-    el.innerHTML = orders.map(order => `
+    el.innerHTML = orders.map(o => `
         <tr class="border-b border-gray-50 hover:bg-gray-50">
-            <td class="py-2">
-                <a href="/cashier/orders/${order.id}" class="font-medium text-indigo-600 hover:underline">
-                    ${order.order_number}
-                </a>
-            </td>
-            <td class="py-2 text-gray-600 capitalize">${order.order_type.replace('_', '-')}</td>
-            <td class="py-2"><span class="badge badge-${order.status}">${capitalize(order.status)}</span></td>
-            <td class="py-2 text-right font-semibold">Rp ${Number(order.total_amount).toLocaleString('id-ID')}</td>
+            <td class="py-2"><a href="/cashier/orders/${o.id}" class="font-medium text-indigo-600 hover:underline">${o.order_number}</a></td>
+            <td class="py-2 text-gray-600 capitalize">${o.order_type.replace('_','-')}</td>
+            <td class="py-2"><span class="badge badge-${o.status}">${capitalize(o.status)}</span></td>
+            <td class="py-2 text-right font-semibold">Rp ${formatRp(o.total_amount)}</td>
         </tr>
     `).join('');
 }
 
-// ==========================================
-// HELPERS
-// ==========================================
 function formatLabels(trendData) {
+    if (!trendData || trendData.length === 0) return [];
     return trendData.map(item => {
+        if (!item.date) return '';
         const d = new Date(item.date);
         return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
     });
@@ -364,8 +299,15 @@ function chartOptions() {
         scales: {
             y: {
                 beginAtZero: true,
-                ticks: { callback: v => 'Rp ' + (v / 1000) + 'k' },
-                grid: { drawBorder: false, color: '#f3f4f6' }
+                ticks: {
+                    // FIX: format angka besar dengan benar
+                    callback: function(v) {
+                        if (v >= 1000000) return 'Rp ' + (v/1000000).toFixed(1) + 'jt';
+                        if (v >= 1000)    return 'Rp ' + (v/1000).toFixed(0) + 'rb';
+                        return 'Rp ' + v;
+                    }
+                },
+                grid: { color: '#f3f4f6' }
             },
             x: { grid: { display: false } }
         }
@@ -379,8 +321,12 @@ function setLoading(state) {
     });
 }
 
+function formatRp(n) {
+    return Number(n).toLocaleString('id-ID');
+}
+
 function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+    return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 }
 </script>
 
