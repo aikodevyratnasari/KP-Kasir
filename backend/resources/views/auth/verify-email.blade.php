@@ -1,27 +1,7 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DePOS — Verifikasi Email</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="font-sans antialiased bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen flex items-center justify-center p-4">
+<x-guest-layout>
+    @section('title', 'Verifikasi Email')
 
-<div class="w-full max-w-md">
-
-    {{-- Logo --}}
-    <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 text-white text-3xl mb-4 shadow-lg">
-            🍽️
-        </div>
-        <h1 class="text-2xl font-bold text-gray-900">DePOS</h1>
-        <p class="text-sm text-gray-500 mt-1">Restaurant Point of Sale</p>
-    </div>
-
-    {{-- Card --}}
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
-
+    <div class="text-center">
         <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span class="text-3xl">📧</span>
         </div>
@@ -36,7 +16,7 @@
 
         {{-- Alert kirim ulang berhasil --}}
         @if(session('resent'))
-            <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm mb-4">
+            <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm mb-4 text-left">
                 ✅ Email verifikasi baru telah dikirim! Silakan cek kotak masuk Anda.
             </div>
         @endif
@@ -66,13 +46,5 @@
                 Logout dari akun ini
             </button>
         </form>
-
     </div>
-
-    <p class="text-center text-xs text-gray-400 mt-6">
-        © {{ date('Y') }} DePOS Restaurant POS
-    </p>
-</div>
-
-</body>
-</html>
+</x-guest-layout>

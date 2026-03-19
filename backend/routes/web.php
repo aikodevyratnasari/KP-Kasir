@@ -3,6 +3,8 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ProfileController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Cashier\OrderController;
@@ -23,6 +25,12 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function () {
     Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post')->middleware('login.throttle');
+
+    // Forgot & Reset Password
+    Route::get('/forgot-password',        [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password',       [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password',        [NewPasswordController::class, 'store'])->name('password.store');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
@@ -65,12 +73,14 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
         ->prefix('admin')
         ->name('admin.')
         ->group(function () {
-            Route::get('/dashboard', [ReportController::class, 'dashboard'])->name('dashboard');
+            Route::get('/dashboard',        [ReportController::class, 'dashboard'])->name('dashboard');
             Route::get('/dashboard/filter', [ReportController::class, 'dashboardFilter'])->name('dashboard.filter');
 
             Route::resource('users', UserController::class)->except(['destroy']);
             Route::patch('users/{user}/toggle-status',      [UserController::class, 'toggleStatus'])->name('users.toggle-status');
             Route::post('users/{user}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
+            Route::get('users/{user}/reset-password',       [UserController::class, 'showResetPassword'])->name('users.reset-password');
+            Route::patch('users/{user}/reset-password',     [UserController::class, 'resetPassword'])->name('users.reset-password.update');
         });
 
     /*──────────────────────────────────────────────────────
@@ -80,7 +90,7 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
         ->prefix('manager')
         ->name('manager.')
         ->group(function () {
-            Route::get('/dashboard', [ReportController::class, 'dashboard'])->name('dashboard');
+            Route::get('/dashboard',        [ReportController::class, 'dashboard'])->name('dashboard');
             Route::get('/dashboard/filter', [ReportController::class, 'dashboardFilter'])->name('dashboard.filter');
 
             // Menu

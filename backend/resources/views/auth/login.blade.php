@@ -37,9 +37,16 @@
 
         {{-- Password --}}
         <div class="mb-4">
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-                Password
-            </label>
+            {{-- Label + link lupa password sejajar --}}
+            <div class="flex items-center justify-between mb-1">
+                <label for="password" class="block text-sm font-medium text-gray-700">
+                    Password
+                </label>
+                <a href="{{ route('password.request') }}"
+                   class="text-xs text-indigo-600 hover:text-indigo-800 hover:underline">
+                    Lupa password?
+                </a>
+            </div>
             <div class="relative" x-data="{ show: false }">
                 <input
                     id="password"
