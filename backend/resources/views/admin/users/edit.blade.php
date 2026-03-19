@@ -53,8 +53,8 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status" class="form-input">
-                        <option value="active" {{ old('status',$user->status)==='active'?'selected':'' }}>Aktif</option>
-                        <option value="inactive" {{ old('status',$user->status)==='inactive'?'selected':'' }}>Nonaktif</option>
+                        <option value="active"   {{ old('status',$user->status)==='active'   ?'selected':'' }}>Aktif</option>
+                        <option value="inactive" {{ old('status',$user->status)==='inactive' ?'selected':'' }}>Nonaktif</option>
                     </select>
                 </div>
                 @endif
@@ -62,6 +62,7 @@
 
             <div class="flex gap-3 mt-6">
                 <button type="submit" class="btn-primary">Simpan Perubahan</button>
+                <a href="{{ route('admin.users.reset-password', $user) }}" class="btn-secondary">Ubah Password</a>
                 <a href="{{ route('admin.users.index') }}" class="btn-secondary">Batal</a>
             </div>
         </form>
