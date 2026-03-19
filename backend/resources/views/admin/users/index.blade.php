@@ -58,7 +58,6 @@
             <tbody class="divide-y divide-gray-100">
             @forelse($users as $user)
                 <tr class="hover:bg-gray-50 transition-colors">
-                    {{-- User info --}}
                     <td class="py-3 px-4">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
@@ -71,7 +70,6 @@
                         </div>
                     </td>
 
-                    {{-- Role --}}
                     <td class="py-3 px-4">
                         <span class="px-2 py-0.5 rounded-md text-xs font-medium
                             @switch($user->role->slug)
@@ -84,12 +82,10 @@
                         </span>
                     </td>
 
-                    {{-- Store --}}
                     <td class="py-3 px-4 text-gray-600 text-xs">
                         {{ $user->store->name ?? '—' }}
                     </td>
 
-                    {{-- Email verification --}}
                     <td class="py-3 px-4 text-center">
                         @if($user->hasVerifiedEmail())
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
@@ -102,8 +98,7 @@
                                 </span>
                                 <form method="POST" action="{{ route('admin.users.resend-verification', $user) }}">
                                     @csrf
-                                    <button type="submit"
-                                            class="text-xs text-indigo-500 hover:text-indigo-700 hover:underline">
+                                    <button type="submit" class="text-xs text-indigo-500 hover:text-indigo-700 hover:underline">
                                         Kirim ulang
                                     </button>
                                 </form>
@@ -111,7 +106,6 @@
                         @endif
                     </td>
 
-                    {{-- Account status --}}
                     <td class="py-3 px-4 text-center">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
                             {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' }}">
@@ -119,15 +113,11 @@
                         </span>
                     </td>
 
-                    {{-- Aksi --}}
+                    {{-- Aksi: Edit + Toggle (Reset Password dipindah ke halaman Edit) --}}
                     <td class="py-3 px-4 text-right">
-                        <div class="flex justify-end items-center gap-3">
+                        <div class="flex justify-end items-center gap-4">
                             <a href="{{ route('admin.users.edit', $user) }}"
                                class="text-xs text-indigo-600 hover:underline font-medium">Edit</a>
-
-                            {{-- TAMBAHAN: Reset Password --}}
-                            <a href="{{ route('admin.users.reset-password', $user) }}"
-                               class="text-xs text-orange-500 hover:underline font-medium">Reset PW</a>
 
                             @if($user->id !== auth()->id())
                                 <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
