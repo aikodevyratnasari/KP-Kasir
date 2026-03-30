@@ -1,29 +1,124 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
+@section('title', 'Profil Saya')
+@section('page-title', 'Profil Saya')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
+@section('content')
+<div class="max-w-2xl mx-auto space-y-6">
+
+    {{-- Informasi Profil --}}
+    <div class="card">
+        <h2 class="text-base font-semibold text-gray-800 mb-1">Informasi Profil</h2>
+        <p class="text-sm text-gray-500 mb-5">Perbarui nama dan nomor telepon. Email tidak dapat diubah.</p>
+
+        @if(session('status') === 'profile-updated')
+            <div class="mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">
+                ✅ Profil berhasil diperbarui.
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('profile.update') }}">
+            @csrf @method('PATCH')
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                    <input type="text" name="name" value="{{ old('name', $user->name) }}" required autofocus
+                           class="form-input @error('name', 'profileInformation') border-red-400 @enderror">
+                    @error('name', 'profileInformation')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <div class="flex items-center gap-2">
+                        <input type="email" value="{{ $user->email }}" disabled
+                               class="form-input flex-1 bg-gray-50 text-gray-400 cursor-not-allowed">
+                        @if($user->hasVerifiedEmail())
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700 whitespace-nowrap">
+                                ✓ Terverifikasi
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-yellow-100 text-yellow-700 whitespace-nowrap">
+                                ⚠ Belum diverifikasi
+                            </span>
+                        @endif
+                    </div>
+                    <p class="mt-1 text-xs text-gray-400">Email tidak dapat diubah. Hubungi Admin jika perlu perubahan.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+                    <input type="text" name="phone" value="{{ old('phone', $user->phone) }}"
+                           placeholder="08xxxxxxxxxx" class="form-input">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                        <input type="text" value="{{ $user->role->name }}" disabled
+                               class="form-input bg-gray-50 text-gray-400 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Store</label>
+                        <input type="text" value="{{ $user->store->name ?? 'N/A' }}" disabled
+                               class="form-input bg-gray-50 text-gray-400 cursor-not-allowed">
+                    </div>
                 </div>
             </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
+            <div class="mt-6 pt-5 border-t border-gray-100">
+                <button type="submit" class="btn-primary">Simpan Perubahan</button>
             </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
-        </div>
+        </form>
     </div>
-</x-app-layout>
+
+    {{-- Ganti Password --}}
+    <div class="card">
+        <h2 class="text-base font-semibold text-gray-800 mb-1">Ganti Password</h2>
+        <p class="text-sm text-gray-500 mb-5">Gunakan password yang kuat dan unik untuk keamanan akun Anda.</p>
+
+        @if(session('status') === 'password-updated')
+            <div class="mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">
+                ✅ Password berhasil diperbarui.
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('password.update') }}">
+            @csrf @method('PUT')
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password Saat Ini</label>
+                    <input type="password" name="current_password" autocomplete="current-password"
+                           class="form-input @error('current_password', 'updatePassword') border-red-400 @enderror">
+                    @error('current_password', 'updatePassword')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password Baru</label>
+                    <input type="password" name="password" autocomplete="new-password"
+                           class="form-input @error('password', 'updatePassword') border-red-400 @enderror">
+                    @error('password', 'updatePassword')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-gray-400">Min. 8 karakter, mengandung huruf besar, kecil, dan angka.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password Baru</label>
+                    <input type="password" name="password_confirmation" autocomplete="new-password"
+                           class="form-input">
+                </div>
+            </div>
+
+            <div class="mt-6 pt-5 border-t border-gray-100">
+                <button type="submit" class="btn-primary">Ganti Password</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+@endsection
