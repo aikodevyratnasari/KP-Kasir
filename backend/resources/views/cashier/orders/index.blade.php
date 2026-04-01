@@ -26,7 +26,7 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Tipe</label>
-                <select name="order_type" class="form-input w-auto">
+                <select name="order_type" class="form-input w-36">
                     <option value="">Semua</option>
                     <option value="dine_in"  {{ request('order_type') === 'dine_in'  ? 'selected' : '' }}>Dine-In</option>
                     <option value="takeaway" {{ request('order_type') === 'takeaway' ? 'selected' : '' }}>Takeaway</option>
@@ -101,9 +101,16 @@
                         Rp {{ number_format($order->total_amount, 0, ',', '.') }}
                     </td>
                     <td class="py-3 px-4 text-right">
-                        <a href="{{ route('cashier.orders.show', $order) }}"
-                           class="text-xs text-indigo-600 hover:underline font-medium">Detail</a>
-                    </td>
+    <a href="{{ route('cashier.orders.show', $order) }}"
+       class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
+       style="color: white; background-color: #16a34a; border: 1px solid #16a34a;"
+       onmouseover="this.style.backgroundColor='#15803d'; this.style.borderColor='#15803d';"
+       onmouseout="this.style.backgroundColor='#16a34a'; this.style.borderColor='#16a34a';"
+       onmousedown="this.style.backgroundColor='#166534'; this.style.transform='scale(0.98)';"
+       onmouseup="this.style.backgroundColor='#15803d'; this.style.transform='scale(1)';">
+        Detail
+    </a>
+</td>
                 </tr>
             @empty
                 <tr>

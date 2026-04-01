@@ -1,11 +1,10 @@
 @extends('layouts.app')
 @section('title', 'Laporan Penjualan')
+@section('page-title', 'Laporan Penjualan')
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="page-title">Laporan Penjualan</h1>
-    </div>
+    
 
     {{-- Filter --}}
     <div class="card">

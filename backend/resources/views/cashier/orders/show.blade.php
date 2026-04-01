@@ -7,7 +7,6 @@
     {{-- Header --}}
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <a href="{{ route('cashier.orders.index') }}" class="text-gray-400 hover:text-gray-600">←</a>
             <h1 class="page-title">Pesanan #{{ $order->order_number }}</h1>
         </div>
         <span id="order-status-badge" class="badge badge-{{ $order->status }} text-sm px-3 py-1">
@@ -43,24 +42,25 @@
             };
         @endphp
         <div class="flex items-center justify-between px-2" id="tracker-steps"
-             data-current="{{ $currentStep }}"
-             data-is-paid="{{ $isPaid ? '1' : '0' }}">
-            @foreach($steps as $i => $step)
-                @php $done = $i <= $currentStep; @endphp
-                <div class="flex flex-col items-center flex-1 {{ $i < count($steps)-1 ? 'relative' : '' }}">
-                    @if($i < count($steps)-1)
-                        <div class="tracker-line-{{ $i }} absolute top-4 left-1/2 w-full h-0.5 {{ $i < $currentStep ? 'bg-indigo-500' : 'bg-gray-200' }}" style="z-index:0"></div>
-                    @endif
-                    <div class="tracker-circle-{{ $i }} relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm
-                        {{ $done ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400' }}">
-                        {{ $done ? $step['icon'] : ($i+1) }}
-                    </div>
-                    <span class="tracker-label-{{ $i }} text-xs mt-1 text-center {{ $done ? 'text-indigo-700 font-semibold' : 'text-gray-400' }}">
-                        {{ $step['label'] }}
-                    </span>
-                </div>
-            @endforeach
+     data-current="{{ $currentStep }}"
+     data-is-paid="{{ $isPaid ? '1' : '0' }}">
+    @foreach($steps as $i => $step)
+        @php $done = $i <= $currentStep; $active = $i === $currentStep; @endphp
+        <div class="flex flex-col items-center flex-1 {{ $i < count($steps)-1 ? 'relative' : '' }}">
+            @if($i < count($steps)-1)
+                <div class="tracker-line-{{ $i }} absolute top-4 left-1/2 w-full h-1 rounded-full {{ $i < $currentStep ? 'bg-indigo-500' : 'bg-gray-200' }}" style="z-index:0"></div>
+            @endif
+            <div class="tracker-circle-{{ $i }} relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2
+                {{ $done ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-400 border-gray-300' }}
+                {{ $active ? 'ring-4 ring-indigo-100' : '' }}">
+                {{ $i + 1 }}
+            </div>
+            <span class="tracker-label-{{ $i }} text-xs mt-1 text-center {{ $done ? 'text-indigo-700 font-semibold' : 'text-gray-400' }}">
+                {{ $step['label'] }}
+            </span>
         </div>
+    @endforeach
+</div>
     </div>
     @endif
 
@@ -155,9 +155,15 @@
                         💳 Proses Pembayaran
                     </a>
                 @elseif($order->isFullyPaid() && $order->isCompleted())
-                    <a href="{{ route('cashier.receipts.show', $order->payments->last()) }}" class="btn-secondary w-full justify-center mt-4">
-                        🧾 Cetak Struk
-                    </a>
+                    <a href="{{ route('cashier.receipts.show', $order->payments->last()) }}"
+   class="w-full justify-center mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
+   style="color: white; background-color: #EF8F00; border: 1px solid #EF8F00;"
+   onmouseover="this.style.backgroundColor='#cc7a00'; this.style.borderColor='#cc7a00';"
+   onmouseout="this.style.backgroundColor='#EF8F00'; this.style.borderColor='#EF8F00';"
+   onmousedown="this.style.backgroundColor='#a86400'; this.style.transform='scale(0.98)';"
+   onmouseup="this.style.backgroundColor='#cc7a00'; this.style.transform='scale(1)';">
+    Cetak Struk
+</a>
                 @endif
             </div>
         </div>
@@ -170,7 +176,7 @@
             <thead><tr class="border-b border-gray-100">
                 <th class="py-2 text-left text-gray-500">Produk</th>
                 <th class="py-2 text-center text-gray-500">Qty</th>
-                <th class="py-2 text-right text-gray-500">Harga</th>
+                <th class="py-2 text-righ<t text-gray-500">Harga</th>
                 <th class="py-2 text-right text-gray-500">Subtotal</th>
             </tr></thead>
             <tbody>
@@ -206,6 +212,20 @@
         </div>
     @endif
 
+    {{-- Tombol Kembali --}}
+<div class="flex justify-start">
+    <a href="{{ route('cashier.orders.index') }}"
+   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
+   style="color: white; background-color: #2D54BF; border: 1px solid #2D54BF;"
+   onmouseover="this.style.backgroundColor='#1e3d8f'; this.style.borderColor='#1e3d8f';"
+   onmouseout="this.style.backgroundColor='#2D54BF'; this.style.borderColor='#2D54BF';"
+   onmousedown="this.style.backgroundColor='#181375'; this.style.transform='scale(0.98)';"
+   onmouseup="this.style.backgroundColor='#1e3d8f'; this.style.transform='scale(1)';">
+    Kembali
+</a>
+</div>
+
+
 </div>
 @endsection
 
@@ -230,7 +250,7 @@
         completed: 'badge-completed',
         cancelled: 'badge-cancelled',
     };
-    const stepIcons = ['📋','💳','🔥','✅','🎉'];
+    
 
     let lastStatus = '{{ $order->status }}';
     let lastIsPaid = {{ $order->isFullyPaid() ? 'true' : 'false' }};
@@ -255,7 +275,7 @@
                     .replace(/bg-indigo-600 text-white|bg-gray-100 text-gray-400/g, '')
                     .trim();
                 circle.classList.add(...(done ? ['bg-indigo-600','text-white'] : ['bg-gray-100','text-gray-400']));
-                circle.textContent = done ? stepIcons[i] : String(i + 1);
+                circle.textContent = String(i + 1); 
             }
             if (label) {
                 label.className = label.className

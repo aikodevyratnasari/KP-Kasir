@@ -57,22 +57,22 @@
                 <div x-show="!open" class="my-1 mx-2" style="border-top: 2px solid #e5e7eb;"></div>
 
                 @foreach([
-                    ['manager.dashboard',        'manager.dashboard',    '📊', 'Dashboard'],
-                    ['manager.products.index',   'manager.products.*',   '🍜', 'Menu'],
-                    ['manager.categories.index', 'manager.categories.*', '📁', 'Kategori'],
-                    ['manager.reports.sales',    'manager.reports.*',    '📈', 'Laporan'],
-                ] as [$r, $m, $icon, $label])
-                    @php $a = request()->routeIs($m); @endphp
-                    <a href="{{ route($r) }}" title="{{ $label }}"
-                       class="flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-colors mb-0.5"
-                       :class="open ? 'px-3' : 'justify-center px-0'"
-                       style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
-                       onmouseover="{{ $a ? '' : "this.style.backgroundColor='#f3f4f6'; this.style.color='#111827';" }}"
-                       onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}">
-                        <span class="text-lg w-6 flex-shrink-0 text-center">{{ $icon }}</span>
-                        <span x-show="open" class="whitespace-nowrap truncate">{{ $label }}</span>
-                    </a>
-                @endforeach
+    ['manager.dashboard',        'manager.dashboard',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>', 'Dashboard'],
+    ['manager.products.index',   'manager.products.*',   '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>', 'Menu'],
+    ['manager.categories.index', 'manager.categories.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg>', 'Kategori'],
+    ['manager.reports.sales',    'manager.reports.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>', 'Laporan'],
+] as [$r, $m, $icon, $label])
+    @php $a = request()->routeIs($m); @endphp
+    <a href="{{ route($r) }}" title="{{ $label }}"
+       class="flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-colors mb-0.5"
+       :class="open ? 'px-3' : 'justify-center px-0'"
+       style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
+       onmouseover="{{ $a ? '' : "this.style.backgroundColor='#f3f4f6'; this.style.color='#111827';" }}"
+       onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}">
+        <span class="w-6 flex-shrink-0 flex items-center justify-center">{!! $icon !!}</span>
+        <span x-show="open" class="whitespace-nowrap truncate">{{ $label }}</span>
+    </a>
+@endforeach
             @endif
 
             {{-- KASIR --}}
@@ -83,33 +83,37 @@
                 <div x-show="!open" class="my-1 mx-2" style="border-top: 2px solid #e5e7eb;"></div>
 
                 @foreach([
-                    ['cashier.orders.index',     'cashier.orders.*',    '🧾', 'Pesanan'],
-                    ['cashier.tables.index',     'cashier.tables.*',    '🪑', 'Meja'],
-                    ['cashier.payments.history', 'cashier.payments.*',  '💳', 'Pembayaran'],
-                ] as [$r, $m, $icon, $label])
-                    @php $a = request()->routeIs($m) && !request()->routeIs('cashier.orders.create'); @endphp
-                    <a href="{{ route($r) }}" title="{{ $label }}"
-                       class="flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-colors mb-0.5"
-                       :class="open ? 'px-3' : 'justify-center px-0'"
-                       style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
-                       onmouseover="{{ $a ? '' : "this.style.backgroundColor='#f3f4f6'; this.style.color='#111827';" }}"
-                       onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}">
-                        <span class="text-lg w-6 flex-shrink-0 text-center">{{ $icon }}</span>
-                        <span x-show="open" class="whitespace-nowrap truncate">{{ $label }}</span>
-                    </a>
-                @endforeach
+    ['cashier.orders.index',     'cashier.orders.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h6"/></svg>', 'Pesanan'],
+    ['cashier.tables.index',     'cashier.tables.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 10V6a1 1 0 011-1h16a1 1 0 011 1v4M3 10l2 8h14l2-8M9 10v8M15 10v8"/></svg>', 'Meja'],
+    ['cashier.payments.history', 'cashier.payments.*',  '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>', 'Pembayaran'],
+] as [$r, $m, $icon, $label])
+    @php $a = request()->routeIs($m) && !request()->routeIs('cashier.orders.create'); @endphp
+    <a href="{{ route($r) }}" title="{{ $label }}"
+       class="flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-colors mb-0.5"
+       :class="open ? 'px-3' : 'justify-center px-0'"
+       style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
+       onmouseover="{{ $a ? '' : "this.style.backgroundColor='#f3f4f6'; this.style.color='#111827';" }}"
+       onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}">
+        <span class="w-6 flex-shrink-0 flex items-center justify-center">{!! $icon !!}</span>
+        <span x-show="open" class="whitespace-nowrap truncate">{{ $label }}</span>
+    </a>
+@endforeach
 
-                {{-- Buat Pesanan (satu tombol, tanpa kategori) --}}
-                @php $isCreate = request()->routeIs('cashier.orders.create'); @endphp
-                <a href="{{ route('cashier.orders.create') }}" title="Buat Pesanan"
-                   class="flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-colors mb-0.5"
-                   :class="open ? 'px-3' : 'justify-center px-0'"
-                   style="{{ $isCreate ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
-                   onmouseover="{{ $isCreate ? '' : "this.style.backgroundColor='#f3f4f6'; this.style.color='#111827';" }}"
-                   onmouseout="{{ $isCreate ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}">
-                    <span class="text-lg w-6 flex-shrink-0 text-center">➕</span>
-                    <span x-show="open" class="whitespace-nowrap truncate">Buat Pesanan</span>
-                </a>
+{{-- Buat Pesanan --}}
+@php $isCreate = request()->routeIs('cashier.orders.create'); @endphp
+<a href="{{ route('cashier.orders.create') }}" title="Buat Pesanan"
+   class="flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-colors mb-0.5"
+   :class="open ? 'px-3' : 'justify-center px-0'"
+   style="{{ $isCreate ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
+   onmouseover="{{ $isCreate ? '' : "this.style.backgroundColor='#f3f4f6'; this.style.color='#111827';" }}"
+   onmouseout="{{ $isCreate ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}">
+    <span class="w-6 flex-shrink-0 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+    </span>
+    <span x-show="open" class="whitespace-nowrap truncate">Buat Pesanan</span>
+</a>
             @endif
 
             {{-- DAPUR --}}
@@ -143,7 +147,11 @@
                    style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
                    onmouseover="{{ $a ? '' : "this.style.backgroundColor='#f3f4f6'; this.style.color='#111827';" }}"
                    onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}">
-                    <span class="text-lg w-6 flex-shrink-0 text-center">👥</span>
+                    <span class="w-6 flex-shrink-0 flex items-center justify-center">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+    </svg>
+</span>
                     <span x-show="open" class="whitespace-nowrap">Users</span>
                 </a>
             @endif
