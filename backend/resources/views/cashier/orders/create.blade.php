@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Buat Pesanan')
+@section('page-title', 'Buat Pesanan')
 
 @section('content')
 {{-- Full-height layout: sidebar kanan sticky tanpa scroll halaman --}}
@@ -9,10 +10,10 @@
     {{-- ── KIRI: Form + Menu (scrollable) ── --}}
     <div style="flex:1; overflow-y:auto; padding:20px 16px 20px 0;">
 
-        <div class="flex items-center gap-3 mb-4">
+        <!-- <div class="flex items-center gap-3 mb-4">
             <a href="{{ route('cashier.orders.index') }}" class="text-gray-400 hover:text-gray-600 text-lg">←</a>
             <h1 class="page-title">Buat Pesanan Baru</h1>
-        </div>
+        </div> -->
 
         <form method="POST" action="{{ route('cashier.orders.store') }}" id="order-form">
             @csrf
@@ -128,7 +129,7 @@
         {{-- Header keranjang --}}
         <div style="padding:16px; border-bottom:1px solid #f1f5f9; flex-shrink:0;">
             <div class="flex items-center justify-between">
-                <h3 class="font-bold text-gray-900">🧺 Keranjang</h3>
+                <h3 class="font-bold text-gray-900">Keranjang</h3>
                 <span x-show="items.length > 0"
                       class="text-xs bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full"
                       x-text="items.length + ' item'"></span>

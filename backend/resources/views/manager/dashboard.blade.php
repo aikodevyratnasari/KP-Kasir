@@ -35,10 +35,26 @@
                 @endif
             </p>
         </div>
-        <div class="flex gap-2">
-            <button onclick="loadDashboard('today')" id="btn-today" class="filter-btn active">Hari Ini</button>
-            <button onclick="loadDashboard('week')"  id="btn-week"  class="filter-btn">Minggu Ini</button>
-            <button onclick="loadDashboard('month')" id="btn-month" class="filter-btn">Bulan Ini</button>
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="loadDashboard('today')"   id="btn-today"   class="filter-btn active">Hari Ini</button>
+            <button onclick="loadDashboard('week')"    id="btn-week"    class="filter-btn">Minggu Ini</button>
+            <button onclick="loadDashboard('month')"   id="btn-month"   class="filter-btn">Bulan Ini</button>
+            <button onclick="loadDashboard('year')"    id="btn-year"    class="filter-btn">Tahun Ini</button>
+            <button onclick="loadDashboard('all')"     id="btn-all"     class="filter-btn">Semua</button>
+            <button onclick="toggleCustomRange()"      id="btn-custom"  class="filter-btn">📅 Custom</button>
+
+            {{-- Custom date range (hidden by default) --}}
+            <div id="custom-range" class="hidden flex items-center gap-2">
+                <input type="date" id="custom-from"
+                       value="{{ now()->startOfMonth()->format('Y-m-d') }}"
+                       class="form-input text-sm py-1.5 w-36">
+                <span class="text-gray-400 text-sm">–</span>
+                <input type="date" id="custom-to"
+                       value="{{ now()->format('Y-m-d') }}"
+                       class="form-input text-sm py-1.5 w-36">
+                <button onclick="loadCustomRange()"
+                        class="filter-btn active text-sm py-1.5 px-3">Terapkan</button>
+            </div>
         </div>
     </div>
 
@@ -99,7 +115,6 @@
         {{-- Chart --}}
         <div class="card lg:col-span-2">
             <div class="flex items-center justify-between mb-4">
-                {{-- FIX: judul sesuai filter aktif (default: Hari Ini) --}}
                 <h2 class="font-semibold text-gray-800" id="chart-title">📈 Tren Penjualan Hari Ini</h2>
                 <div id="chart-loading" class="hidden">
                     <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -171,8 +186,6 @@ let salesChart = null;
 
 document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('salesChart').getContext('2d');
-
-    // Data awal dari server (hari ini)
     const trendData = @json($trend ?? []);
 
     salesChart = new Chart(ctx, {
@@ -195,9 +208,49 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+function toggleCustomRange() {
+    const el = document.getElementById('custom-range');
+    const btn = document.getElementById('btn-custom');
+    const hidden = el.classList.contains('hidden');
+    el.classList.toggle('hidden', !hidden);
+    if (hidden) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    } else {
+        btn.classList.remove('active');
+    }
+}
+
+function loadCustomRange() {
+    const from = document.getElementById('custom-from').value;
+    const to   = document.getElementById('custom-to').value;
+    if (!from || !to) return;
+
+    document.getElementById('chart-title').textContent = `📈 Tren Penjualan ${from} – ${to}`;
+    setLoading(true);
+
+    fetch(`{{ route('manager.dashboard.filter') }}?period=custom&from=${from}&to=${to}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(res => { if (!res.ok) throw new Error('Network error'); return res.json(); })
+    .then(data => {
+        updateStats(data);
+        updateChart(data.trend, 'custom');
+        updateTopProducts(data.topProducts);
+        updateRecentOrders(data.recentOrders);
+        setLoading(false);
+    })
+    .catch(err => { console.error(err); setLoading(false); });
+}
+
 function loadDashboard(period) {
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById('btn-' + period).classList.add('active');
+    document.getElementById('custom-range').classList.add('hidden');
     setLoading(true);
 
     fetch(`{{ route('manager.dashboard.filter') }}?period=${period}`, {
@@ -215,17 +268,13 @@ function loadDashboard(period) {
         updateRecentOrders(data.recentOrders);
         setLoading(false);
     })
-    .catch(err => {
-        console.error('Error:', err);
-        setLoading(false);
-    });
+    .catch(err => { console.error(err); setLoading(false); });
 }
 
 function updateStats(data) {
-    document.getElementById('stat-sales').textContent   = 'Rp ' + formatRp(data.totalSales);
-    document.getElementById('stat-orders').textContent  = data.totalOrders;
-    document.getElementById('stat-avg').textContent     = 'Rp ' + formatRp(data.avgOrder);
-
+    document.getElementById('stat-sales').textContent  = 'Rp ' + formatRp(data.totalSales);
+    document.getElementById('stat-orders').textContent = data.totalOrders;
+    document.getElementById('stat-avg').textContent    = 'Rp ' + formatRp(data.avgOrder);
     const el = document.getElementById('stat-active-orders');
     if (data.activeOrders && Object.keys(data.activeOrders).length > 0) {
         el.innerHTML = Object.entries(data.activeOrders).map(([s, c]) =>
@@ -241,9 +290,12 @@ function updateChart(trendData, period) {
         today: '📈 Tren Penjualan Hari Ini',
         week:  '📈 Tren Penjualan Minggu Ini',
         month: '📈 Tren Penjualan Bulan Ini',
+        year:  '📈 Tren Penjualan Tahun Ini',
+        all:   '📈 Tren Penjualan Semua Waktu',
     };
-    document.getElementById('chart-title').textContent = titles[period] ?? '📈 Tren Penjualan';
-
+    if (period !== 'custom') {
+        document.getElementById('chart-title').textContent = titles[period] ?? '📈 Tren Penjualan';
+    }
     salesChart.data.labels = formatLabels(trendData);
     salesChart.data.datasets[0].data = (trendData || []).map(i => Number(i.total));
     salesChart.update('active');
@@ -300,7 +352,6 @@ function chartOptions() {
             y: {
                 beginAtZero: true,
                 ticks: {
-                    // FIX: format angka besar dengan benar
                     callback: function(v) {
                         if (v >= 1000000) return 'Rp ' + (v/1000000).toFixed(1) + 'jt';
                         if (v >= 1000)    return 'Rp ' + (v/1000).toFixed(0) + 'rb';
@@ -316,18 +367,10 @@ function chartOptions() {
 
 function setLoading(state) {
     document.getElementById('chart-loading').classList.toggle('hidden', !state);
-    document.querySelectorAll('.stat-value').forEach(el => {
-        el.style.opacity = state ? '0.4' : '1';
-    });
+    document.querySelectorAll('.stat-value').forEach(el => { el.style.opacity = state ? '0.4' : '1'; });
 }
-
-function formatRp(n) {
-    return Number(n).toLocaleString('id-ID');
-}
-
-function capitalize(str) {
-    return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
-}
+function formatRp(n) { return Number(n).toLocaleString('id-ID'); }
+function capitalize(str) { return str ? str.charAt(0).toUpperCase() + str.slice(1) : ''; }
 </script>
 
 @endsection

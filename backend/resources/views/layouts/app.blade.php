@@ -22,7 +22,9 @@
 </head>
 <body class="font-sans antialiased bg-gray-100">
 
-<div x-data="{ open: true }" class="min-h-screen">
+<div x-data="{ open: localStorage.getItem('sidebarOpen') === 'true' }"
+     x-init="$watch('open', val => localStorage.setItem('sidebarOpen', val))"
+     class="min-h-screen">
 
     {{-- SIDEBAR --}}
     <aside
@@ -52,7 +54,7 @@
             {{-- MANAGER --}}
             @if(in_array($role, ['admin', 'manager']))
                 <div x-show="open" class="px-4 pt-3 pb-1">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Manager</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Menu Utama</p>
                 </div>
                 <div x-show="!open" class="my-1 mx-2" style="border-top: 2px solid #e5e7eb;"></div>
 
@@ -78,13 +80,32 @@
             {{-- KASIR --}}
             @if(in_array($role, ['admin', 'manager', 'cashier']))
                 <div x-show="open" class="px-4 pt-4 pb-1">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Kasir</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Pemesanan</p>
                 </div>
                 <div x-show="!open" class="my-1 mx-2" style="border-top: 2px solid #e5e7eb;"></div>
 
                 @foreach([
     ['cashier.orders.index',     'cashier.orders.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h6"/></svg>', 'Pesanan'],
-    ['cashier.tables.index',     'cashier.tables.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 10V6a1 1 0 011-1h16a1 1 0 011 1v4M3 10l2 8h14l2-8M9 10v8M15 10v8"/></svg>', 'Meja'],
+    ['cashier.tables.index', 'cashier.tables.*', 
+'<svg xmlns="http://www.w3.org/2000/svg" 
+    class="w-5 h-5" 
+    viewBox="0 0 24 24" 
+    fill="currentColor">
+    
+    <!-- Top table -->
+    <rect x="2" y="3" width="20" height="3" rx="0.5"/>
+    
+    <!-- Table leg -->
+    <rect x="11" y="6" width="2" height="5"/>
+    
+    <!-- Bottom half circle (outer) -->
+    <path d="M4 18a8 8 0 0 1 16 0H4z"/>
+    
+    <!-- Inner cut (white hole) -->
+    <path d="M7 18a5 5 0 0 1 10 0H7z" fill="white"/>
+    
+</svg>', 
+'Meja'],
     ['cashier.payments.history', 'cashier.payments.*',  '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>', 'Pembayaran'],
 ] as [$r, $m, $icon, $label])
     @php $a = request()->routeIs($m) && !request()->routeIs('cashier.orders.create'); @endphp
@@ -129,7 +150,39 @@
                    style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
                    onmouseover="{{ $a ? '' : "this.style.backgroundColor='#f3f4f6'; this.style.color='#111827';" }}"
                    onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}">
-                    <span class="text-lg w-6 flex-shrink-0 text-center">👨‍🍳</span>
+                    <span class="w-6 flex-shrink-0 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" 
+                            class="w-5 h-5" 
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor" 
+                            stroke-width="2">
+
+                            <!-- Pegangan tutup -->
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6v2" />
+
+                            <!-- Badan panci -->
+                            <rect x="4" y="10" width="16" height="8" rx="2" ry="2" />
+
+                            <!-- Handle kiri -->
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M2 12h2" />
+
+                            <!-- Handle kanan -->
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M20 12h2" />
+
+                            <!-- Uap -->
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M8 4c0 1 1 1 1 2s-1 1-1 2" />
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 3c0 1 1 1 1 2s-1 1-1 2" />
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M16 4c0 1 1 1 1 2s-1 1-1 2" />
+
+                        </svg>
+                    </span>
                     <span x-show="open" class="whitespace-nowrap">Tampilan Dapur</span>
                 </a>
             @endif
@@ -137,7 +190,7 @@
             {{-- ADMIN --}}
             @if($role === 'admin')
                 <div x-show="open" class="px-4 pt-4 pb-1">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Admin</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Akun</p>
                 </div>
                 <div x-show="!open" class="my-1 mx-2" style="border-top: 2px solid #e5e7eb;"></div>
                 @php $a = request()->routeIs('admin.users.*'); @endphp
@@ -177,20 +230,44 @@
                 </button>
 
                 <div x-show="menuOpen"
-                     x-transition:enter="transition ease-out duration-150"
-                     x-transition:enter-start="opacity-0 -translate-y-1"
-                     x-transition:enter-end="opacity-100 translate-y-0"
-                     @click.outside="menuOpen = false"
-                     class="mt-1 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden">
-                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                        <span>👤</span> Profil Saya
-                    </a>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
-                            <span>🚪</span> Logout
-                        </button>
-                    </form>
+                x-transition:enter="transition ease-out duration-150"
+                x-transition:enter-start="opacity-0 translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                @click.outside="menuOpen = false"
+                class="absolute bottom-full left-2 right-2 mb-2 bg-white border border-gray-100 rounded-xl shadow-lg z-[9999]"
+style="position: absolute; bottom: 100%; left: 8px; right: 8px; margin-bottom: 8px;">
+                    <div class="px-4 pt-3 pb-1">
+    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Profile</p>
+</div>
+
+<a href="{{ route('profile.edit') }}"
+   class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+   style="color: #374151;"
+   onmouseover="this.style.backgroundColor='#f3f4f6';"
+   onmouseout="this.style.backgroundColor='';"
+   onmousedown="this.style.backgroundColor='#e5e7eb';"
+   onmouseup="this.style.backgroundColor='#f3f4f6';">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+    </svg>
+    Profil Saya
+</a>
+
+<form method="POST" action="{{ route('logout') }}">
+    @csrf
+    <button type="submit"
+            class="flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors"
+            style="color: #ef4444;"
+            onmouseover="this.style.backgroundColor='#fff1f2';"
+            onmouseout="this.style.backgroundColor='';"
+            onmousedown="this.style.backgroundColor='#fee2e2';"
+            onmouseup="this.style.backgroundColor='#fff1f2';">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        Logout
+    </button>
+</form>
                 </div>
             </div>
         </div>

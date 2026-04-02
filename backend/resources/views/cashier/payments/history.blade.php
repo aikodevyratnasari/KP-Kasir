@@ -1,14 +1,15 @@
 @extends('layouts.app')
 @section('title', 'Riwayat Pembayaran')
+@section('page-title', 'Riwayat Penbayaran')
 
 @section('content')
 <div class="space-y-6">
-    <h1 class="page-title">Riwayat Pembayaran</h1>
+    <!-- <h1 class="page-title">Riwayat Pembayaran</h1> -->
 
     <div class="card">
         <form method="GET" class="flex flex-wrap gap-3 items-end">
             <div><label class="block text-xs font-medium text-gray-600 mb-1">Metode</label>
-                <select name="method" class="form-input w-auto">
+                <select name="method" class="form-input w-36">
                     <option value="">Semua Metode</option>
                     <option value="cash" {{ request('method')==='cash'?'selected':'' }}>Tunai</option>
                     <option value="card" {{ request('method')==='card'?'selected':'' }}>Kartu</option>

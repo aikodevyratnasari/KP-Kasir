@@ -15,7 +15,7 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
-                <select name="status" class="form-input w-auto">
+                <select name="status" class="form-input w-36">
                     <option value="">Semua</option>
                     @foreach(['pending','cooking','ready','completed','cancelled'] as $s)
                         <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>
