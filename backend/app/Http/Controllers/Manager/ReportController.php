@@ -41,9 +41,15 @@ class ReportController extends Controller
         $period  = $request->period ?? 'today';
 
         [$from, $to] = match ($period) {
-            'week'  => [now()->startOfWeek(), now()->endOfWeek()],
-            'month' => [now()->startOfMonth(), now()->endOfMonth()],
-            default => [now()->startOfDay(), now()->endOfDay()],
+            'week'   => [now()->startOfWeek(),  now()->endOfWeek()],
+            'month'  => [now()->startOfMonth(), now()->endOfMonth()],
+            'year'   => [now()->startOfYear(),  now()->endOfYear()],
+            'all'    => [now()->subYears(10)->startOfDay(), now()->endOfDay()],
+            'custom' => [
+                Carbon::parse($request->from)->startOfDay(),
+                Carbon::parse($request->to)->endOfDay(),
+            ],
+            default  => [now()->startOfDay(), now()->endOfDay()],
         };
 
         $raw = $this->reportService->dashboardAnalytics($storeId, $from, $to);

@@ -20,7 +20,9 @@
 
     /* ── Cards ────────────────────────────────────────── */
     .card {
-        @apply bg-white rounded-xl border border-gray-200 p-4 shadow-sm;
+        @apply bg-white rounded-xl p-4;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.05);
     }
 
     /* ── Buttons ──────────────────────────────────────── */
