@@ -20,7 +20,6 @@
             <span class="w-3 h-3 rounded-full bg-gray-300"></span> Ditutup
         </span>
         <div class="ml-auto flex items-center gap-3">
-            {{-- Live indicator --}}
             <span id="poll-indicator" class="flex items-center gap-1.5 text-xs text-gray-400">
                 <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                 Live
@@ -56,7 +55,6 @@
                         ];
                     @endphp
 
-                    {{-- data-table-id dipakai JS untuk update partial --}}
                     <div id="table-card-{{ $table->id }}"
                          data-table-id="{{ $table->id }}"
                          data-table-number="{{ $table->number }}"
@@ -75,19 +73,43 @@
                         <div class="table-body">
                             @if($status === 'closed')
                                 <div class="mt-1 text-center">
-                                    <span class="text-xs text-gray-400 font-medium">🔒 Ditutup</span>
+                                    <span class="text-xs text-gray-400 font-medium inline-flex items-center gap-1 justify-center">
+                                        {{-- lock --}}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                        </svg>
+                                        Ditutup
+                                    </span>
                                 </div>
                             @elseif($activeOrder)
                                 <div class="mt-2 pt-2 border-t border-red-200">
                                     <p class="text-xs font-medium text-red-700 truncate">#{{ $activeOrder->order_number }}</p>
                                     <p class="text-xs text-red-500">Rp {{ number_format($activeOrder->total_amount,0,',','.') }}</p>
-                                    <p class="text-xs text-red-400 mt-0.5">
-                                        {{ match($activeOrder->status) {
-                                            'pending'  => '⏳ Menunggu bayar',
-                                            'cooking'  => '🔥 Dimasak',
-                                            'ready'    => '✅ Siap disajikan',
-                                            default    => $activeOrder->status,
-                                        } }}
+                                    <p class="text-xs text-red-400 mt-0.5 inline-flex items-center gap-1">
+                                        @php
+                                            $orderStatus = $activeOrder->status;
+                                        @endphp
+                                        @if($orderStatus === 'pending')
+                                            {{-- hourglass --}}
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
+                                            </svg>
+                                            Menunggu bayar
+                                        @elseif($orderStatus === 'cooking')
+                                            {{-- flame --}}
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                                            </svg>
+                                            Dimasak
+                                        @elseif($orderStatus === 'ready')
+                                            {{-- check-circle --}}
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                            </svg>
+                                            Siap disajikan
+                                        @else
+                                            {{ $activeOrder->status }}
+                                        @endif
                                     </p>
                                     <a href="{{ route('cashier.orders.show', $activeOrder) }}"
                                        class="mt-1.5 block text-center text-xs bg-white border border-red-200 text-red-700 rounded-lg py-1 hover:bg-red-50 transition">
@@ -119,7 +141,12 @@
         </div>
     @empty
         <div class="card text-center py-10 text-gray-400">
-            <p class="text-4xl mb-2">🪑</p>
+            {{-- armchair --}}
+            <div class="flex justify-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z"/><path d="M5 18v2"/><path d="M19 18v2"/>
+                </svg>
+            </div>
             <p>Belum ada meja terdaftar</p>
         </div>
     @endforelse
@@ -130,7 +157,7 @@
 @push('scripts')
 <script>
 (function() {
-    const INTERVAL = 10000; // 10 detik
+    const INTERVAL = 10000;
     const POLL_URL = '{{ route('poll.tables') }}';
 
     const colorMap = {
@@ -145,10 +172,13 @@
         reserved:  'bg-yellow-400',
         closed:    'bg-gray-300',
     };
+
+    // SVG icons sebagai string untuk dipakai JS
+    const svgLock = `<svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
     const statusLabel = {
-        pending:  '⏳ Menunggu bayar',
-        cooking:  '🔥 Dimasak',
-        ready:    '✅ Siap disajikan',
+        pending: `<svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg> Menunggu bayar`,
+        cooking: `<svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Dimasak`,
+        ready:   `<svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Siap disajikan`,
     };
 
     function formatRp(n) {
@@ -169,20 +199,17 @@
                 if (prevStatus === t.status &&
                     card.dataset.orderId === String(t.order_id ?? '') &&
                     card.dataset.orderStatus === String(t.order_status ?? '')) {
-                    return; // tidak ada perubahan
+                    return;
                 }
 
-                // Update dataset
                 card.dataset.status      = t.status;
                 card.dataset.orderId     = t.order_id ?? '';
                 card.dataset.orderStatus = t.order_status ?? '';
 
-                // Update border & background
                 const allColors = Object.values(colorMap).join(' ').split(' ').filter(Boolean);
                 card.classList.remove(...allColors);
                 (colorMap[t.status] || '').split(' ').filter(Boolean).forEach(c => card.classList.add(c));
 
-                // Update dot
                 const dot = card.querySelector('.table-dot');
                 if (dot) {
                     const allDots = Object.values(dotMap);
@@ -190,21 +217,17 @@
                     dot.classList.add(dotMap[t.status] || 'bg-gray-300');
                 }
 
-                // Update body
                 const body = card.querySelector('.table-body');
                 if (!body) return;
 
-                const num  = card.dataset.tableNumber;
-                const cap  = card.dataset.tableCapacity;
-
                 if (t.status === 'closed') {
-                    body.innerHTML = `<div class="mt-1 text-center"><span class="text-xs text-gray-400 font-medium">🔒 Ditutup</span></div>`;
+                    body.innerHTML = `<div class="mt-1 text-center"><span class="text-xs text-gray-400 font-medium inline-flex items-center gap-1 justify-center">${svgLock} Ditutup</span></div>`;
                 } else if (t.status === 'occupied' && t.order_id) {
                     body.innerHTML = `
                         <div class="mt-2 pt-2 border-t border-red-200">
                             <p class="text-xs font-medium text-red-700 truncate">#${t.order_number}</p>
                             <p class="text-xs text-red-500">Rp ${t.order_total}</p>
-                            <p class="text-xs text-red-400 mt-0.5">${statusLabel[t.order_status] ?? t.order_status}</p>
+                            <p class="text-xs text-red-400 mt-0.5 inline-flex items-center gap-1">${statusLabel[t.order_status] ?? t.order_status}</p>
                             <a href="/cashier/orders/${t.order_id}"
                                class="mt-1.5 block text-center text-xs bg-white border border-red-200 text-red-700 rounded-lg py-1 hover:bg-red-50 transition">
                                 Lihat Pesanan
@@ -226,11 +249,10 @@
             });
 
         } catch (e) {
-            // Gagal poll — tidak perlu alert
+            // Gagal poll
         }
     }
 
-    // Mulai polling
     setInterval(pollTables, INTERVAL);
 })();
 </script>

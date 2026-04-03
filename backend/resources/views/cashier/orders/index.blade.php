@@ -101,21 +101,26 @@
                         Rp {{ number_format($order->total_amount, 0, ',', '.') }}
                     </td>
                     <td class="py-3 px-4 text-right">
-    <a href="{{ route('cashier.orders.show', $order) }}"
-       class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
-       style="color: white; background-color: #16a34a; border: 1px solid #16a34a;"
-       onmouseover="this.style.backgroundColor='#15803d'; this.style.borderColor='#15803d';"
-       onmouseout="this.style.backgroundColor='#16a34a'; this.style.borderColor='#16a34a';"
-       onmousedown="this.style.backgroundColor='#166534'; this.style.transform='scale(0.98)';"
-       onmouseup="this.style.backgroundColor='#15803d'; this.style.transform='scale(1)';">
-        Detail
-    </a>
-</td>
+                        <a href="{{ route('cashier.orders.show', $order) }}"
+                           class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
+                           style="color: white; background-color: #16a34a; border: 1px solid #16a34a;"
+                           onmouseover="this.style.backgroundColor='#15803d'; this.style.borderColor='#15803d';"
+                           onmouseout="this.style.backgroundColor='#16a34a'; this.style.borderColor='#16a34a';"
+                           onmousedown="this.style.backgroundColor='#166534'; this.style.transform='scale(0.98)';"
+                           onmouseup="this.style.backgroundColor='#15803d'; this.style.transform='scale(1)';">
+                            Detail
+                        </a>
+                    </td>
                 </tr>
             @empty
                 <tr>
                     <td colspan="8" class="py-12 text-center text-gray-400">
-                        <p class="text-3xl mb-2">📋</p>
+                        <div class="flex justify-center mb-2">
+                            {{-- clipboard --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h4"/>
+                            </svg>
+                        </div>
                         <p>Belum ada pesanan</p>
                     </td>
                 </tr>
@@ -154,7 +159,6 @@
                 const row = document.getElementById('order-row-' + o.id);
                 if (!row) return;
 
-                // Update status badge
                 const statusBadge = row.querySelector('.order-status-badge');
                 if (statusBadge) {
                     const allBadge = Object.values(statusClass);
@@ -163,7 +167,6 @@
                     statusBadge.textContent = o.status.charAt(0).toUpperCase() + o.status.slice(1);
                 }
 
-                // Update payment badge
                 const paidBadge = row.querySelector('.order-paid-badge');
                 if (paidBadge) {
                     paidBadge.innerHTML = o.is_paid

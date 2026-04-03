@@ -101,6 +101,6 @@ class OrderController extends Controller
         ActivityLogService::log('order_completed', $order, description: "Order #{$order->order_number} selesai, meja dikosongkan.");
 
         return redirect()->route('cashier.tables.index')
-            ->with('success', "✅ Pesanan #{$order->order_number} selesai. Meja {$order->table?->number} kembali tersedia.");
+            ->with('success', " Pesanan #{$order->order_number} selesai. Meja {$order->table?->number} kembali tersedia.");
     }
 }

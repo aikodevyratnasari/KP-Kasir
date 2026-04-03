@@ -30,14 +30,35 @@
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Metode Pembayaran <span class="text-red-500">*</span></label>
                 <div class="grid grid-cols-3 gap-2">
-                    @foreach(['cash' => '💵 Tunai', 'card' => '💳 Kartu', 'ewallet' => '📱 E-Wallet'] as $val => $label)
-                        <label class="flex flex-col items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-colors"
-                               :class="method === '{{ $val }}' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-200'">
-                            <input type="radio" name="payment_method" value="{{ $val }}" x-model="method" class="sr-only">
-                            <span class="text-lg">{{ explode(' ', $label)[0] }}</span>
-                            <span class="text-xs font-medium mt-1">{{ explode(' ', $label)[1] }}</span>
-                        </label>
-                    @endforeach
+                    {{-- Tunai --}}
+                    <label class="flex flex-col items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-colors"
+                           :class="method === 'cash' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-200'">
+                        <input type="radio" name="payment_method" value="cash" x-model="method" class="sr-only">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>
+                        </svg>
+                        <span class="text-xs font-medium">Tunai</span>
+                    </label>
+
+                    {{-- Kartu --}}
+                    <label class="flex flex-col items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-colors"
+                           :class="method === 'card' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-200'">
+                        <input type="radio" name="payment_method" value="card" x-model="method" class="sr-only">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                        <span class="text-xs font-medium">Kartu</span>
+                    </label>
+
+                    {{-- E-Wallet --}}
+                    <label class="flex flex-col items-center justify-center border-2 rounded-lg p-3 cursor-pointer transition-colors"
+                           :class="method === 'ewallet' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-200'">
+                        <input type="radio" name="payment_method" value="ewallet" x-model="method" class="sr-only">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+                        </svg>
+                        <span class="text-xs font-medium">E-Wallet</span>
+                    </label>
                 </div>
                 @error('payment_method') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -97,8 +118,12 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-primary w-full justify-center text-base">
-                ✓ Proses Pembayaran
+            <button type="submit" class="btn-primary w-full justify-center text-base inline-flex items-center gap-2">
+                {{-- check --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Proses Pembayaran
             </button>
         </form>
     </div>

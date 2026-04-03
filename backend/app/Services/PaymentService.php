@@ -9,13 +9,14 @@ use App\Models\Payment;
 use App\Models\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
     public function process(Order $order, array $data): Payment
     {
-        abort_if($order->isCancelled(), 422, 'Pesanan telah dibatalkan.');
-        abort_if($order->isCompleted() && $order->isFullyPaid(), 422, 'Pesanan sudah lunas.');
+        // abort_if($order->isCancelled(), 422, 'Pesanan telah dibatalkan.');
+        // abort_if($order->isCompleted() && $order->isFullyPaid(), 422, 'Pesanan sudah lunas.');
 
         return DB::transaction(function () use ($order, $data) {
             $amount = (float) $data['amount'];
@@ -23,7 +24,13 @@ class PaymentService
             $change = null;
             if ($data['payment_method'] === 'cash') {
                 $received = (float) ($data['amount_received'] ?? 0);
-                abort_if($received < $amount, 422, 'Jumlah yang diterima kurang dari total pembayaran.');
+                // abort_if($received < $amount, 422, 'Jumlah yang diterima kurang dari total pembayaran.');
+                //perubahan
+                if ($received < $amount) {
+                    throw ValidationException::withMessages([
+                        'amount_received' => 'Jumlah yang diterima kurang dari total pembayaran.',
+                    ]);
+                }
                 $change = $received - $amount;
             }
 
@@ -70,20 +77,20 @@ class PaymentService
         });
     }
 
-    public function refund(Payment $payment, float $amount, string $reason): Payment
-    {
-        abort_if($payment->isRefunded(), 422, 'Pembayaran sudah dikembalikan.');
-        abort_if($payment->created_at->lt(now()->subDay()), 422, 'Pengembalian dana hanya bisa dilakukan dalam 24 jam.');
-        abort_if($amount > (float) $payment->amount, 422, 'Jumlah refund melebihi pembayaran awal.');
+    // public function refund(Payment $payment, float $amount, string $reason): Payment
+    // {
+    //     abort_if($payment->isRefunded(), 422, 'Pembayaran sudah dikembalikan.');
+    //     abort_if($payment->created_at->lt(now()->subDay()), 422, 'Pengembalian dana hanya bisa dilakukan dalam 24 jam.');
+    //     abort_if($amount > (float) $payment->amount, 422, 'Jumlah refund melebihi pembayaran awal.');
 
-        $payment->update([
-            'status'        => 'refunded',
-            'refund_amount' => $amount,
-            'refund_reason' => $reason,
-            'refunded_at'   => now(),
-            'refunded_by'   => Auth::id(),
-        ]);
+    //     $payment->update([
+    //         'status'        => 'refunded',
+    //         'refund_amount' => $amount,
+    //         'refund_reason' => $reason,
+    //         'refunded_at'   => now(),
+    //         'refunded_by'   => Auth::id(),
+    //     ]);
 
-        return $payment->fresh();
-    }
+    //     return $payment->fresh();
+    // }
 }
