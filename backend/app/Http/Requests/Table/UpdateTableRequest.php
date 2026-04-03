@@ -5,7 +5,7 @@ namespace App\Http\Requests\Table;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreTableRequest extends FormRequest
+class UpdateTableRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,21 +14,24 @@ class StoreTableRequest extends FormRequest
 
     public function rules(): array
     {
-        $storeId = (int) ($this->user()->store_id ?? 0);
+        $table   = $this->route('table');
+        $storeId = $this->user()->store_id ?? $table->store_id;
 
         return [
             'number'   => [
                 'required', 'string', 'max:20',
                 Rule::unique('tables', 'number')
-                    ->where(fn ($q) => $q->where('store_id', $storeId)),
+                    ->ignore($table->id)
+                    ->where('store_id', $storeId),
             ],
-            'capacity' => ['required', 'integer', 'min:1', 'max:100'],
+            'capacity' => ['required', 'integer', 'min:1', 'max:50'],
             'section'  => ['nullable', 'string', 'max:50'],
+            'status'   => ['required', 'in:available,closed'],
         ];
     }
 
     public function messages(): array
     {
-        return ['number.unique' => 'Nomor meja sudah digunakan di toko ini.'];
+        return ['number.unique' => 'Nomor meja sudah digunakan.'];
     }
 }

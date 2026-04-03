@@ -89,12 +89,20 @@
                     <td class="py-3 px-4 text-center">
                         @if($user->hasVerifiedEmail())
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                ✓ Terverifikasi
+                                {{-- check --}}
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                                Terverifikasi
                             </span>
                         @else
                             <div class="flex flex-col items-center gap-1">
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
-                                    ⏳ Menunggu
+                                    {{-- hourglass --}}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
+                                    </svg>
+                                    Menunggu
                                 </span>
                                 <form method="POST" action="{{ route('admin.users.resend-verification', $user) }}">
                                     @csrf
@@ -113,7 +121,6 @@
                         </span>
                     </td>
 
-                    {{-- Aksi: Edit + Toggle (Reset Password dipindah ke halaman Edit) --}}
                     <td class="py-3 px-4 text-right">
                         <div class="flex justify-end items-center gap-4">
                             <a href="{{ route('admin.users.edit', $user) }}"
@@ -138,7 +145,12 @@
             @empty
                 <tr>
                     <td colspan="6" class="py-12 text-center text-gray-400">
-                        <p class="text-3xl mb-2">👥</p>
+                        <div class="flex justify-center mb-2">
+                            {{-- users --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </div>
                         <p>Belum ada user terdaftar</p>
                     </td>
                 </tr>

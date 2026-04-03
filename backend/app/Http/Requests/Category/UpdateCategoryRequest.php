@@ -15,15 +15,18 @@ class UpdateCategoryRequest extends FormRequest
     public function rules(): array
     {
         $category = $this->route('category');
-        $storeId  = $this->user()->store_id ?? $category->store_id;
+        // Cast ke int agar tidak terjadi type mismatch di PostgreSQL
+        $storeId  = (int) ($this->user()->store_id ?? $category->store_id ?? 0);
 
         return [
             'name'        => [
                 'required', 'string', 'max:100',
                 Rule::unique('categories', 'name')
                     ->ignore($category->id)
-                    ->where('store_id', $storeId)
-                    ->whereNull('deleted_at'),
+                    ->where(fn ($q) => $q
+                        ->where('store_id', $storeId)
+                        ->whereNull('deleted_at')
+                    ),
             ],
             'description' => ['nullable', 'string', 'max:500'],
             'image'       => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:1024'],

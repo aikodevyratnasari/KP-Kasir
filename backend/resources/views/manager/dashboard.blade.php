@@ -41,7 +41,13 @@
             <button onclick="loadDashboard('month')"   id="btn-month"   class="filter-btn">Bulan Ini</button>
             <button onclick="loadDashboard('year')"    id="btn-year"    class="filter-btn">Tahun Ini</button>
             <button onclick="loadDashboard('all')"     id="btn-all"     class="filter-btn">Semua</button>
-            <button onclick="toggleCustomRange()"      id="btn-custom"  class="filter-btn">📅 Custom</button>
+            <button onclick="toggleCustomRange()"      id="btn-custom"  class="filter-btn flex items-center gap-1.5">
+                {{-- calendar --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Custom
+            </button>
 
             {{-- Custom date range (hidden by default) --}}
             <div id="custom-range" class="hidden flex items-center gap-2">
@@ -96,7 +102,13 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- Top Products --}}
         <div class="card">
-            <h2 class="font-semibold text-gray-800 mb-4">🏆 Top Produk</h2>
+            <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                {{-- trophy --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+                </svg>
+                Top Produk
+            </h2>
             <div id="top-products-list">
                 @forelse($topProducts ?? [] as $i => $p)
                     <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
@@ -115,7 +127,13 @@
         {{-- Chart --}}
         <div class="card lg:col-span-2">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="font-semibold text-gray-800" id="chart-title">📈 Tren Penjualan Hari Ini</h2>
+                <h2 class="font-semibold text-gray-800 flex items-center gap-2" id="chart-title-wrapper">
+                    {{-- trending up --}}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+                    </svg>
+                    <span id="chart-title">Tren Penjualan Hari Ini</span>
+                </h2>
                 <div id="chart-loading" class="hidden">
                     <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -133,7 +151,13 @@
         {{-- Recent Orders --}}
         <div class="card lg:col-span-2">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="font-semibold text-gray-800">🧾 Pesanan Terbaru</h2>
+                <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                    {{-- receipt --}}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/>
+                    </svg>
+                    Pesanan Terbaru
+                </h2>
                 <a href="{{ route('cashier.orders.index') }}" class="text-xs text-indigo-600 hover:underline">Lihat semua →</a>
             </div>
             <table class="w-full text-sm">
@@ -166,7 +190,13 @@
 
         {{-- Low Stock --}}
         <div class="card">
-            <h2 class="font-semibold text-gray-800 mb-4">⚠️ Stok Menipis</h2>
+            <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                {{-- alert triangle --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                Stok Menipis
+            </h2>
             @forelse($lowStockProducts ?? [] as $p)
                 <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                     <span class="text-sm text-gray-700 truncate flex-1">{{ $p->name }}</span>
@@ -175,7 +205,13 @@
                     </span>
                 </div>
             @empty
-                <p class="text-sm text-green-600 text-center py-6">✅ Semua stok aman</p>
+                <div class="text-sm text-green-600 text-center py-6 flex flex-col items-center gap-2">
+                    {{-- check circle --}}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    Semua stok aman
+                </div>
             @endforelse
         </div>
     </div>
@@ -226,7 +262,7 @@ function loadCustomRange() {
     const to   = document.getElementById('custom-to').value;
     if (!from || !to) return;
 
-    document.getElementById('chart-title').textContent = `📈 Tren Penjualan ${from} – ${to}`;
+    document.getElementById('chart-title').textContent = `Tren Penjualan ${from} – ${to}`;
     setLoading(true);
 
     fetch(`{{ route('manager.dashboard.filter') }}?period=custom&from=${from}&to=${to}`, {
@@ -287,14 +323,14 @@ function updateStats(data) {
 
 function updateChart(trendData, period) {
     const titles = {
-        today: '📈 Tren Penjualan Hari Ini',
-        week:  '📈 Tren Penjualan Minggu Ini',
-        month: '📈 Tren Penjualan Bulan Ini',
-        year:  '📈 Tren Penjualan Tahun Ini',
-        all:   '📈 Tren Penjualan Semua Waktu',
+        today: 'Tren Penjualan Hari Ini',
+        week:  'Tren Penjualan Minggu Ini',
+        month: 'Tren Penjualan Bulan Ini',
+        year:  'Tren Penjualan Tahun Ini',
+        all:   'Tren Penjualan Semua Waktu',
     };
     if (period !== 'custom') {
-        document.getElementById('chart-title').textContent = titles[period] ?? '📈 Tren Penjualan';
+        document.getElementById('chart-title').textContent = titles[period] ?? 'Tren Penjualan';
     }
     salesChart.data.labels = formatLabels(trendData);
     salesChart.data.datasets[0].data = (trendData || []).map(i => Number(i.total));

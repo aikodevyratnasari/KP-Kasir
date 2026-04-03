@@ -6,7 +6,14 @@
     <div class="flex items-center justify-between">
         <a href="{{ route('cashier.orders.show', $payment->order) }}" class="text-gray-400 hover:text-gray-600">←</a>
         <h1 class="text-lg font-bold text-gray-900">Struk Pembayaran</h1>
-        <a href="{{ route('cashier.receipts.print', $payment) }}" target="_blank" class="btn-secondary text-xs">🖨️ Cetak</a>
+        <a href="{{ route('cashier.receipts.print', $payment) }}" target="_blank"
+           class="btn-secondary text-xs inline-flex items-center gap-1.5">
+            {{-- printer --}}
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Cetak
+        </a>
     </div>
 
     <div class="card font-mono text-sm" id="receipt">
@@ -39,7 +46,13 @@
                     <span>Rp {{ number_format($item->subtotal,0,',','.') }}</span>
                 </div>
                 @if($item->special_notes)
-                    <div class="pl-2 text-xs text-orange-600 italic">→ {{ $item->special_notes }}</div>
+                    <div class="pl-2 text-xs text-orange-600 italic flex items-center gap-1">
+                        {{-- arrow-right --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                        {{ $item->special_notes }}
+                    </div>
                 @endif
             @endforeach
             @if($payment->order->notes)

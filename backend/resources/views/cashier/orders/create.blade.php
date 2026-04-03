@@ -3,17 +3,11 @@
 @section('page-title', 'Buat Pesanan')
 
 @section('content')
-{{-- Full-height layout: sidebar kanan sticky tanpa scroll halaman --}}
 <div style="display:flex; gap:0; height:calc(100vh - 64px); overflow:hidden;"
      x-data="orderForm()">
 
     {{-- ── KIRI: Form + Menu (scrollable) ── --}}
     <div style="flex:1; overflow-y:auto; padding:20px 16px 20px 0;">
-
-        <!-- <div class="flex items-center gap-3 mb-4">
-            <a href="{{ route('cashier.orders.index') }}" class="text-gray-400 hover:text-gray-600 text-lg">←</a>
-            <h1 class="page-title">Buat Pesanan Baru</h1>
-        </div> -->
 
         <form method="POST" action="{{ route('cashier.orders.store') }}" id="order-form">
             @csrf
@@ -52,11 +46,10 @@
                 </div>
             </div>
 
-            {{-- ── Pilih Menu (card dengan gambar) ── --}}
+            {{-- ── Pilih Menu ── --}}
             @foreach($categories as $category)
                 @if($category->products->where('is_available', true)->count() > 0)
                 <div style="margin-bottom:32px;">
-                    {{-- Header kategori dengan garis pemisah --}}
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-top:4px;">
                         <span style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.09em; white-space:nowrap;">
                             {{ $category->name }}
@@ -75,20 +68,27 @@
                              onmouseup="this.style.borderColor='#6366f1'; this.style.boxShadow='0 4px 12px rgba(99,102,241,0.12)'; this.style.transform='translateY(-2px)';"
                              @click="addItem({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->price }})">
 
-                            {{-- Gambar fixed 110px --}}
                             <div style="height:110px; background:#f8fafc; overflow:hidden;">
                                 @if($product->image)
                                     <img src="{{ Storage::url($product->image) }}"
                                          alt="{{ $product->name }}"
                                          style="width:100%; height:100%; object-fit:cover; display:block;"
                                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-size:32px; color:#d1d5db;">🍽️</div>
+                                    {{-- fallback SVG --}}
+                                    <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; color:#d1d5db;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+                                        </svg>
+                                    </div>
                                 @else
-                                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:32px; color:#d1d5db;">🍽️</div>
+                                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#d1d5db;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+                                        </svg>
+                                    </div>
                                 @endif
                             </div>
 
-                            {{-- Info --}}
                             <div style="padding:10px 12px 12px;">
                                 <p style="font-size:13px; font-weight:600; color:#111827; margin:0 0 3px; line-height:1.35;
                                           display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
@@ -123,7 +123,7 @@
         </form>
     </div>
 
-    {{-- ── KANAN: Keranjang (fixed height, tidak ikut scroll) ── --}}
+    {{-- ── KANAN: Keranjang ── --}}
     <div style="width:320px; flex-shrink:0; display:flex; flex-direction:column; border-left:1px solid #e5e7eb; background:#fff; overflow:hidden;">
 
         {{-- Header keranjang --}}
@@ -141,7 +141,10 @@
             {{-- Kosong --}}
             <div x-show="items.length === 0"
                  class="flex flex-col items-center justify-center h-full text-gray-400 py-12">
-                <span class="text-4xl mb-2">🛒</span>
+                {{-- shopping cart --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mb-2 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
                 <p class="text-sm">Klik menu untuk menambahkan</p>
             </div>
 
@@ -155,13 +158,14 @@
                         <div class="flex items-start justify-between mb-1.5">
                             <p class="text-sm font-semibold text-gray-900 flex-1 leading-tight" x-text="item.name"></p>
                             <button type="button" @click="removeItem(index)"
-                                    class="ml-2 text-gray-300 hover:text-red-500 transition-colors text-lg leading-none flex-shrink-0">
-                                ×
+                                    class="ml-2 text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
                             </button>
                         </div>
 
                         <div class="flex items-center justify-between">
-                            {{-- Qty control --}}
                             <div class="flex items-center gap-1.5">
                                 <button type="button"
                                         @click="item.quantity > 1 ? item.quantity-- : removeItem(index)"
@@ -178,7 +182,6 @@
                                   x-text="'Rp ' + formatRp(item.price * item.quantity)"></span>
                         </div>
 
-                        {{-- Catatan item --}}
                         <div class="mt-2">
                             <input type="text"
                                    :name="'items['+index+'][special_notes]'"
@@ -200,8 +203,12 @@
                           x-text="'Rp ' + formatRp(total)"></span>
                 </div>
                 <button type="submit" form="order-form"
-                        class="btn-primary w-full justify-center py-3 text-base">
-                    ✓ Buat Pesanan
+                        class="btn-primary w-full justify-center py-3 text-base inline-flex items-center gap-2">
+                    {{-- check --}}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Buat Pesanan
                 </button>
             </div>
             <div x-show="items.length === 0" class="text-center text-xs text-gray-400">
@@ -225,7 +232,6 @@ function orderForm() {
             const existing = this.items.find(i => i.product_id === id);
             if (existing) {
                 existing.quantity++;
-                // Animasi visual feedback
                 this.$nextTick(() => {
                     const el = document.querySelector(`[data-pid="${id}"]`);
                     if (el) { el.classList.add('scale-105'); setTimeout(() => el.classList.remove('scale-105'), 200); }

@@ -116,6 +116,7 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::delete('bundles/{bundle}',   [ProductController::class, 'destroyBundle'])->name('bundles.destroy');
 
             // Table management
+            Route::post('tables/bulk', [\App\Http\Controllers\Manager\TableManagerController::class, 'storeBulk'])->name('tables.bulk');
             Route::resource('tables', \App\Http\Controllers\Manager\TableManagerController::class)->except(['show']);
 
             // Reports

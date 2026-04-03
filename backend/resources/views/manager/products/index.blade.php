@@ -5,8 +5,6 @@
 @section('content')
 <div class="space-y-5">
 
-    
-
 {{-- Filter --}}
 <div class="card">
     <form method="GET" class="flex flex-wrap gap-3 items-end">
@@ -34,18 +32,17 @@
         <button type="submit" class="btn-primary text-sm">Filter</button>
         <a href="{{ route('manager.products.index') }}" class="btn-secondary text-sm">Reset</a>
 
-        {{-- Pindah ke sini --}}
         <div class="ml-auto flex gap-2 items-center">
-    <a href="{{ route('manager.products.create') }}" class="btn-primary text-sm">+ Tambah Produk</a>
-    <a href="{{ route('manager.products.trashed') }}" class="inline-flex items-center p-2 text-gray-500 hover:text-red-600 transition-colors" title="Sampah">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-            <path d="M10 11v6M14 11v6"/>
-            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-        </svg>
-    </a>
-</div>
+            <a href="{{ route('manager.products.create') }}" class="btn-primary text-sm">+ Tambah Produk</a>
+            <a href="{{ route('manager.products.trashed') }}" class="inline-flex items-center p-2 text-gray-500 hover:text-red-600 transition-colors" title="Sampah">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                </svg>
+            </a>
+        </div>
     </form>
 </div>
 
@@ -73,7 +70,12 @@
                                 <img src="{{ Storage::url($product->image) }}" alt="{{ $product->name }}"
                                      class="w-10 h-10 rounded-lg object-cover flex-shrink-0">
                             @else
-                                <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-xl flex-shrink-0">🍽️</div>
+                                <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                    {{-- utensils --}}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+                                    </svg>
+                                </div>
                             @endif
                             <div class="min-w-0">
                                 <p class="font-medium text-gray-900 truncate">{{ $product->name }}</p>
@@ -84,22 +86,22 @@
                         </div>
                     </td>
                     <td class="py-3 px-4">
-                       @php
-    $categoryColors = [
-        'Dessert'        => ['bg' => '#fff0f6', 'text' => '#c2185b', 'border' => '#f48fb1'],
-        'Makanan Ringan' => ['bg' => '#fff8ec', 'text' => '#EF8F00', 'border' => '#ffcc80'],
-        'Makanan Utama'  => ['bg' => '#f0fdf4', 'text' => '#2e7d32', 'border' => '#a5d6a7'],
-        'Minuman'        => ['bg' => '#f3e5f5', 'text' => '#7b1fa2', 'border' => '#ce93d8'],
-        'Minuman Panas'  => ['bg' => '#fce4ec', 'text' => '#c62828', 'border' => '#ef9a9a'],
-        'Paket Hemat'    => ['bg' => '#e8f5e9', 'text' => '#1b5e20', 'border' => '#80cbc4'],
-    ];
-    $catName = $product->category?->name ?? '—';
-    $color = $categoryColors[$catName] ?? ['bg' => '#f5f5f5', 'text' => '#616161', 'border' => '#e0e0e0'];
-@endphp
-<span class="px-2 py-0.5 rounded-md text-xs font-medium"
-      style="background-color: {{ $color['bg'] }}; color: {{ $color['text'] }}; border: 1px solid {{ $color['border'] }};">
-    {{ $catName }}
-</span>
+                        @php
+                            $categoryColors = [
+                                'Dessert'        => ['bg' => '#fff0f6', 'text' => '#c2185b', 'border' => '#f48fb1'],
+                                'Makanan Ringan' => ['bg' => '#fff8ec', 'text' => '#EF8F00', 'border' => '#ffcc80'],
+                                'Makanan Utama'  => ['bg' => '#f0fdf4', 'text' => '#2e7d32', 'border' => '#a5d6a7'],
+                                'Minuman'        => ['bg' => '#f3e5f5', 'text' => '#7b1fa2', 'border' => '#ce93d8'],
+                                'Minuman Panas'  => ['bg' => '#fce4ec', 'text' => '#c62828', 'border' => '#ef9a9a'],
+                                'Paket Hemat'    => ['bg' => '#e8f5e9', 'text' => '#1b5e20', 'border' => '#80cbc4'],
+                            ];
+                            $catName = $product->category?->name ?? '—';
+                            $color = $categoryColors[$catName] ?? ['bg' => '#f5f5f5', 'text' => '#616161', 'border' => '#e0e0e0'];
+                        @endphp
+                        <span class="px-2 py-0.5 rounded-md text-xs font-medium"
+                              style="background-color: {{ $color['bg'] }}; color: {{ $color['text'] }}; border: 1px solid {{ $color['border'] }};">
+                            {{ $catName }}
+                        </span>
                     </td>
                     <td class="py-3 px-4 text-right font-semibold text-gray-900">
                         Rp {{ number_format($product->price, 0, ',', '.') }}
@@ -110,46 +112,67 @@
                                 {{ $product->stock }}
                             </span>
                             @if($product->stock <= ($product->low_stock_alert ?? 5))
-                                <span class="block text-xs text-red-500">⚠ Menipis</span>
+                                <span class="flex items-center justify-center gap-0.5 text-xs text-red-500 mt-0.5">
+                                    {{-- alert-triangle mini --}}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                    Menipis
+                                </span>
                             @endif
                         @else
                             <span class="text-xs text-gray-400">—</span>
                         @endif
                     </td>
                     <td class="py-3 px-4 text-center">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold
                             {{ $product->is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                            {{ $product->is_available ? '✓ Ya' : '✗ Tidak' }}
+                            @if($product->is_available)
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                                Ya
+                            @else
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                                Tidak
+                            @endif
                         </span>
                     </td>
                     <td class="py-3 px-4 text-center">
-    <div class="flex justify-center items-center gap-2">
-        <a href="{{ route('manager.products.edit', $product) }}"
-   class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-   style="color: #EF8F00; background-color: #fff8ec; border: 1px solid #EF8F00;"
-   onmouseover="this.style.backgroundColor='#ffefd0'"
-   onmouseout="this.style.backgroundColor='#fff8ec'"
-   onmousedown="this.style.transform='scale(0.95)'"
-   onmouseup="this.style.transform='scale(1)'">
-    Edit
-</a>
-        <form method="POST" action="{{ route('manager.products.destroy', $product) }}"
-              onsubmit="return confirm('Hapus produk {{ addslashes($product->name) }}?')">
-            @csrf @method('DELETE')
-            <button type="submit" 
-   class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-   onmousedown="this.style.transform='scale(0.95)'"
-   onmouseup="this.style.transform='scale(1)'">
-    Hapus
-</button>
-        </form>
-    </div>
-</td>
+                        <div class="flex justify-center items-center gap-2">
+                            <a href="{{ route('manager.products.edit', $product) }}"
+                               class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                               style="color: #EF8F00; background-color: #fff8ec; border: 1px solid #EF8F00;"
+                               onmouseover="this.style.backgroundColor='#ffefd0'"
+                               onmouseout="this.style.backgroundColor='#fff8ec'"
+                               onmousedown="this.style.transform='scale(0.95)'"
+                               onmouseup="this.style.transform='scale(1)'">
+                                Edit
+                            </a>
+                            <form method="POST" action="{{ route('manager.products.destroy', $product) }}"
+                                  onsubmit="return confirm('Hapus produk {{ addslashes($product->name) }}?')">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                                        onmousedown="this.style.transform='scale(0.95)'"
+                                        onmouseup="this.style.transform='scale(1)'">
+                                    Hapus
+                                </button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             @empty
                 <tr>
                     <td colspan="6" class="py-12 text-center">
-                        <p class="text-4xl mb-2">🍽️</p>
+                        <div class="flex justify-center mb-2">
+                            {{-- utensils large --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+                            </svg>
+                        </div>
                         <p class="text-gray-500 font-medium">Belum ada produk</p>
                         <p class="text-gray-400 text-xs mt-1">Mulai dengan menambahkan produk pertama</p>
                         <a href="{{ route('manager.products.create') }}" class="btn-primary mt-3 inline-flex">+ Tambah Produk</a>
@@ -159,10 +182,10 @@
             </tbody>
         </table>
         <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
-    <div class="pagination-custom">
-        {{ $products->links() }}
-    </div>
-</div>
+            <div class="pagination-custom">
+                {{ $products->links() }}
+            </div>
+        </div>
     </div>
 
 </div>

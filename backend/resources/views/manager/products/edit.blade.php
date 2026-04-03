@@ -28,13 +28,33 @@
 
     {{-- TABS --}}
     <div class="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-        @foreach(['info' => '📋 Info', 'variants' => '🔀 Variasi', 'discounts' => '🏷️ Diskon'] as $key => $label)
-        <button type="button" @click="tab = '{{ $key }}'"
-                :class="tab === '{{ $key }}' ? 'bg-white shadow text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
-                class="px-4 py-2 rounded-lg text-sm transition-all">
-            {{ $label }}
+        {{-- Info tab --}}
+        <button type="button" @click="tab = 'info'"
+                :class="tab === 'info' ? 'bg-white shadow text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                class="px-4 py-2 rounded-lg text-sm transition-all inline-flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/>
+            </svg>
+            Info
         </button>
-        @endforeach
+        {{-- Variasi tab --}}
+        <button type="button" @click="tab = 'variants'"
+                :class="tab === 'variants' ? 'bg-white shadow text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                class="px-4 py-2 rounded-lg text-sm transition-all inline-flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+            </svg>
+            Variasi
+        </button>
+        {{-- Diskon tab --}}
+        <button type="button" @click="tab = 'discounts'"
+                :class="tab === 'discounts' ? 'bg-white shadow text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                class="px-4 py-2 rounded-lg text-sm transition-all inline-flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+            </svg>
+            Diskon
+        </button>
     </div>
 
     {{-- ══ TAB: INFO PRODUK ══ --}}
@@ -83,18 +103,19 @@
                     <div class="flex items-start gap-4">
                         <div class="flex-shrink-0">
                             <div class="w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 flex items-center justify-center">
-                                {{-- Preview foto baru --}}
                                 <template x-if="imagePreview">
                                     <img :src="imagePreview" class="w-full h-full object-cover">
                                 </template>
-                                {{-- Foto lama --}}
                                 <template x-if="!imagePreview">
                                     @if($product->image)
                                         <img src="{{ Storage::url($product->image) }}"
                                              class="w-full h-full object-cover"
                                              onerror="this.style.display='none'">
                                     @else
-                                        <span class="text-3xl text-gray-300">🖼️</span>
+                                        {{-- image placeholder --}}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                                        </svg>
                                     @endif
                                 </template>
                             </div>
@@ -173,7 +194,6 @@
                 @csrf
 
                 <div class="space-y-3" x-show="variants.length > 0">
-                    {{-- Header --}}
                     <div class="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-500 uppercase px-1">
                         <div class="col-span-3">Nama</div>
                         <div class="col-span-2">Tipe</div>
@@ -216,14 +236,23 @@
                             </div>
                             <div class="col-span-1 flex justify-center">
                                 <button type="button" @click="removeVariant(i)"
-                                        class="text-red-400 hover:text-red-600 text-lg leading-none">×</button>
+                                        class="text-red-400 hover:text-red-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     </template>
                 </div>
 
                 <div x-show="variants.length === 0" class="text-center py-8 text-gray-400">
-                    <p class="text-2xl mb-2">🔀</p>
+                    <div class="flex justify-center mb-2">
+                        {{-- shuffle --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+                        </svg>
+                    </div>
                     <p class="text-sm">Belum ada variasi. Klik "+ Tambah Variasi" untuk menambahkan.</p>
                 </div>
 
@@ -319,24 +348,33 @@
 
                 {{-- Status badge --}}
                 @if($disc->isCurrentlyActive())
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">✓ Aktif</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 inline-flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Aktif
+                    </span>
                 @elseif(!$disc->is_active)
                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">Nonaktif</span>
                 @elseif($disc->starts_at && now()->lt($disc->starts_at))
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-600">⏳ Belum mulai</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-600 inline-flex items-center gap-1">
+                        {{-- hourglass --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
+                        </svg>
+                        Belum mulai
+                    </span>
                 @else
                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-600">Kadaluarsa</span>
                 @endif
 
                 <div class="flex items-center gap-2">
-                    {{-- Toggle aktif --}}
                     <form method="POST" action="{{ route('manager.products.discounts.toggle', [$product, $disc]) }}">
                         @csrf @method('PATCH')
                         <button type="submit" class="text-xs text-indigo-500 hover:underline">
                             {{ $disc->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
                         </button>
                     </form>
-                    {{-- Hapus --}}
                     <form method="POST" action="{{ route('manager.products.discounts.destroy', [$product, $disc]) }}"
                           onsubmit="return confirm('Hapus diskon ini?')">
                         @csrf @method('DELETE')
@@ -346,7 +384,12 @@
             </div>
             @empty
             <div class="py-8 text-center text-gray-400 text-sm">
-                <p class="text-2xl mb-2">🏷️</p>
+                <div class="flex justify-center mb-2">
+                    {{-- tag --}}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+                    </svg>
+                </div>
                 Belum ada diskon untuk produk ini
             </div>
             @endforelse

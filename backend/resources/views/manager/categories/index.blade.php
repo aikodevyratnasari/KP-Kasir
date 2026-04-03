@@ -72,7 +72,12 @@
                         @if($category->image)
                             <img src="{{ Storage::url($category->image) }}" class="w-10 h-10 rounded-lg object-cover">
                         @else
-                            <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-xl">📁</div>
+                            <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                                {{-- folder --}}
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                </svg>
+                            </div>
                         @endif
                         <div>
                             <div class="flex items-center gap-2">
@@ -102,7 +107,8 @@
                                 </button>
                             </form>
                         @else
-                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-300 bg-gray-50 border border-gray-200 rounded-lg cursor-not-allowed" title="Ada produk di kategori ini">Hapus</span>
+                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-300 bg-gray-50 border border-gray-200 rounded-lg cursor-not-allowed"
+                                  title="Ada produk di kategori ini">Hapus</span>
                         @endif
                     </div>
                 </div>
@@ -127,7 +133,11 @@
                                        onchange="document.getElementById('editImgName_{{ $category->id }}').textContent = this.files[0] ? this.files[0].name : 'Tidak ada file'">
                                 <button type="button" onclick="document.getElementById('{{ $editId }}').click()"
                                     class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border border-indigo-300 text-indigo-600 bg-indigo-50 hover:bg-indigo-100">
-                                    📷 Pilih Foto
+                                    {{-- camera --}}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                                    </svg>
+                                    Pilih Foto
                                 </button>
                                 <span id="editImgName_{{ $category->id }}" class="ml-1 text-xs text-gray-400">
                                     {{ $category->image ? basename($category->image) : 'Tidak ada file' }}
@@ -153,7 +163,12 @@
             </div>
         @empty
             <div class="card text-center py-10 text-gray-400">
-                <p class="text-3xl mb-2">📁</p>
+                <div class="flex justify-center mb-2">
+                    {{-- folder open --}}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
                 <p>Belum ada kategori. Buat kategori pertama di sebelah kiri.</p>
             </div>
         @endforelse

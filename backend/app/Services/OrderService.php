@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
@@ -223,7 +224,13 @@ class OrderService
     {
         return collect($rawItems)->map(function ($item) {
             $product = Product::findOrFail($item['product_id']);
-            abort_if($product->isOutOfStock() && $product->track_stock, 422, "{$product->name} habis.");
+            // abort_if($product->isOutOfStock() && $product->track_stock, 422, "{$product->name} habis.");
+            //perbaikan
+            if($product->isOutOfStock() && $product->track_stock){
+                throw ValidationException::withMessages([
+                    "{$product->name} habis.",
+                ]);
+            }
 
             return [
                 'product_id'    => $product->id,

@@ -41,7 +41,13 @@
 
             <div class="lg:col-span-1">
                 <div class="card sticky top-6">
-                    <h3 class="font-semibold text-gray-800 mb-4">🧺 Keranjang</h3>
+                    <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        {{-- shopping basket --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                        </svg>
+                        Keranjang
+                    </h3>
                     <div class="space-y-3 max-h-96 overflow-y-auto">
                         <template x-for="(item, index) in items" :key="item.product_id">
                             <div class="border border-gray-100 rounded-lg p-3">
@@ -49,7 +55,13 @@
                                 <input type="hidden" :name="'items['+index+'][quantity]'" :value="item.quantity">
                                 <div class="flex justify-between items-start">
                                     <p class="text-sm font-medium text-gray-900 flex-1" x-text="item.name"></p>
-                                    <button type="button" @click="removeItem(index)" class="text-red-400 hover:text-red-600 ml-2 text-xs">✕</button>
+                                    {{-- remove button: SVG x --}}
+                                    <button type="button" @click="removeItem(index)"
+                                            class="text-red-400 hover:text-red-600 ml-2 flex-shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                        </svg>
+                                    </button>
                                 </div>
                                 <div class="flex items-center justify-between mt-2">
                                     <div class="flex items-center gap-2">
