@@ -62,7 +62,7 @@
     ['manager.dashboard',        'manager.dashboard',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>', 'Dashboard'],
     ['manager.products.index',   'manager.products.*',   '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>', 'Menu'],
     ['manager.categories.index', 'manager.categories.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg>', 'Kategori'],
-    ['manager.tables.index', 'manager.tables.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="3" rx="0.5"/><rect x="11" y="6" width="2" height="5"/><path d="M4 18a8 8 0 0 1 16 0H4z"/><path d="M7 18a5 5 0 0 1 10 0H7z" fill="{{ request()->routeIs(\'manager.tables.*\') ? \'#181375\' : \'white\' }}"/></svg>', 'Manajemen Meja'],
+    ['manager.tables.index', 'manager.tables.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="3" rx="0.5"/><rect x="11" y="6" width="2" height="5"/><path d="M4 18a8 8 0 0 1 16 0H4z"/><path d="M7 18a5 5 0 0 1 10 0H7z" fill="{{ request()->routeIs(\'manager.tables.*\') ? \'#181375\' : \'white\' }}"/></svg>', 'Kelola Meja'],
     ['manager.reports.sales',    'manager.reports.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>', 'Laporan'],
 ] as [$r, $m, $icon, $label])
     @php $a = request()->routeIs($m); @endphp
@@ -107,11 +107,11 @@
 
                 @foreach([
     ['cashier.orders.index',     'cashier.orders.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h6"/></svg>', 'Pesanan'],
-    ['cashier.tables.index', 'cashier.tables.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="3" rx="0.5"/><rect x="11" y="6" width="2" height="5"/><path d="M4 18a8 8 0 0 1 16 0H4z"/><path d="M7 18a5 5 0 0 1 10 0H7z" fill="{{ request()->routeIs(\'cashier.tables.*\') ? \'#181375\' : \'white\' }}"/></svg>', 'Meja'],
+    ['cashier.tables.index',     'cashier.tables.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3C7.03 3 3 7.03 3 12h18c0-4.97-4.03-9-9-9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18"/><path stroke-linecap="round" stroke-linejoin="round" d="M2 15h20"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 15v2"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 15v2"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 17h16"/></svg>', 'Dine-In'],
     ['cashier.payments.history', 'cashier.payments.*',  '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>', 'Pembayaran'],
 ] as [$r, $m, $icon, $label])
     @php $a = request()->routeIs($m) && !request()->routeIs('cashier.orders.create'); @endphp
-    <a href="{{ route($r) }}" title="{{ $label }}"
+    <a href="{{ route($r) }}" title=""
        x-data="{ hovered: false, tipY: 0 }"
        @mouseenter="if(!open){ hovered = true; tipY = $el.getBoundingClientRect().top + $el.getBoundingClientRect().height / 2 }"
        @mouseleave="hovered = false"
@@ -351,8 +351,8 @@
 
         {{-- Flash messages --}}
         @if(session('success') || session('status') || session('error') || $errors->any())
-            <div class="px-6 pt-4 space-y-2">
-                @if(session('success') || session('status'))
+    <div class="px-6 pt-4 space-y-2">
+        @if((session('success') || session('status')) && !request()->routeIs('manager.categories.*'))
                     <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm flex items-start gap-2.5">
                         {{-- check-circle --}}
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0 mt-0.5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

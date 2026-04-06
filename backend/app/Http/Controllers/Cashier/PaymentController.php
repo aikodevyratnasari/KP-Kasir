@@ -26,8 +26,15 @@ class PaymentController extends Controller
     public function store(ProcessPaymentRequest $request, Order $order): RedirectResponse
     {
         $payment = $this->paymentService->process($order, $request->validated());
-        ActivityLogService::logCreated($payment, ['method' => $payment->payment_method, 'amount' => $payment->amount]);
-        return redirect()->route('cashier.receipts.show', $payment)->with('success', 'Pembayaran berhasil diproses.');
+        ActivityLogService::logCreated($payment, [
+            'method' => $payment->payment_method,
+            'amount' => $payment->amount,
+        ]);
+
+        // Setelah bayar → kembali ke detail pesanan (tampil status Lunas + tombol Cetak Struk)
+        return redirect()
+            ->route('cashier.orders.show', $order)
+            ->with('success', 'Pembayaran berhasil diproses.');
     }
 
     public function history(Request $request): View
@@ -50,8 +57,16 @@ class PaymentController extends Controller
     public function refund(RefundPaymentRequest $request, Payment $payment): RedirectResponse
     {
         $this->authorize('refund', $payment);
-        $payment = $this->paymentService->refund($payment, $request->refund_amount, $request->refund_reason);
-        ActivityLogService::log('payment_refunded', $payment, description: "Refund Rp{$request->refund_amount} for payment #{$payment->id}");
+        $payment = $this->paymentService->refund(
+            $payment,
+            $request->refund_amount,
+            $request->refund_reason
+        );
+        ActivityLogService::log(
+            'payment_refunded',
+            $payment,
+            description: "Refund Rp{$request->refund_amount} for payment #{$payment->id}"
+        );
         return back()->with('success', 'Pengembalian dana berhasil diproses.');
     }
 }

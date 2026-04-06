@@ -48,7 +48,7 @@ class CategoryController extends Controller
 
         return redirect()
             ->route('manager.categories.index')
-            ->with('success', "Kategori {$category->name} berhasil dibuat.");
+            ->with('success', "Kategori {$category->name} berhasil dibuat");
     }
 
     public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse
@@ -77,7 +77,7 @@ class CategoryController extends Controller
 
         return redirect()
             ->route('manager.categories.index')
-            ->with('success', 'Kategori diperbarui.');
+            ->with('success', 'Kategori diperbarui');
     }
 
     public function destroy(Category $category): RedirectResponse
@@ -94,7 +94,7 @@ class CategoryController extends Controller
 
         return redirect()
             ->route('manager.categories.index')
-            ->with('success', 'Kategori dihapus.');
+            ->with('success', 'Kategori dihapus');
     }
 
     private function authorizeStore(int $storeId): void
