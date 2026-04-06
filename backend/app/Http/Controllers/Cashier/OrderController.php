@@ -41,7 +41,18 @@ class OrderController extends Controller
     {
         $storeId    = $request->get('_store_id');
         $categories = Category::where('store_id', $storeId)->with('products')->where('is_active', true)->get();
-        $tables     = Table::where('store_id', $storeId)->available()->orderBy('number')->get();
+
+        // Ambil semua meja available
+        $tables = Table::where('store_id', $storeId)->available()->orderBy('number')->get();
+
+        // Jika ada ?table= dari meja reserved, tambahkan meja itu ke daftar
+        if ($request->table) {
+            $selectedTable = Table::where('store_id', $storeId)->find($request->table);
+            if ($selectedTable && !$tables->contains('id', $selectedTable->id)) {
+                $tables = $tables->push($selectedTable)->sortBy('number')->values();
+            }
+        }
+
         return view('cashier.orders.create', compact('categories', 'tables'));
     }
 
@@ -64,7 +75,14 @@ class OrderController extends Controller
         abort_if(! $order->isPending(), 403, 'Hanya pesanan Pending yang dapat diubah.');
         $storeId    = auth()->user()->store_id;
         $categories = Category::where('store_id', $storeId)->with('products')->where('is_active', true)->get();
-        return view('cashier.orders.edit', compact('order', 'categories'));
+        $tables     = Table::where('store_id', $storeId)->available()->orderBy('number')->get();
+        if ($order->table_id) {
+            $t = Table::find($order->table_id);
+            if ($t && !$tables->contains($t)) {
+                $tables = $tables->push($t)->sortBy('number')->values();
+            }
+        }
+        return view('cashier.orders.edit', compact('order', 'categories', 'tables'));
     }
 
     public function update(UpdateOrderRequest $request, Order $order): RedirectResponse
@@ -101,6 +119,6 @@ class OrderController extends Controller
         ActivityLogService::log('order_completed', $order, description: "Order #{$order->order_number} selesai, meja dikosongkan.");
 
         return redirect()->route('cashier.tables.index')
-            ->with('success', " Pesanan #{$order->order_number} selesai. Meja {$order->table?->number} kembali tersedia.");
+            ->with('success', "Pesanan #{$order->order_number} selesai. Meja {$order->table?->number} kembali tersedia.");
     }
 }

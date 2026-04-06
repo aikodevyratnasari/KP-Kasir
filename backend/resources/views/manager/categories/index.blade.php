@@ -7,7 +7,7 @@
 
     {{-- Form Tambah Kategori --}}
     <div class="card h-fit">
-        <h2 class="font-semibold text-gray-800 mb-4">+ Tambah Kategori</h2>
+        <h2 class="font-semibold text-gray-800 mb-4">Tambah Kategori</h2>
         <form method="POST" action="{{ route('manager.categories.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="space-y-3">
@@ -39,13 +39,20 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Urutan Tampil</label>
-                    <input type="number" name="sort_order" value="{{ old('sort_order', 0) }}" min="0" class="form-input w-24">
+                    <input type="number" name="sort_order" 
+       value="{{ old('sort_order', 0) }}" 
+       min="0" 
+       class="form-input w-24"
+       style="color: #9ca3af;"
+       onfocus="if(this.value == '0') { this.value = ''; this.style.color = '#111827'; }"
+       onblur="if(this.value == '') { this.value = '0'; this.style.color = '#9ca3af'; } else { this.style.color = '#111827'; }">
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="hidden" name="is_active" value="0">
                     <input type="checkbox" name="is_active" id="is_active" value="1"
-                           {{ old('is_active') ? 'checked' : '' }}
-                           class="rounded border-gray-300 accent-[#2D54BF]">
+       {{ old('is_active') ? 'checked' : '' }}
+       class="rounded border-gray-300 accent-[#2D54BF] focus:ring-0 focus:outline-none"
+       style="outline: none !important; box-shadow: none !important;">
                     <label for="is_active" class="text-sm text-gray-700">Aktif</label>
                 </div>
             </div>
@@ -149,14 +156,32 @@
                             </div>
                             <div class="col-span-2 flex items-center gap-2">
                                 <input type="hidden" name="is_active" value="0">
-                                <input type="checkbox" name="is_active" value="1" {{ $category->is_active ? 'checked' : '' }}
-                                       class="rounded border-gray-300 text-indigo-600">
+                                <input type="checkbox" name="is_active" id="is_active" value="1"
+                                {{ old('is_active') ? 'checked' : '' }}
+                                class="rounded border-gray-300 accent-[#2D54BF] focus:ring-0 focus:outline-none"
+                                style="outline: none !important; box-shadow: none !important;">
                                 <label class="text-sm text-gray-700">Aktif</label>
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <button type="submit" class="btn-primary text-xs">Simpan</button>
-                            <button type="button" @click="editing = false" class="btn-secondary text-xs">Batal</button>
+                            <button type="submit" 
+        class="text-xs font-medium rounded-lg transition-colors px-3 py-1.5"
+        style="background-color: white; border: 1px solid #1e3d8f; color: #1e3d8f;"
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+        onmouseout="this.style.backgroundColor='white';"
+        onmousedown="this.style.backgroundColor='#1e3d8f'; this.style.color='white';"
+        onmouseup="this.style.backgroundColor='#f3f4f6'; this.style.color='#1e3d8f';">
+    Simpan
+</button>
+<button type="button" @click="editing = false"
+        class="text-xs font-medium rounded-lg transition-colors px-3 py-1.5"
+        style="background-color: white; border: 1px solid #1e3d8f; color: #1e3d8f;"
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+        onmouseout="this.style.backgroundColor='white';"
+        onmousedown="this.style.backgroundColor='#1e3d8f'; this.style.color='white';"
+        onmouseup="this.style.backgroundColor='#f3f4f6'; this.style.color='#1e3d8f';">
+    Batal
+</button>
                         </div>
                     </form>
                 </div>
@@ -176,4 +201,45 @@
         <div>{{ $categories->links() }}</div>
     </div>
 </div>
+@if(session('success'))
+<div id="popup-success" 
+     class="fixed inset-0 z-[99999] flex items-center justify-center"
+     style="background: rgba(0,0,0,0.25);">
+    <div class="bg-white rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-3"
+         style="min-width: 300px; max-width: 360px; border: 1px solid #e5e7eb;">
+        
+        {{-- Icon centang bulat --}}
+        <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-md"
+             style="background: linear-gradient(135deg, #4ade80, #22c55e); border: 4px solid white;">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+        </div>
+
+        <h3 class="text-xl font-bold text-gray-800 mt-1">Berhasil!</h3>
+        <p class="text-sm text-gray-400 text-center">{{ session('success') }}</p>
+
+        <div class="w-full flex justify-center mt-4 mb-4">
+    <button onclick="document.getElementById('popup-success').remove()"
+            class="text-sm font-semibold text-white transition-all"
+            style="background-color: #2D54BF; width: 200px; padding: 10px 0; border-radius: 50px;"
+            onmouseover="this.style.backgroundColor='#1e3d8f'"
+            onmouseout="this.style.backgroundColor='#2D54BF'"
+            onmousedown="this.style.transform='scale(0.97)'"
+            onmouseup="this.style.transform='scale(1)'">
+        OK
+    </button>
+</div>
+    </div>
+</div>
+
+<script>
+    function closePopup() {
+        const popup = document.getElementById('popup-success');
+        popup.style.opacity = '0';
+        popup.style.transition = 'opacity 0.3s';
+        setTimeout(() => popup.style.display = 'none', 300);
+    }
+</script>
+@endif
 @endsection

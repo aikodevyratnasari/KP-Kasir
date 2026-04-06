@@ -120,10 +120,14 @@
                                 <div class="mt-2 pt-2 border-t border-yellow-200">
                                     <p class="text-xs font-medium text-yellow-700 truncate">{{ $reservation->customer_name }}</p>
                                     <p class="text-xs text-yellow-600">{{ \Carbon\Carbon::parse($reservation->reserved_at)->format('H:i') }}</p>
+                                    <a href="{{ route('cashier.orders.create') }}?table={{ $table->id }}"
+                                       class="mt-1.5 block text-center text-xs bg-indigo-600 text-white rounded-lg py-1.5 hover:bg-indigo-700 transition font-medium">
+                                        Mulai Pesanan
+                                    </a>
                                     <form method="POST" action="{{ route('cashier.reservations.cancel', $reservation) }}">
                                         @csrf @method('DELETE')
                                         <button type="submit"
-                                                class="mt-1.5 w-full text-xs bg-white border border-yellow-200 text-yellow-700 rounded-lg py-1 hover:bg-yellow-50 transition">
+                                                class="mt-1 w-full text-xs bg-white border border-yellow-200 text-yellow-700 rounded-lg py-1 hover:bg-yellow-50 transition">
                                             Batalkan
                                         </button>
                                     </form>
@@ -234,11 +238,15 @@
                             </a>
                         </div>`;
                 } else if (t.status === 'reserved' && t.reservation) {
-                    body.innerHTML = `
-                        <div class="mt-2 pt-2 border-t border-yellow-200">
-                            <p class="text-xs font-medium text-yellow-700 truncate">${t.reservation.name}</p>
-                            <p class="text-xs text-yellow-600">${t.reservation.time}</p>
-                        </div>`;
+                body.innerHTML = `
+                    <div class="mt-2 pt-2 border-t border-yellow-200">
+                        <p class="text-xs font-medium text-yellow-700 truncate">${t.reservation.name}</p>
+                        <p class="text-xs text-yellow-600">${t.reservation.time}</p>
+                        <a href="/cashier/orders/create?table=${t.id}"
+                        class="mt-1.5 block text-center text-xs bg-indigo-600 text-white rounded-lg py-1.5 hover:bg-indigo-700 transition font-medium">
+                            Mulai Pesanan
+                        </a>
+                    </div>`;
                 } else {
                     body.innerHTML = `
                         <a href="/cashier/orders/create?table=${t.id}"
