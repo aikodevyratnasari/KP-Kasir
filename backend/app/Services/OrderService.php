@@ -8,10 +8,11 @@ use App\Models\KitchenOrder;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\Reservation;
 use App\Models\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
@@ -28,25 +29,43 @@ class OrderService
             $taxAmount = round($subtotal * $taxRate / 100, 2);
             $total     = $subtotal + $taxAmount;
 
+            // customer_name: dari input form, atau fallback dari reservasi aktif di meja
+            $customerName = ! empty($data['customer_name']) ? trim($data['customer_name']) : null;
+            if (
+                empty($customerName) &&
+                ($data['order_type'] ?? '') === 'dine_in' &&
+                ! empty($data['table_id'])
+            ) {
+                $activeReservation = Reservation::where('table_id', $data['table_id'])
+                    ->where('status', 'active')
+                    ->first();
+                if ($activeReservation) {
+                    $customerName = $activeReservation->customer_name;
+                }
+            }
+
             $order = Order::create([
-                'store_id'     => $storeId,
-                'cashier_id'   => Auth::id(),
-                'table_id'     => $data['table_id'] ?? null,
-                'order_number' => $this->generateOrderNumber($storeId),
-                'order_type'   => $data['order_type'],
-                'status'       => 'pending',
-                'subtotal'     => $subtotal,
-                'tax_rate'     => $taxRate,
-                'tax_amount'   => $taxAmount,
-                'total_amount' => $total,
-                'notes'        => $data['notes'] ?? null,
+                'store_id'      => $storeId,
+                'cashier_id'    => Auth::id(),
+                'table_id'      => $data['table_id'] ?? null,
+                'order_number'  => $this->generateOrderNumber($storeId),
+                'order_type'    => $data['order_type'],
+                'status'        => 'pending',
+                'subtotal'      => $subtotal,
+                'tax_rate'      => $taxRate,
+                'tax_amount'    => $taxAmount,
+                'total_amount'  => $total,
+                'notes'         => $data['notes'] ?? null,
+                'customer_name' => $customerName,
             ]);
 
             foreach ($items as $item) {
                 OrderItem::create([
                     'order_id'      => $order->id,
                     'product_id'    => $item['product_id'],
+                    'variant_id'    => $item['variant_id'] ?? null,
                     'product_name'  => $item['product_name'],
+                    'variant_name'  => $item['variant_name'] ?? null,
                     'unit_price'    => $item['unit_price'],
                     'quantity'      => $item['quantity'],
                     'subtotal'      => $item['unit_price'] * $item['quantity'],
@@ -54,16 +73,18 @@ class OrderService
                 ]);
             }
 
-            // Meja belum occupied saat order dibuat —
-            // occupied setelah makanan ready (tamu mulai makan)
-            // Tapi jika dine_in, tandai meja "reserved" agar tidak bisa dibuat order lain
             if (($data['order_type'] ?? '') === 'dine_in' && ! empty($data['table_id'])) {
                 Table::where('id', $data['table_id'])->update(['status' => 'occupied']);
+
+                Reservation::where('table_id', $data['table_id'])
+                    ->where('status', 'active')
+                    ->update([
+                        'status'        => 'converted',
+                        'cancelled_at'  => now(),
+                        'cancel_reason' => 'Pesanan telah dibuat.',
+                    ]);
             }
 
-            // Buat kitchen_order dengan status 'waiting_payment' — belum muncul di dapur
-            // queued_at diisi now() karena kolom NOT NULL,
-            // akan di-update ulang saat pembayaran lunas
             KitchenOrder::create([
                 'order_id'  => $order->id,
                 'status'    => 'waiting_payment',
@@ -98,13 +119,16 @@ class OrderService
                 'tax_amount'   => $taxAmount,
                 'total_amount' => $total,
                 'notes'        => $data['notes'] ?? $order->notes,
+                // customer_name tidak diubah saat edit
             ]);
 
             foreach ($items as $item) {
                 OrderItem::create([
                     'order_id'      => $order->id,
                     'product_id'    => $item['product_id'],
+                    'variant_id'    => $item['variant_id'] ?? null,
                     'product_name'  => $item['product_name'],
+                    'variant_name'  => $item['variant_name'] ?? null,
                     'unit_price'    => $item['unit_price'],
                     'quantity'      => $item['quantity'],
                     'subtotal'      => $item['unit_price'] * $item['quantity'],
@@ -133,7 +157,6 @@ class OrderService
                 'cancelled_at'  => now(),
             ]);
 
-            // Bebaskan meja saat dibatalkan
             if ($order->table_id) {
                 Table::where('id', $order->table_id)->update(['status' => 'available']);
             }
@@ -145,12 +168,6 @@ class OrderService
         });
     }
 
-    /**
-     * Transisi status:
-     *  pending  → cooking  : dapur mulai masak
-     *  cooking  → ready    : dapur selesai masak (makanan siap, tamu makan di meja)
-     *  ready    → completed: kasir confirm meja kosong → meja available kembali
-     */
     public function updateStatus(Order $order, string $newStatus, int $userId): Order
     {
         $transitions = [
@@ -165,13 +182,8 @@ class OrderService
             "Tidak dapat pindah dari {$order->status} ke {$newStatus}."
         );
 
-        $old = $order->status;
-
-        $timestamps = [
-            'cooking'   => 'cooking_at',
-            'ready'     => 'ready_at',
-            'completed' => 'completed_at',
-        ];
+        $old        = $order->status;
+        $timestamps = ['cooking' => 'cooking_at', 'ready' => 'ready_at', 'completed' => 'completed_at'];
 
         $updateData = ['status' => $newStatus];
         if (isset($timestamps[$newStatus])) {
@@ -180,7 +192,6 @@ class OrderService
 
         $order->update($updateData);
 
-        // Sync kitchen_orders
         $kitchenStatMap = ['cooking' => 'cooking', 'ready' => 'ready'];
         if (isset($kitchenStatMap[$newStatus])) {
             $kitchenUpdate = ['status' => $kitchenStatMap[$newStatus]];
@@ -194,8 +205,6 @@ class OrderService
             $order->kitchenOrder?->update($kitchenUpdate);
         }
 
-        // ready → meja tetap occupied (tamu sedang makan)
-        // completed → meja kembali available (tamu sudah pergi)
         if ($newStatus === 'completed' && $order->table_id) {
             Table::where('id', $order->table_id)->update(['status' => 'available']);
         }
@@ -223,19 +232,34 @@ class OrderService
     private function resolveItems(array $rawItems): array
     {
         return collect($rawItems)->map(function ($item) {
-            $product = Product::findOrFail($item['product_id']);
-            // abort_if($product->isOutOfStock() && $product->track_stock, 422, "{$product->name} habis.");
-            //perbaikan
-            if($product->isOutOfStock() && $product->track_stock){
-                throw ValidationException::withMessages([
-                    "{$product->name} habis.",
-                ]);
+            $product = Product::with('discounts')->findOrFail($item['product_id']);
+            abort_if($product->isOutOfStock() && $product->track_stock, 422, "{$product->name} habis.");
+
+            $unitPrice   = (float) $product->price;
+            $variantId   = $item['variant_id'] ?? null;
+            $variantName = null;
+
+            if ($variantId) {
+                $variant = ProductVariant::find($variantId);
+                if ($variant) {
+                    $unitPrice  += (float) $variant->price_adjustment;
+                    $variantName = $variant->name;
+                }
+            }
+
+            $activeDiscount = $product->discounts->first(fn($d) => $d->isCurrentlyActive());
+            if ($activeDiscount) {
+                $unitPrice = $activeDiscount->type === 'percentage'
+                    ? $unitPrice * (1 - (float) $activeDiscount->value / 100)
+                    : max(0, $unitPrice - (float) $activeDiscount->value);
             }
 
             return [
                 'product_id'    => $product->id,
                 'product_name'  => $product->name,
-                'unit_price'    => $product->price,
+                'variant_id'    => $variantId,
+                'variant_name'  => $variantName,
+                'unit_price'    => round($unitPrice, 2),
                 'quantity'      => $item['quantity'],
                 'special_notes' => $item['special_notes'] ?? null,
             ];

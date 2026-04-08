@@ -29,6 +29,6 @@ class StoreTableRequest extends FormRequest
 
     public function messages(): array
     {
-        return ['number.unique' => 'Nomor meja sudah digunakan di toko ini.'];
+        return ['number.unique' => 'Nomor meja sudah digunakan'];
     }
 }

@@ -60,24 +60,24 @@ class ProductController extends Controller
             ->with('success', "Produk {$product->name} berhasil ditambahkan.");
     }
 
-public function edit(Product $product): View
-{
-    $categories = Category::where('store_id', $product->store_id)->get();
+    public function edit(Product $product): View
+    {
+        $categories = Category::where('store_id', $product->store_id)->get();
 
-    $product->load('variants', 'discounts');
+        $product->load('variants', 'discounts');
 
-    $variants = $product->variants->map(function ($v) {
-        return [
-            'name' => $v->name,
-            'type' => $v->type,
-            'price_adjustment' => $v->price_adjustment,
-            'stock' => $v->stock,
-            'is_available' => $v->is_available,
-        ];
-    });
+        // FIX: gunakan ->values()->toArray() agar hasilnya plain array [...]
+        // bukan Collection yang Alpine.js baca sebagai object {...}
+        $variants = $product->variants->map(fn($v) => [
+            'name'             => $v->name,
+            'type'             => $v->type,
+            'price_adjustment' => (float) $v->price_adjustment,
+            'stock'            => (int) $v->stock,
+            'is_available'     => (bool) $v->is_available,
+        ])->values()->toArray();
 
-    return view('manager.products.edit', compact('product', 'categories', 'variants'));
-}
+        return view('manager.products.edit', compact('product', 'categories', 'variants'));
+    }
 
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
@@ -114,7 +114,7 @@ public function edit(Product $product): View
         return view('manager.products.trashed', compact('products'));
     }
 
-    // ── VARIANTS ────────────────────────────────────────────────────────────
+    // ── VARIANTS ─────────────────────────────────────────────────────────────
 
     public function storeVariant(Request $request, Product $product): RedirectResponse
     {
@@ -128,7 +128,6 @@ public function edit(Product $product): View
         ]);
 
         DB::transaction(function () use ($product, $data) {
-            // Hapus semua variant lama lalu insert ulang
             $product->variants()->delete();
             foreach ($data['variants'] as $i => $v) {
                 $product->variants()->create([
@@ -151,7 +150,7 @@ public function edit(Product $product): View
         return back()->with('success', 'Variasi dihapus.');
     }
 
-    // ── DISCOUNTS ────────────────────────────────────────────────────────────
+    // ── DISCOUNTS ─────────────────────────────────────────────────────────────
 
     public function storeDiscount(Request $request, Product $product): RedirectResponse
     {
@@ -185,7 +184,7 @@ public function edit(Product $product): View
         return back()->with('success', 'Status diskon diperbarui.');
     }
 
-    // ── BUNDLES ──────────────────────────────────────────────────────────────
+    // ── BUNDLES ───────────────────────────────────────────────────────────────
 
     public function bundles(Request $request): View
     {
@@ -206,9 +205,9 @@ public function edit(Product $product): View
             'is_active'    => ['nullable', 'boolean'],
             'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             'items'        => ['required', 'array', 'min:1'],
-            'items.*.product_id'        => ['required', 'exists:products,id'],
-            'items.*.product_variant_id'=> ['nullable', 'exists:product_variants,id'],
-            'items.*.quantity'          => ['required', 'integer', 'min:1'],
+            'items.*.product_id'         => ['required', 'exists:products,id'],
+            'items.*.product_variant_id' => ['nullable', 'exists:product_variants,id'],
+            'items.*.quantity'           => ['required', 'integer', 'min:1'],
         ]);
 
         DB::transaction(function () use ($request, $data) {

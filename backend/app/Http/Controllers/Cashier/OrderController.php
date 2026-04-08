@@ -8,6 +8,7 @@ use App\Http\Requests\Order\StoreOrderRequest;
 use App\Http\Requests\Order\UpdateOrderRequest;
 use App\Models\Category;
 use App\Models\Order;
+use App\Models\Reservation;
 use App\Models\Table;
 use App\Services\ActivityLogService;
 use App\Services\OrderService;
@@ -39,21 +40,34 @@ class OrderController extends Controller
 
     public function create(Request $request): View
     {
-        $storeId    = $request->get('_store_id');
-        $categories = Category::where('store_id', $storeId)->with('products')->where('is_active', true)->get();
+        $storeId = $request->get('_store_id');
 
-        // Ambil semua meja available
+        $categories = Category::where('store_id', $storeId)
+            ->with(['products' => function ($q) {
+                $q->where('is_available', true)
+                  ->with([
+                      // Load varian yang tersedia
+                      'variants' => fn($q2) => $q2->where('is_available', true)->orderBy('sort_order'),
+                      // Load diskon agar bisa cek isCurrentlyActive() di blade tanpa N+1
+                      'discounts',
+                  ]);
+            }])
+            ->where('is_active', true)
+            ->get();
+
         $tables = Table::where('store_id', $storeId)->available()->orderBy('number')->get();
 
-        // Jika ada ?table= dari meja reserved, tambahkan meja itu ke daftar
+        $prefilledCustomerName = null;
         if ($request->table) {
             $selectedTable = Table::where('store_id', $storeId)->find($request->table);
             if ($selectedTable && !$tables->contains('id', $selectedTable->id)) {
                 $tables = $tables->push($selectedTable)->sortBy('number')->values();
             }
+            $activeReservation = Reservation::where('table_id', $request->table)->where('status', 'active')->first();
+            if ($activeReservation) $prefilledCustomerName = $activeReservation->customer_name;
         }
 
-        return view('cashier.orders.create', compact('categories', 'tables'));
+        return view('cashier.orders.create', compact('categories', 'tables', 'prefilledCustomerName'));
     }
 
     public function store(StoreOrderRequest $request): RedirectResponse
@@ -66,22 +80,34 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load('items.product', 'table', 'cashier', 'payments', 'kitchenOrder');
+        $order->load('items.product', 'items.variant', 'table', 'cashier', 'payments', 'kitchenOrder');
         return view('cashier.orders.show', compact('order'));
     }
 
     public function edit(Order $order): View
     {
         abort_if(! $order->isPending(), 403, 'Hanya pesanan Pending yang dapat diubah.');
-        $storeId    = auth()->user()->store_id;
-        $categories = Category::where('store_id', $storeId)->with('products')->where('is_active', true)->get();
-        $tables     = Table::where('store_id', $storeId)->available()->orderBy('number')->get();
+        $storeId = auth()->user()->store_id;
+
+        $categories = Category::where('store_id', $storeId)
+            ->with(['products' => function ($q) {
+                $q->where('is_available', true)
+                  ->with([
+                      'variants'  => fn($q2) => $q2->where('is_available', true)->orderBy('sort_order'),
+                      'discounts',
+                  ]);
+            }])
+            ->where('is_active', true)
+            ->get();
+
+        $tables = Table::where('store_id', $storeId)->available()->orderBy('number')->get();
         if ($order->table_id) {
             $t = Table::find($order->table_id);
-            if ($t && !$tables->contains($t)) {
-                $tables = $tables->push($t)->sortBy('number')->values();
-            }
+            if ($t && !$tables->contains($t)) $tables = $tables->push($t)->sortBy('number')->values();
         }
+
+        $order->load('items.variant');
+
         return view('cashier.orders.edit', compact('order', 'categories', 'tables'));
     }
 
@@ -89,15 +115,13 @@ class OrderController extends Controller
     {
         $this->orderService->update($order, $request->validated());
         ActivityLogService::log('order_updated', $order, description: "Order #{$order->order_number} modified.");
-        return redirect()->route('cashier.orders.show', $order)
-            ->with('success', 'Pesanan berhasil diperbarui.');
+        return redirect()->route('cashier.orders.show', $order)->with('success', 'Pesanan berhasil diperbarui.');
     }
 
     public function cancel(CancelOrderRequest $request, Order $order): RedirectResponse
     {
         $this->orderService->cancel($order, $request->cancel_reason, auth()->id());
-        return redirect()->route('cashier.orders.index')
-            ->with('success', "Pesanan #{$order->order_number} dibatalkan.");
+        return redirect()->route('cashier.orders.index')->with('success', "Pesanan #{$order->order_number} dibatalkan.");
     }
 
     public function updateStatus(Request $request, Order $order): JsonResponse
@@ -107,17 +131,11 @@ class OrderController extends Controller
         return response()->json(['success' => true, 'status' => $order->status]);
     }
 
-    /**
-     * Kasir konfirmasi meja kosong → order completed → meja hijau kembali.
-     * Dipanggil saat status = 'ready'.
-     */
     public function complete(Order $order): RedirectResponse
     {
         abort_if($order->status !== 'ready', 422, 'Pesanan belum siap untuk diselesaikan.');
-
         $this->orderService->updateStatus($order, 'completed', auth()->id());
         ActivityLogService::log('order_completed', $order, description: "Order #{$order->order_number} selesai, meja dikosongkan.");
-
         return redirect()->route('cashier.tables.index')
             ->with('success', "Pesanan #{$order->order_number} selesai. Meja {$order->table?->number} kembali tersedia.");
     }
