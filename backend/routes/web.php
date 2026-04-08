@@ -44,9 +44,10 @@ Route::middleware(['auth', 'account.status'])->group(function () {
     Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
     Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])->middleware('signed')->name('verification.verify');
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send');
-    Route::get('/profile',   [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::put('/password',  [ProfileController::class, 'updatePassword'])->name('password.update');
+    Route::get('/profile',          [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile',        [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/password', [ProfileController::class, 'editPassword'])->name('profile.password');
+    Route::put('/password',         [ProfileController::class, 'updatePassword'])->name('password.update');
 });
 
 /*
@@ -118,6 +119,10 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             // Table management
             Route::post('tables/bulk', [\App\Http\Controllers\Manager\TableManagerController::class, 'storeBulk'])->name('tables.bulk');
             Route::resource('tables', \App\Http\Controllers\Manager\TableManagerController::class)->except(['show']);
+
+            // Store Settings (termasuk pajak)
+            Route::get('settings',   [\App\Http\Controllers\Manager\StoreSettingsController::class, 'index'])->name('settings.index');
+            Route::patch('settings', [\App\Http\Controllers\Manager\StoreSettingsController::class, 'update'])->name('settings.update');
 
             // Reports
             Route::prefix('reports')->name('reports.')->group(function () {

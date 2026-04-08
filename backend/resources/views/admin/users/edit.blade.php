@@ -3,9 +3,7 @@
 
 @section('content')
 <div class="max-w-xl mx-auto space-y-6">
-    <div class="flex items-center gap-3">
-        <a href="{{ route('admin.users.index') }}" class="text-gray-400 hover:text-gray-600">←</a>
-    </div>
+    
 
     <div class="card">
         <form method="POST" action="{{ route('admin.users.update', $user) }}">
@@ -60,11 +58,54 @@
             </div>
 
             <div class="flex gap-3 mt-6">
-                <button type="submit" class="btn-primary">Simpan Perubahan</button>
-                <a href="{{ route('admin.users.reset-password', $user) }}" class="btn-secondary">Ubah Password</a>
-                <a href="{{ route('admin.users.index') }}" class="btn-secondary">Batal</a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                    style="background-color: #2D54BF; border: 1px solid #2D548F;"
+                    onmouseover="this.style.backgroundColor='#1e3d8f'"
+                    onmouseout="this.style.backgroundColor='#2D54BF'">
+                    Simpan Perubahan
+                </button>
+
+                <a href="{{ route('admin.users.reset-password', $user) }}" 
+                class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+
+        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
+
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+
+        onmouseout="this.style.backgroundColor='white';"
+
+        onmousedown="this.style.transform='scale(0.98)';"
+
+        onmouseup="this.style.transform='scale(1)';">
+
+        Ubah Password
+    </a>
+               
             </div>
         </form>
     </div>
+    <div class="flex items-center gap-3">
+        <a href="{{ route('admin.users.index') }}" 
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                    style="background-color: #2D54BF; border: 1px solid #2D548F;"
+                    onmouseover="this.style.backgroundColor='#1e3d8f'"
+                    onmouseout="this.style.backgroundColor='#2D54BF'">
+            Kembali
+        </a>
+    </div>
+     <a href="{{ route('admin.users.index') }}" 
+     class="inline-flex items-right px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+
+        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
+
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+
+        onmouseout="this.style.backgroundColor='white';"
+
+        onmousedown="this.style.transform='scale(0.98)';"
+
+        onmouseup="this.style.transform='scale(1)';">
+
+        Batal</a>
 </div>
 @endsection

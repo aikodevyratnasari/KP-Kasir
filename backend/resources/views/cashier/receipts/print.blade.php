@@ -7,19 +7,10 @@
     <style>
         @page { size: 80mm auto; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
-            width: 76mm;
-            padding: 4mm 2mm;
-            color: #000;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
+        body { font-family: 'Courier New', Courier, monospace; font-size: 11px; width: 76mm; padding: 4mm 2mm; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .center   { text-align: center; }
         .right    { text-align: right; }
         .bold     { font-weight: bold; }
-        .large    { font-size: 13px; }
         .xlarge   { font-size: 15px; }
         .small    { font-size: 10px; }
         .divider  { border: none; border-top: 1px dashed #000; margin: 3mm 0; }
@@ -29,6 +20,7 @@
         .item-name   { word-break: break-word; }
         .item-detail { padding-left: 3mm; color: #333; }
         .item-note   { padding-left: 3mm; font-style: italic; color: #555; font-size: 10px; }
+        .variant-row { padding-left: 3mm; font-size: 10px; color: #555; }
         .total-row   { font-size: 13px; font-weight: bold; margin: 1.5mm 0; }
         .footer      { margin-top: 3mm; text-align: center; font-size: 10px; }
         .no-print    { display: block; margin: 6px 0; text-align: center; }
@@ -37,18 +29,9 @@
 </head>
 <body>
 
-    {{-- Tombol cetak (tidak muncul saat print) --}}
     <div class="no-print">
-        <button onclick="window.print()"
-                style="padding:6px 16px; background:#4f46e5; color:white; border:none;
-                       border-radius:6px; font-size:12px; cursor:pointer;">
-            🖨 Cetak Sekarang
-        </button>
-        <button onclick="window.close()"
-                style="padding:6px 16px; background:#e5e7eb; color:#374151; border:none;
-                       border-radius:6px; font-size:12px; cursor:pointer; margin-left:6px;">
-            Tutup
-        </button>
+        <button onclick="window.print()" style="padding:6px 16px; background:#4f46e5; color:white; border:none; border-radius:6px; font-size:12px; cursor:pointer;">🖨 Cetak Sekarang</button>
+        <button onclick="window.close()" style="padding:6px 16px; background:#e5e7eb; color:#374151; border:none; border-radius:6px; font-size:12px; cursor:pointer; margin-left:6px;">Tutup</button>
     </div>
 
     {{-- Header Toko --}}
@@ -79,6 +62,9 @@
     {{-- Item Pesanan --}}
     @foreach($payment->order->items as $item)
         <div class="item-name bold">{{ $item->product_name }}</div>
+        @if($item->variant_name)
+            <div class="variant-row">Variasi: {{ $item->variant_name }}</div>
+        @endif
         <div class="row item-detail">
             <span>{{ $item->quantity }} × Rp {{ number_format($item->unit_price, 0, ',', '.') }}</span>
             <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
@@ -95,37 +81,33 @@
 
     <hr class="divider">
 
-    {{-- Total --}}
+    {{-- Breakdown Harga --}}
+    <div class="row"><span>Subtotal</span><span>Rp {{ number_format($payment->order->subtotal, 0, ',', '.') }}</span></div>
+    <div class="row"><span>Pajak ({{ number_format($payment->order->tax_rate, 0) }}%)</span><span>Rp {{ number_format($payment->order->tax_amount, 0, ',', '.') }}</span></div>
+
     <div class="row total-row">
         <span>TOTAL</span>
         <span>Rp {{ number_format($payment->order->total_amount, 0, ',', '.') }}</span>
     </div>
+
+    {{-- Pembayaran --}}
     <div class="row">
-        <span>{{ ucfirst($payment->payment_method) }}</span>
+        <span>{{ $payment->methodLabel() }}</span>
         <span>Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
     </div>
     @if($payment->payment_method === 'cash' && $payment->amount_received)
-        <div class="row">
-            <span>Uang Diterima</span>
-            <span>Rp {{ number_format($payment->amount_received, 0, ',', '.') }}</span>
-        </div>
-        <div class="row bold">
-            <span>Kembalian</span>
-            <span>Rp {{ number_format(max(0, $payment->amount_received - $payment->amount), 0, ',', '.') }}</span>
-        </div>
+        <div class="row"><span>Uang Diterima</span><span>Rp {{ number_format($payment->amount_received, 0, ',', '.') }}</span></div>
+        <div class="row bold"><span>Kembalian</span><span>Rp {{ number_format(max(0, $payment->amount_received - $payment->amount), 0, ',', '.') }}</span></div>
     @endif
 
     <hr class="divider">
 
-    {{-- Footer --}}
     <div class="footer">
         <div>Terima kasih atas kunjungan Anda!</div>
         <div style="margin-top:2mm;">Simpan sebagai bukti pembayaran</div>
         <div style="margin-top:2mm; font-size:9px; color:#666;">{{ now()->format('d/m/Y H:i:s') }}</div>
     </div>
 
-    <script>
-        window.addEventListener('load', function () { window.print(); });
-    </script>
+    <script>window.addEventListener('load', function() { window.print(); });</script>
 </body>
 </html>

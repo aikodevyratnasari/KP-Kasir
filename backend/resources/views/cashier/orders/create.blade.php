@@ -3,31 +3,25 @@
 @section('page-title', 'Buat Pesanan')
 
 @section('content')
+@php $taxRate = auth()->user()->store->tax_rate ?? 10; @endphp
 <div style="display:flex; gap:0; height:calc(100vh - 64px); overflow:hidden;"
-     x-data="orderForm()">
+     x-data="orderForm({{ $taxRate }})">
 
     {{-- ── KIRI: Form + Menu (scrollable) ── --}}
     <div style="flex:1; overflow-y:auto; padding:20px 16px 20px 0;">
-
         <form method="POST" action="{{ route('cashier.orders.store') }}" id="order-form">
             @csrf
-
-            {{-- ── Tipe & Meja ── --}}
             <div class="card mb-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Tipe Pesanan <span class="text-red-500">*</span>
-                        </label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipe Pesanan <span class="text-red-500">*</span></label>
                         <select name="order_type" x-model="orderType" class="form-input">
                             <option value="dine_in">Dine-In</option>
                             <option value="takeaway">Takeaway</option>
                         </select>
                     </div>
                     <div x-show="orderType === 'dine_in'" x-transition>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Nomor Meja <span class="text-red-500">*</span>
-                        </label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Meja <span class="text-red-500">*</span></label>
                         <select name="table_id" class="form-input">
                             <option value="">Pilih Meja</option>
                             @foreach($tables as $table)
@@ -59,22 +53,18 @@
                 @if($category->products->where('is_available', true)->count() > 0)
                 <div style="margin-bottom:32px;">
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-top:4px;">
-                        <span style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.09em; white-space:nowrap;">
-                            {{ $category->name }}
-                        </span>
+                        <span style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.09em; white-space:nowrap;">{{ $category->name }}</span>
                         <div style="flex:1; height:1px; background:#e5e7eb;"></div>
-                        <span style="font-size:10px; color:#9ca3af; white-space:nowrap;">
-                            {{ $category->products->where('is_available', true)->count() }} item
-                        </span>
+                        <span style="font-size:10px; color:#9ca3af; white-space:nowrap;">{{ $category->products->where('is_available', true)->count() }} item</span>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         @foreach($category->products->where('is_available', true) as $product)
                         @php
-                            $variants      = $product->variants->where('is_available', true)->values();
-                            $hasVariants   = $variants->count() > 0;
-                            $activeDisc    = $product->discounts->first(fn($d) => $d->isCurrentlyActive());
-                            $displayPrice  = $activeDisc ? $activeDisc->discountedPrice((float)$product->price) : (float)$product->price;
-                            $hasDiscount   = $activeDisc !== null;
+                            $variants     = $product->variants->where('is_available', true)->values();
+                            $hasVariants  = $variants->count() > 0;
+                            $activeDisc   = $product->discounts->first(fn($d) => $d->isCurrentlyActive());
+                            $displayPrice = $activeDisc ? $activeDisc->discountedPrice((float)$product->price) : (float)$product->price;
+                            $hasDiscount  = $activeDisc !== null;
                         @endphp
                         <div style="background:#fff; border:1.5px solid #e5e7eb; border-radius:12px; overflow:hidden; cursor:pointer; transition:border-color 0.15s, box-shadow 0.15s, transform 0.15s; user-select:none;"
                              onmouseover="this.style.borderColor='#6366f1'; this.style.boxShadow='0 4px 12px rgba(99,102,241,0.12)'; this.style.transform='translateY(-2px)';"
@@ -86,7 +76,6 @@
                              @else
                                  @click="addItem({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $displayPrice }})"
                              @endif>
-
                             <div style="height:110px; background:#f8fafc; overflow:hidden; position:relative;">
                                 @if($product->image)
                                     <img src="{{ Storage::url($product->image) }}" alt="{{ $product->name }}"
@@ -100,42 +89,29 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
                                     </div>
                                 @endif
-                                {{-- Badge varian --}}
                                 @if($hasVariants)
                                     <div style="position:absolute; top:6px; right:6px; background:#6366f1; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">
                                         {{ $variants->count() }} variasi
                                     </div>
                                 @endif
-                                {{-- Badge diskon --}}
                                 @if($hasDiscount)
                                     <div style="position:absolute; top:6px; left:6px; background:#ef4444; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">
-                                        {{ $activeDisc->type === 'percentage' ? $activeDisc->value.'%' : 'DISKON' }} OFF
+                                        {{ $activeDisc->type === 'percentage' ? number_format($activeDisc->value,0).'%' : 'DISKON' }} OFF
                                     </div>
                                 @endif
                             </div>
-
                             <div style="padding:10px 12px 12px;">
-                                <p style="font-size:13px; font-weight:600; color:#111827; margin:0 0 3px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
-                                    {{ $product->name }}
-                                </p>
+                                <p style="font-size:13px; font-weight:600; color:#111827; margin:0 0 3px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ $product->name }}</p>
                                 @if($product->description)
-                                    <p style="font-size:11px; color:#9ca3af; margin:0 0 6px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">
-                                        {{ $product->description }}
-                                    </p>
+                                    <p style="font-size:11px; color:#9ca3af; margin:0 0 6px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">{{ $product->description }}</p>
                                 @else
                                     <div style="margin-bottom:6px;"></div>
                                 @endif
                                 <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
                                     <div>
-                                        {{-- Harga setelah diskon --}}
                                         <span style="font-size:13px; font-weight:700; color:#4f46e5;">
-                                            @if($hasVariants)
-                                                Mulai Rp {{ number_format($displayPrice, 0, ',', '.') }}
-                                            @else
-                                                Rp {{ number_format($displayPrice, 0, ',', '.') }}
-                                            @endif
+                                            @if($hasVariants) Mulai @endif Rp {{ number_format($displayPrice, 0, ',', '.') }}
                                         </span>
-                                        {{-- Harga asli dicoret jika ada diskon --}}
                                         @if($hasDiscount)
                                             <span style="font-size:10px; color:#9ca3af; text-decoration:line-through; display:block; margin-top:1px;">
                                                 Rp {{ number_format($product->price, 0, ',', '.') }}
@@ -143,9 +119,7 @@
                                         @endif
                                     </div>
                                     @if($product->track_stock)
-                                        <span style="font-size:10px; color:#9ca3af; background:#f3f4f6; padding:2px 6px; border-radius:10px; flex-shrink:0;">
-                                            Stok {{ $product->stock }}
-                                        </span>
+                                        <span style="font-size:10px; color:#9ca3af; background:#f3f4f6; padding:2px 6px; border-radius:10px; flex-shrink:0;">Stok {{ $product->stock }}</span>
                                     @endif
                                 </div>
                             </div>
@@ -185,8 +159,6 @@
                             <div class="flex-1 leading-tight">
                                 <p class="text-sm font-semibold text-gray-900" x-text="item.name"></p>
                                 <p x-show="item.variant_name" class="text-xs text-indigo-500 font-medium mt-0.5" x-text="item.variant_name"></p>
-                                {{-- Label diskon di keranjang --}}
-                                <p x-show="item.discount_label" class="text-xs text-red-500 font-medium mt-0.5" x-text="item.discount_label"></p>
                             </div>
                             <button type="button" @click="removeItem(index)" class="ml-2 text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -212,9 +184,18 @@
         </div>
         <div style="padding:14px; border-top:1px solid #f1f5f9; flex-shrink:0; background:#fff;">
             <div x-show="items.length > 0">
-                <div class="flex justify-between items-center mb-3">
+                <div class="flex justify-between items-center mb-1">
                     <span class="text-sm text-gray-500">Subtotal</span>
-                    <span class="text-lg font-bold text-gray-900" x-text="'Rp ' + formatRp(total)"></span>
+                    <span class="text-sm text-gray-700" x-text="'Rp ' + formatRp(subtotal)"></span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-gray-400">Pajak ({{ $taxRate }}%)</span>
+                    <span class="text-xs text-gray-400" x-text="'Rp ' + formatRp(taxAmount)"></span>
+                </div>
+                <div style="height:1px; background:#f1f5f9; margin-bottom:8px;"></div>
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-sm font-bold text-gray-700">Total</span>
+                    <span class="text-lg font-bold text-gray-900" x-text="'Rp ' + formatRp(grandTotal)"></span>
                 </div>
                 <button type="submit" form="order-form"
                         class="btn-primary w-full justify-center py-3 text-base inline-flex items-center gap-2">
@@ -227,65 +208,29 @@
     </div>
 
     {{-- ── MODAL PILIH VARIAN ── --}}
-    {{--
-        FIX posisi modal: gunakan Alpine :style binding untuk kontrol display,
-        bukan x-show + x-cloak yang bisa konflik dengan inline style.
-        Overlay adalah flex container yang memusatkan card putih.
-    --}}
     <div :style="variantModal.open
                     ? 'display:flex; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;'
                     : 'display:none;'"
          @click.self="variantModal.open = false">
-
-        {{-- Card putih — lebar terbatas, tidak stretch ke tepi --}}
-        <div style="background:#fff; border-radius:16px; width:100%; max-width:420px;
-                    margin:16px; max-height:calc(100vh - 32px);
-                    box-shadow:0 24px 60px rgba(0,0,0,0.25);
-                    display:flex; flex-direction:column; overflow:hidden;">
-
-            {{-- Header --}}
-            <div style="padding:16px 20px; border-bottom:1px solid #f1f5f9;
-                        display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+        <div style="background:#fff; border-radius:16px; width:100%; max-width:420px; margin:16px; max-height:calc(100vh - 32px); box-shadow:0 24px 60px rgba(0,0,0,0.25); display:flex; flex-direction:column; overflow:hidden;">
+            <div style="padding:16px 20px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
                 <div>
                     <h3 style="font-size:14px; font-weight:700; color:#111827; margin:0;" x-text="variantModal.productName"></h3>
                     <p style="font-size:11px; color:#9ca3af; margin:4px 0 0;">Pilih variasi produk</p>
                 </div>
                 <button type="button" @click="variantModal.open = false"
-                        style="color:#9ca3af; background:none; border:none; cursor:pointer; padding:4px; border-radius:6px;
-                               display:flex; align-items:center; justify-content:center;"
+                        style="color:#9ca3af; background:none; border:none; cursor:pointer; padding:4px; border-radius:6px; display:flex; align-items:center; justify-content:center;"
                         onmouseover="this.style.color='#374151'; this.style.background='#f3f4f6';"
                         onmouseout="this.style.color='#9ca3af'; this.style.background='none';">
-                    <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
-
-            {{-- Daftar pilihan --}}
             <div style="padding:12px 16px 16px; overflow-y:auto; flex:1;">
-
-                {{-- Standar (tanpa varian) --}}
-                <div style="border:1.5px solid #e5e7eb; border-radius:10px; padding:12px 14px; margin-bottom:8px;
-                            cursor:pointer; background:#fff; transition:border-color 0.12s, background 0.12s;"
-                     onmouseover="this.style.borderColor='#6366f1'; this.style.background='#f5f3ff';"
-                     onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='#fff';"
-                     @click="addItemWithVariant(variantModal.productId, variantModal.productName, variantModal.basePrice, null, null, 0, variantModal.discountLabel); variantModal.open = false">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <p style="font-size:13px; font-weight:600; color:#111827; margin:0;">Standar</p>
-                            <p style="font-size:11px; color:#9ca3af; margin:3px 0 0;">Tanpa variasi</p>
-                        </div>
-                        <span style="font-size:13px; font-weight:700; color:#4f46e5;" x-text="'Rp ' + formatRp(variantModal.basePrice)"></span>
-                    </div>
-                </div>
-
-                {{-- Daftar varian --}}
                 <template x-for="v in variantModal.variants" :key="v.id">
-                    <div style="border:1.5px solid #e5e7eb; border-radius:10px; padding:12px 14px; margin-bottom:8px;
-                                cursor:pointer; background:#fff; transition:border-color 0.12s, background 0.12s;"
+                    <div style="border:1.5px solid #e5e7eb; border-radius:10px; padding:12px 14px; margin-bottom:8px; cursor:pointer; background:#fff; transition:border-color 0.12s, background 0.12s;"
                          onmouseover="this.style.borderColor='#6366f1'; this.style.background='#f5f3ff';"
                          onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='#fff';"
-                         @click="addItemWithVariant(variantModal.productId, variantModal.productName, variantModal.basePrice, v.id, v.name, Number(v.price_adjustment||0), variantModal.discountLabel); variantModal.open = false">
+                         @click="addItemWithVariant(variantModal.productId, variantModal.productName, variantModal.basePrice, v.id, v.name, Number(v.price_adjustment||0)); variantModal.open = false">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
                                 <p style="font-size:13px; font-weight:600; color:#111827; margin:0;" x-text="v.name"></p>
@@ -294,9 +239,8 @@
                             <div style="text-align:right; flex-shrink:0; margin-left:12px;">
                                 <p style="font-size:13px; font-weight:700; color:#4f46e5; margin:0;"
                                    x-text="'Rp ' + formatRp(variantModal.basePrice + Number(v.price_adjustment||0))"></p>
-                                <p x-show="Number(v.price_adjustment) !== 0"
-                                   style="font-size:10px; color:#9ca3af; margin:2px 0 0;"
-                                   x-text="(Number(v.price_adjustment)>0?'+':'')+' Rp '+formatRp(Math.abs(Number(v.price_adjustment)))"></p>
+                                <p x-show="Number(v.price_adjustment) !== 0" style="font-size:10px; color:#9ca3af; margin:2px 0 0;"
+                                   x-text="(Number(v.price_adjustment)>0?'+':'-')+' Rp '+formatRp(Math.abs(Number(v.price_adjustment)))"></p>
                             </div>
                         </div>
                     </div>
@@ -304,49 +248,34 @@
             </div>
         </div>
     </div>
-
 </div>
 
 @push('scripts')
 <script>
-function orderForm() {
+function orderForm(taxRate) {
     return {
         orderType: '{{ request('table') ? 'dine_in' : old('order_type', request('type', 'dine_in')) }}',
         items: [],
-        variantModal: {
-            open: false,
-            productId: null,
-            productName: '',
-            basePrice: 0,
-            variants: [],
-            discountLabel: null,
+        taxRate: taxRate,
+        variantModal: { open: false, productId: null, productName: '', basePrice: 0, variants: [] },
+        get subtotal()   { return this.items.reduce((s, i) => s + (i.price * i.quantity), 0); },
+        get taxAmount()  { return Math.round(this.subtotal * this.taxRate / 100); },
+        get grandTotal() { return this.subtotal + this.taxAmount; },
+        openVariantModal(id, name, price, variants) {
+            this.variantModal = { open: true, productId: id, productName: name, basePrice: Number(price), variants };
         },
-        get total() {
-            return this.items.reduce((s, i) => s + (i.price * i.quantity), 0);
-        },
-        openVariantModal(id, name, price, variants, discountLabel) {
-            this.variantModal = {
-                open: true,
-                productId: id,
-                productName: name,
-                basePrice: Number(price),
-                variants: variants,
-                discountLabel: discountLabel || null,
-            };
-        },
-        addItem(id, name, price, discountLabel) {
+        addItem(id, name, price) {
             const key = 'p_' + id;
-            const existing = this.items.find(i => i.key === key);
-            if (existing) { existing.quantity++; return; }
-            this.items.push({ key, product_id: id, name, price: Number(price), quantity: 1, variant_id: null, variant_name: null, discount_label: discountLabel || null });
+            const ex  = this.items.find(i => i.key === key);
+            if (ex) { ex.quantity++; return; }
+            this.items.push({ key, product_id: id, name, price: Number(price), quantity: 1, variant_id: null, variant_name: null });
         },
-        addItemWithVariant(productId, productName, basePrice, variantId, variantName, priceAdjustment, discountLabel) {
-            const adj   = Number(priceAdjustment) || 0;
-            const price = Number(basePrice) + adj;
-            const key   = variantId ? ('p_' + productId + '_v_' + variantId) : ('p_' + productId);
-            const existing = this.items.find(i => i.key === key);
-            if (existing) { existing.quantity++; return; }
-            this.items.push({ key, product_id: productId, name: productName, price, quantity: 1, variant_id: variantId, variant_name: variantName, discount_label: discountLabel || null });
+        addItemWithVariant(productId, productName, basePrice, variantId, variantName, priceAdjustment) {
+            const price = Number(basePrice) + (Number(priceAdjustment) || 0);
+            const key   = 'p_' + productId + '_v_' + variantId;
+            const ex    = this.items.find(i => i.key === key);
+            if (ex) { ex.quantity++; return; }
+            this.items.push({ key, product_id: productId, name: productName, price, quantity: 1, variant_id: variantId, variant_name: variantName });
         },
         removeItem(index) { this.items.splice(index, 1); },
         formatRp(val) { return new Intl.NumberFormat('id-ID').format(Math.round(val)); }
