@@ -3,16 +3,8 @@
 
 @section('content')
 <div class="max-w-xl mx-auto space-y-6">
-    <div class="flex gap-3 mt-6">
-        <button type="submit" 
-        <a href="{{ route('admin.users.index') }}" 
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-                    style="background-color: #2D54BF; border: 1px solid #2D548F;"
-                    onmouseover="this.style.backgroundColor='#1e3d8f'"
-                    onmouseout="this.style.backgroundColor='#2D54BF'">
-                    kembali
-                </button>
-       
+    <div class="flex items-center gap-3">
+        <a href="{{ route('admin.users.index') }}" class="text-gray-400 hover:text-gray-600">←</a>
     </div>
 
     <div class="card">
