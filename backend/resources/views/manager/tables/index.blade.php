@@ -10,15 +10,21 @@
         <p class="text-sm text-gray-500">{{ $tables->count() }} meja terdaftar</p>
         <div class="flex gap-2">
             <button onclick="document.getElementById('modal-bulk').classList.remove('hidden')"
-                    class="btn-secondary text-sm inline-flex items-center gap-1.5">
-                {{-- grid / layers --}}
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-                </svg>
-                Tambah Massal
-            </button>
+        class="text-sm inline-flex items-center px-4 py-2 font-medium rounded-lg transition-colors"
+        style="border: 1px solid #2D54BF; background-color: white; color: #2D54BF;"
+        onmouseover="this.style.backgroundColor='#eef2ff';"
+        onmouseout="this.style.backgroundColor='white';"
+        onmousedown="this.style.transform='scale(0.98)';"
+        onmouseup="this.style.transform='scale(1)';">
+    Tambah Massal
+</button>
             <button onclick="document.getElementById('modal-add').classList.remove('hidden')"
-                    class="btn-primary text-sm">+ Tambah Meja</button>
+        class="text-sm inline-flex items-center px-4 py-2 font-medium text-white rounded-lg transition-colors"
+        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+        onmouseover="this.style.backgroundColor='#1e3d8f'"
+        onmouseout="this.style.backgroundColor='#2D54BF'">
+    Tambah Meja
+</button>
         </div>
     </div>
 
@@ -36,7 +42,7 @@
                         <th class="py-2.5 px-4 text-left text-xs font-semibold text-gray-500">Nomor Meja</th>
                         <th class="py-2.5 px-4 text-center text-xs font-semibold text-gray-500">Kapasitas</th>
                         <th class="py-2.5 px-4 text-center text-xs font-semibold text-gray-500">Status</th>
-                        <th class="py-2.5 px-4 text-right text-xs font-semibold text-gray-500">Aksi</th>
+                        <th class="py-2.5 px-4 text-xs font-semibold text-gray-500" style="text-align: right; padding-right: 70px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -63,15 +69,31 @@
                             <td class="py-2.5 px-4 text-right">
                                 <div class="flex justify-end gap-3">
                                     <button onclick="openEdit({{ $table->id }}, '{{ $table->number }}', {{ $table->capacity }}, '{{ $table->section }}', '{{ $table->status }}')"
-                                            class="text-xs text-indigo-600 hover:underline font-medium">Edit</button>
+                                            class="text-xs font-medium px-3 py-1 rounded-lg transition-solors"
+                                            style="color: #EF8F00; background-color: #fff8ec; border: 1px solid #EF8F00;"
+                                            onmouseover="this.style.backgroundColor='#ffefd0'"
+                                            onmouseout="this.style.backgroundColor='#fff8ec'">
+                                            Edit
+                                    </button>
                                     @if($table->status === 'available')
                                         <form method="POST" action="{{ route('manager.tables.destroy', $table) }}"
                                               onsubmit="return confirm('Hapus meja {{ $table->number }}?')">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="text-xs text-red-500 hover:underline font-medium">Hapus</button>
+                                            <button type="submit" 
+                                                    class="text-xs font-medium px-3 py-1 rounded-lg transition-colors"
+                                                    style="color: #ef4444; background-color: #fff1f2; border: 1px solid #ef4444;"
+                                                    onmouseover="this.style.backgroundColor='#fee2e2';"
+                                                    onmouseout="this.style.backgroundColor='#fff1f2';"
+                                                    onmousedown="this.style.transform='scale(0.98)';"
+                                                    onmouseup="this.style.transform='scale(1)';">
+                                                Hapus
+                                            </button>
                                         </form>
                                     @else
-                                        <span class="text-xs text-gray-300 cursor-not-allowed" title="Meja sedang digunakan">Hapus</span>
+                                        <span class="text-xs font-medium px-3 py-1 rounded-lg cursor-not-allowed"
+                                        style="color: #d1d5db; background-color: #f9fafb; border: 1px solid #e5e7eb;">
+                                            Hapus
+                                        </span>
                                     @endif
                                 </div>
                             </td>
@@ -132,12 +154,22 @@
                     {{-- Shortcut pilih seksi yang sudah ada --}}
                     <div class="flex gap-2 flex-wrap mb-2">
                         @foreach($sections as $sec)
-                            <button type="button"
-                                    onclick="document.getElementById('add-section').value = '{{ $sec }}'; this.parentElement.querySelectorAll('button').forEach(b => { b.classList.remove('bg-indigo-600','text-white'); b.classList.add('border-gray-300','text-gray-600'); }); this.classList.remove('border-gray-300','text-gray-600'); this.classList.add('bg-indigo-600','text-white');"
-                                    class="px-3 py-1 text-xs rounded-full border border-gray-300 text-gray-600 hover:border-indigo-400 transition">
-                                {{ $sec }}
-                            </button>
-                        @endforeach
+                        <button type="button"
+                            onclick="
+                                document.getElementById('add-section').value = '{{ $sec }}';
+                                this.parentElement.querySelectorAll('button').forEach(b => {
+                                    b.style.backgroundColor = 'white';
+                                    b.style.color = '#374151';
+                                    b.style.borderColor = '#d1d5db';
+                                });
+                                this.style.backgroundColor = '#1e3d8f';
+                                this.style.color = 'white';
+                                this.style.borderColor = '#1e3d8f';"
+                            class="edit-section-btn px-3 py-1 text-xs rounded-full border transition"
+                            style="border-color: #d1d5db; color: #374151; background-color: white;">
+                        {{ $sec }}
+                    </button>
+                    @endforeach
                     </div>
                     <input type="text" name="section" id="add-section"
                            placeholder="atau ketik area baru..."
@@ -145,10 +177,23 @@
                 </div>
             </div>
             <div class="flex gap-3 mt-6">
-                <button type="submit" class="btn-primary">Simpan</button>
-                <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
-                        class="btn-secondary">Batal</button>
-            </div>
+    <button type="submit"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+        onmouseover="this.style.backgroundColor='#1e3d8f'"
+        onmouseout="this.style.backgroundColor='#2D54BF'">
+        Simpan
+    </button>
+    <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+        onmouseout="this.style.backgroundColor='white';"
+        onmousedown="this.style.transform='scale(0.98)';"
+        onmouseup="this.style.transform='scale(1)';">
+        Batal
+    </button>
+</div>
         </form>
     </div>
 </div>
@@ -180,10 +225,20 @@
                     <div class="flex gap-2 flex-wrap mb-2">
                         @foreach($sections as $sec)
                             <button type="button"
-                                    onclick="document.getElementById('bulk-section').value = '{{ $sec }}'; this.parentElement.querySelectorAll('button').forEach(b => { b.classList.remove('bg-indigo-600','text-white'); b.classList.add('border-gray-300','text-gray-600'); }); this.classList.remove('border-gray-300','text-gray-600'); this.classList.add('bg-indigo-600','text-white');"
-                                    class="px-3 py-1 text-xs rounded-full border border-gray-300 text-gray-600 hover:border-indigo-400 transition">
-                                {{ $sec }}
-                            </button>
+    onclick="
+        document.getElementById('bulk-section').value = '{{ $sec }}';
+        this.parentElement.querySelectorAll('button').forEach(b => {
+            b.style.backgroundColor = 'white';
+            b.style.color = '#374151';
+            b.style.borderColor = '#d1d5db';
+        });
+        this.style.backgroundColor = '#1e3d8f';
+        this.style.color = 'white';
+        this.style.borderColor = '#1e3d8f';"
+    class="add-section-btn px-3 py-1 text-xs rounded-full border transition"
+    style="border-color: #d1d5db; color: #374151; background-color: white;">
+{{ $sec }}
+</button>
                         @endforeach
                     </div>
                     <input type="text" name="section" id="bulk-section"
@@ -240,10 +295,23 @@
             </div>
 
             <div class="flex gap-3 mt-6">
-                <button type="submit" class="btn-primary">Buat Semua Meja</button>
-                <button type="button" onclick="document.getElementById('modal-bulk').classList.add('hidden')"
-                        class="btn-secondary">Batal</button>
-            </div>
+    <button type="submit"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+        onmouseover="this.style.backgroundColor='#1e3d8f'"
+        onmouseout="this.style.backgroundColor='#2D54BF'">
+        Buat Semua Meja
+    </button>
+    <button type="button" onclick="document.getElementById('modal-bulk').classList.add('hidden')"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+        onmouseout="this.style.backgroundColor='white';"
+        onmousedown="this.style.transform='scale(0.98)';"
+        onmouseup="this.style.transform='scale(1)';">
+        Batal
+    </button>
+</div>
         </form>
     </div>
 </div>
@@ -280,10 +348,20 @@
                     <div class="flex gap-2 flex-wrap mb-2">
                         @foreach($sections as $sec)
                             <button type="button"
-                                    onclick="document.getElementById('edit-section').value = '{{ $sec }}'; this.parentElement.querySelectorAll('button').forEach(b => { b.classList.remove('bg-indigo-600','text-white'); b.classList.add('border-gray-300','text-gray-600'); }); this.classList.remove('border-gray-300','text-gray-600'); this.classList.add('bg-indigo-600','text-white');"
-                                    class="edit-section-btn px-3 py-1 text-xs rounded-full border border-gray-300 text-gray-600 hover:border-indigo-400 transition">
-                                {{ $sec }}
-                            </button>
+        onclick="
+            document.getElementById('edit-section').value = '{{ $sec }}';
+            this.parentElement.querySelectorAll('button').forEach(b => {
+                b.style.backgroundColor = 'white';
+                b.style.color = '#374151';
+                b.style.borderColor = '#d1d5db';
+            });
+            this.style.backgroundColor = '#1e3d8f';
+            this.style.color = 'white';
+            this.style.borderColor = '#1e3d8f';"
+        class="px-3 py-1 text-xs rounded-full border transition"
+        style="border-color: #d1d5db; color: #374151; background-color: white;">
+    {{ $sec }}
+</button>
                         @endforeach
                     </div>
                     <input type="text" name="section" id="edit-section" class="form-input">
@@ -297,9 +375,22 @@
                 </div>
             </div>
             <div class="flex gap-3 mt-6">
-                <button type="submit" class="btn-primary">Simpan Perubahan</button>
+                <button type="submit" 
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                    style="background-color: #2D54BF; border: 1px solid #2D548F;"
+                    onmouseover="this.style.backgroundColor='#1e3d8f'"
+                    onmouseout="this.style.backgroundColor='#2D54BF'">
+                    Simpan Perubahan
+                </button>
                 <button type="button" onclick="document.getElementById('modal-edit').classList.add('hidden')"
-                        class="btn-secondary">Batal</button>
+        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+        onmouseout="this.style.backgroundColor='white';"
+        onmousedown="this.style.transform='scale(0.98)';"
+        onmouseup="this.style.transform='scale(1)';">
+        Batal
+    </button>
             </div>
         </form>
     </div>

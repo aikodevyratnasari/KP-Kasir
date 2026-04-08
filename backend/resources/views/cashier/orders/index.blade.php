@@ -11,7 +11,7 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Cari</label>
                 <input type="text" name="search" value="{{ request('search') }}"
-                       placeholder="Nomor order..." class="form-input w-44">
+                       placeholder="Nomor order / pelanggan..." class="form-input w-48">
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
@@ -43,7 +43,6 @@
             <button type="submit" class="btn-primary text-sm">Filter</button>
             <a href="{{ route('cashier.orders.index') }}" class="btn-secondary text-sm">Reset</a>
 
-            {{-- Live indicator --}}
             <div class="ml-auto flex items-center gap-1.5 text-xs text-gray-400">
                 <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                 <span id="poll-status">Live</span>
@@ -57,6 +56,7 @@
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Order</th>
+                    <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Pelanggan</th>
                     <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Tipe</th>
                     <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Meja</th>
                     <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Kasir</th>
@@ -73,6 +73,10 @@
                     <td class="py-3 px-4">
                         <p class="font-semibold text-gray-900">{{ $order->order_number }}</p>
                         <p class="text-xs text-gray-400">{{ $order->created_at->format('d M, H:i') }}</p>
+                    </td>
+                    {{-- Kolom Pelanggan --}}
+                    <td class="py-3 px-4 text-gray-700 text-xs">
+                        {{ $order->customer_name ?? '—' }}
                     </td>
                     <td class="py-3 px-4 capitalize text-gray-600 text-xs">
                         {{ str_replace('_',' ', $order->order_type) }}
@@ -114,9 +118,8 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="py-12 text-center text-gray-400">
+                    <td colspan="9" class="py-12 text-center text-gray-400">
                         <div class="flex justify-center mb-2">
-                            {{-- clipboard --}}
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h4"/>
                             </svg>
@@ -161,8 +164,7 @@
 
                 const statusBadge = row.querySelector('.order-status-badge');
                 if (statusBadge) {
-                    const allBadge = Object.values(statusClass);
-                    statusBadge.classList.remove(...allBadge);
+                    statusBadge.classList.remove(...Object.values(statusClass));
                     statusBadge.classList.add(statusClass[o.status] || 'badge-pending');
                     statusBadge.textContent = o.status.charAt(0).toUpperCase() + o.status.slice(1);
                 }
@@ -175,7 +177,8 @@
                 }
             });
 
-            document.getElementById('poll-status').textContent = 'Live · ' + new Date().toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
+            document.getElementById('poll-status').textContent =
+                'Live · ' + new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
         } catch (e) {
             document.getElementById('poll-status').textContent = 'Offline';

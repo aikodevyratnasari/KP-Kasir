@@ -346,12 +346,12 @@
         {{-- Topbar --}}
         <header class="h-14 border-b flex items-center justify-between px-6 sticky top-0 z-40 flex-shrink-0" style="background-color: #181375;">
             <h2 class="text-base font-semibold text-white truncate">@yield('page-title', 'Dashboard')</h2>
-            <span class="text-sm text-white whitespace-nowrap">{{ now()->format('l, d F Y') }}</span>
+            <span class="text-sm text-white whitespace-nowrap">{{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</span>
         </header>
 
         {{-- Flash messages --}}
         @if(session('success') || session('status') || session('error') || $errors->any())
-    <div class="px-6 pt-4 space-y-2">
+    <div class="px-6 pt-4 space-y-2 flex flex-col items-center">
         @if((session('success') || session('status')) && !request()->routeIs('manager.categories.*'))
                     <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm flex items-start gap-2.5">
                         {{-- check-circle --}}
@@ -371,19 +371,38 @@
                     </div>
                 @endif
                 @if($errors->any())
-                    <div class="bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm">
-                        <p class="font-medium mb-1 flex items-center gap-2">
-                            {{-- alert-triangle --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                            </svg>
-                            Terdapat kesalahan:
-                        </p>
-                        <ul class="list-disc list-inside space-y-0.5">
-                            @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
-                        </ul>
-                    </div>
-                @endif
+<div x-data="{ show: true }" x-show="show"
+     class="fixed inset-0 z-[99999] flex items-center justify-center"
+     style="background-color: rgba(0,0,0,0.5);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs mx-4">
+        {{-- Isi --}}
+        <div class="px-6 py-8 flex flex-col items-center text-center">
+            {{-- Icon X bulat merah --}}
+            <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4" style="background-color: #e53e3e;">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9" viewBox="0 0 24 24" fill="white">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+    </svg>
+</div>
+            {{-- Pesan --}}
+            <ul class="text-sm text-gray-600 space-y-1 mb-6">
+                @foreach($errors->all() as $e)
+                    <li>{{ $e }}</li>
+                @endforeach
+            </ul>
+            {{-- Button Close --}}
+            <button @click="show = false"
+                    class="w-full py-2.5 text-sm font-bold text-white rounded-lg transition-colors"
+                    style="background-color: #e53e3e;"
+                    onmouseover="this.style.backgroundColor='#c53030';"
+                    onmouseout="this.style.backgroundColor='#e53e3e';"
+                    onmousedown="this.style.transform='scale(0.98)';"
+                    onmouseup="this.style.transform='scale(1)';">
+                CLOSE
+            </button>
+        </div>
+    </div>
+</div>
+@endif
             </div>
         @endif
 

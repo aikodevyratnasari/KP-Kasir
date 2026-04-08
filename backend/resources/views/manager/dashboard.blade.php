@@ -29,7 +29,7 @@
         <div>
             <h1 class="page-title">Dashboard</h1>
             <p class="text-sm text-gray-500 mt-1">
-                {{ now()->format('l, d F Y') }}
+                {{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
                 @if(auth()->user()->store)
                     &bull; {{ auth()->user()->store->name }}
                 @endif

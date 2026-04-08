@@ -22,14 +22,20 @@ class PollController extends Controller
             ->with(['activeOrder', 'activeReservation'])
             ->get()
             ->map(fn($t) => [
-                'id'           => $t->id,
-                'status'       => $t->status,
-                'order_number' => $t->activeOrder?->order_number,
-                'order_id'     => $t->activeOrder?->id,
-                'order_status' => $t->activeOrder?->status,
-                'order_total'  => $t->activeOrder ? number_format($t->activeOrder->total_amount, 0, ',', '.') : null,
-                'is_paid'      => $t->activeOrder?->isFullyPaid() ?? false,
-                'reservation'  => $t->activeReservation ? [
+                'id'             => $t->id,
+                'status'         => $t->status,
+                'order_number'   => $t->activeOrder?->order_number,
+                'order_id'       => $t->activeOrder?->id,
+                'order_status'   => $t->activeOrder?->status,
+                'order_total'    => $t->activeOrder
+                    ? number_format($t->activeOrder->total_amount, 0, ',', '.')
+                    : null,
+                // Nilai numerik mentah untuk diformat ulang di JS jika perlu
+                'order_total_raw' => $t->activeOrder?->total_amount,
+                'is_paid'        => $t->activeOrder?->isFullyPaid() ?? false,
+                'reservation'    => $t->activeReservation ? [
+                    // FIX: sertakan id agar JS bisa render form Batalkan dengan route yang benar
+                    'id'   => $t->activeReservation->id,
                     'name' => $t->activeReservation->customer_name,
                     'time' => \Carbon\Carbon::parse($t->activeReservation->reserved_at)->format('H:i'),
                 ] : null,
@@ -68,9 +74,9 @@ class PollController extends Controller
             ->limit(50)
             ->get()
             ->map(fn($o) => [
-                'id'     => $o->id,
-                'status' => $o->status,
-                'is_paid'=> $o->isFullyPaid(),
+                'id'      => $o->id,
+                'status'  => $o->status,
+                'is_paid' => $o->isFullyPaid(),
             ]);
 
         return response()->json($orders);

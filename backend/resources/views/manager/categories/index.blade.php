@@ -67,9 +67,7 @@
 
     {{-- Daftar Kategori --}}
     <div class="lg:col-span-2 space-y-3">
-        <div class="flex items-center justify-between">
-            <p class="text-sm text-gray-500">{{ $categories->total() }} kategori terdaftar</p>
-        </div>
+        
 
         @forelse($categories as $category)
             <div class="card" x-data="{ editing: false }">
@@ -164,22 +162,22 @@
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <button type="submit" 
-        class="text-xs font-medium rounded-lg transition-colors px-3 py-1.5"
-        style="background-color: white; border: 1px solid #1e3d8f; color: #1e3d8f;"
-        onmouseover="this.style.backgroundColor='#f3f4f6';"
-        onmouseout="this.style.backgroundColor='white';"
-        onmousedown="this.style.backgroundColor='#1e3d8f'; this.style.color='white';"
-        onmouseup="this.style.backgroundColor='#f3f4f6'; this.style.color='#1e3d8f';">
+                            <button type="submit"
+        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+        style="border: 1px solid #2D54BF; background-color: #2D54BF; color: white;"
+        onmouseover="this.style.backgroundColor='#1e3d8f';"
+        onmouseout="this.style.backgroundColor='#2D54BF';"
+        onmousedown="this.style.transform='scale(0.98)';"
+        onmouseup="this.style.transform='scale(1)';">
     Simpan
 </button>
 <button type="button" @click="editing = false"
-        class="text-xs font-medium rounded-lg transition-colors px-3 py-1.5"
-        style="background-color: white; border: 1px solid #1e3d8f; color: #1e3d8f;"
-        onmouseover="this.style.backgroundColor='#f3f4f6';"
+        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+        style="border: 1px solid #2D54BF; background-color: white; color: #2D54BF;"
+        onmouseover="this.style.backgroundColor='#eef2ff';"
         onmouseout="this.style.backgroundColor='white';"
-        onmousedown="this.style.backgroundColor='#1e3d8f'; this.style.color='white';"
-        onmouseup="this.style.backgroundColor='#f3f4f6'; this.style.color='#1e3d8f';">
+        onmousedown="this.style.transform='scale(0.98)';"
+        onmouseup="this.style.transform='scale(1)';">
     Batal
 </button>
                         </div>
@@ -202,34 +200,33 @@
     </div>
 </div>
 @if(session('success'))
-<div id="popup-success" 
+<div id="popup-success"
      class="fixed inset-0 z-[99999] flex items-center justify-center"
-     style="background: rgba(0,0,0,0.25);">
-    <div class="bg-white rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-3"
-         style="min-width: 300px; max-width: 360px; border: 1px solid #e5e7eb;">
-        
-        {{-- Icon centang bulat --}}
-        <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-md"
-             style="background: linear-gradient(135deg, #4ade80, #22c55e); border: 4px solid white;">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                <polyline points="20 6 9 17 4 12"/>
-            </svg>
-        </div>
-
-        <h3 class="text-xl font-bold text-gray-800 mt-1">Berhasil!</h3>
-        <p class="text-sm text-gray-400 text-center">{{ session('success') }}</p>
-
-        <div class="w-full flex justify-center mt-4 mb-4">
-    <button onclick="document.getElementById('popup-success').remove()"
-            class="text-sm font-semibold text-white transition-all"
-            style="background-color: #2D54BF; width: 200px; padding: 10px 0; border-radius: 50px;"
-            onmouseover="this.style.backgroundColor='#1e3d8f'"
-            onmouseout="this.style.backgroundColor='#2D54BF'"
-            onmousedown="this.style.transform='scale(0.97)'"
-            onmouseup="this.style.transform='scale(1)'">
-        OK
-    </button>
+     style="background-color: rgba(0,0,0,0.5);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs mx-4">
+        <div class="px-6 py-8 flex flex-col items-center text-center">
+            {{-- Icon centang bulat hijau --}}
+<div class="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+     style="background-color: #22c55e;">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3">
+        <polyline points="4 12 9 17 20 6"/>
+    </svg>
 </div>
+
+{{-- Pesan --}}
+<p class="text-sm text-gray-600 mb-6">{{ session('success') }}</p>
+
+{{-- Button OK --}}
+<button onclick="document.getElementById('popup-success').remove()"
+        class="w-full py-2.5 text-sm font-bold text-white rounded-lg transition-colors"
+        style="background-color: #2D54BF;"
+        onmouseover="this.style.backgroundColor='#1e3d8f';"
+        onmouseout="this.style.backgroundColor='#2D54BF';"
+        onmousedown="this.style.transform='scale(0.98)';"
+        onmouseup="this.style.transform='scale(1)';">
+    OK
+</button>
+        </div>
     </div>
 </div>
 

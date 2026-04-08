@@ -52,7 +52,7 @@
                     <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Store</th>
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Email</th>
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
-                    <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase">Aksi</th>
+                    <th class="py-2.5 px-4 text-xs font-semibold text-gray-500" style="text-align: right; padding-right: 70px;">AKSI</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -71,7 +71,7 @@
                     </td>
 
                     <td class="py-3 px-4">
-                        <span class="px-2 py-0.5 rounded-md text-xs font-medium
+                        <span class="px-4 py-0.5 rounded-md text-xs font-medium
                             @switch($user->role->slug)
                                 @case('admin')    bg-purple-100 text-purple-700 @break
                                 @case('manager')  bg-blue-100 text-blue-700 @break
@@ -115,32 +115,42 @@
                     </td>
 
                     <td class="py-3 px-4 text-center">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                        <span class="inline-flex items-center px-4 py-0.5 rounded-full text-xs font-semibold
                             {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' }}">
                             {{ $user->status === 'active' ? 'Aktif' : 'Nonaktif' }}
                         </span>
                     </td>
 
                     <td class="py-3 px-4 text-right">
-                        <div class="flex justify-end items-center gap-4">
+                        <div class="flex justify-end items-center gap-2">
                             <a href="{{ route('admin.users.edit', $user) }}"
-                               class="text-xs text-indigo-600 hover:underline font-medium">Edit</a>
-
+                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
+                            style="color: #EF8F00; background-color: #fff8ec; border: 1 px solid #EF8F00;"
+                            onmouseover="this.style.backgroundColor='#ffefd0';"
+                            onmouseout="this.style.backgroundColor='#fff8ec';"
+                            onmousedown="this.style.transform='scale(0.95)';"
+                            onmouseup="this.style.transform='scale(1)';">
+                                Edit
+                            </a>
                             @if($user->id !== auth()->id())
-                                <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
-                                      onsubmit="return confirm('{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }} user {{ addslashes($user->name) }}?')">
-                                    @csrf @method('PATCH')
-                                    <button type="submit"
-                                            class="text-xs font-medium
-                                                   {{ $user->status === 'active'
-                                                      ? 'text-red-500 hover:underline'
-                                                      : 'text-green-600 hover:underline' }}">
-                                        {{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}
-                                    </button>
-                                </form>
-                            @endif
-                        </div>
-                    </td>
+                            <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
+                  onsubmit="return confirm('{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }} user {{ addslashes($user->name) }}?')">
+                @csrf @method('PATCH')
+                <button type="submit"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
+                        style="{{ $user->status === 'active'
+                            ? 'color: #dc2626; background-color: #fff1f2; border: 1px solid #fca5a5;'
+                            : 'color: #16a34a; background-color: #f0fdf4; border: 1px solid #86efac;' }}"
+                        onmouseover="this.style.backgroundColor='{{ $user->status === 'active' ? '#fee2e2' : '#dcfce7' }}';"
+                        onmouseout="this.style.backgroundColor='{{ $user->status === 'active' ? '#fff1f2' : '#f0fdf4' }}';"
+                        onmousedown="this.style.transform='scale(0.98)';"
+                        onmouseup="this.style.transform='scale(1)';">
+                    {{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}
+                </button>
+            </form>
+        @endif
+    </div>
+</td>
                 </tr>
             @empty
                 <tr>

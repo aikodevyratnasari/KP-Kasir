@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Struk #{{ $payment->order->order_number }}</title>
     <style>
-        /* ── Thermal 80mm paper settings ── */
-        @page {
-            size: 80mm auto;
-            margin: 0;
-        }
+        @page { size: 80mm auto; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Courier New', Courier, monospace;
@@ -41,19 +37,21 @@
 </head>
 <body>
 
-    {{-- ── TOMBOL CETAK (tidak muncul saat print) ── --}}
+    {{-- Tombol cetak (tidak muncul saat print) --}}
     <div class="no-print">
         <button onclick="window.print()"
-                style="padding:6px 16px; background:#4f46e5; color:white; border:none; border-radius:6px; font-size:12px; cursor:pointer;">
+                style="padding:6px 16px; background:#4f46e5; color:white; border:none;
+                       border-radius:6px; font-size:12px; cursor:pointer;">
             🖨 Cetak Sekarang
         </button>
         <button onclick="window.close()"
-                style="padding:6px 16px; background:#e5e7eb; color:#374151; border:none; border-radius:6px; font-size:12px; cursor:pointer; margin-left:6px;">
+                style="padding:6px 16px; background:#e5e7eb; color:#374151; border:none;
+                       border-radius:6px; font-size:12px; cursor:pointer; margin-left:6px;">
             Tutup
         </button>
     </div>
 
-    {{-- ── HEADER TOKO ── --}}
+    {{-- Header Toko --}}
     <div class="center bold xlarge">{{ $payment->order->store->name ?? config('app.name', 'DePOS') }}</div>
     @if($payment->order->store->address ?? '')
         <div class="center small">{{ $payment->order->store->address }}</div>
@@ -64,8 +62,11 @@
 
     <hr class="divider">
 
-    {{-- ── INFO TRANSAKSI ── --}}
+    {{-- Info Transaksi --}}
     <div class="row"><span>No. Pesanan</span><span>{{ $payment->order->order_number }}</span></div>
+    @if($payment->order->customer_name)
+        <div class="row"><span>Pelanggan</span><span>{{ $payment->order->customer_name }}</span></div>
+    @endif
     <div class="row"><span>Kasir</span><span>{{ $payment->order->cashier?->name ?? '-' }}</span></div>
     <div class="row"><span>Waktu</span><span>{{ $payment->created_at->format('d/m/Y H:i') }}</span></div>
     <div class="row"><span>Tipe</span><span class="bold">{{ $payment->order->order_type === 'dine_in' ? 'Dine-In' : 'Takeaway' }}</span></div>
@@ -75,7 +76,7 @@
 
     <hr class="divider">
 
-    {{-- ── ITEM PESANAN ── --}}
+    {{-- Item Pesanan --}}
     @foreach($payment->order->items as $item)
         <div class="item-name bold">{{ $item->product_name }}</div>
         <div class="row item-detail">
@@ -94,7 +95,7 @@
 
     <hr class="divider">
 
-    {{-- ── TOTAL ── --}}
+    {{-- Total --}}
     <div class="row total-row">
         <span>TOTAL</span>
         <span>Rp {{ number_format($payment->order->total_amount, 0, ',', '.') }}</span>
@@ -116,19 +117,15 @@
 
     <hr class="divider">
 
-    {{-- ── FOOTER ── --}}
+    {{-- Footer --}}
     <div class="footer">
         <div>Terima kasih atas kunjungan Anda!</div>
         <div style="margin-top:2mm;">Simpan sebagai bukti pembayaran</div>
-        <div style="margin-top:2mm; font-size:9px; color:#666;">
-            {{ now()->format('d/m/Y H:i:s') }}
-        </div>
+        <div style="margin-top:2mm; font-size:9px; color:#666;">{{ now()->format('d/m/Y H:i:s') }}</div>
     </div>
 
     <script>
-        window.addEventListener('load', function () {
-            window.print();
-        });
+        window.addEventListener('load', function () { window.print(); });
     </script>
 </body>
 </html>
