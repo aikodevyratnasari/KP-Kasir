@@ -6,8 +6,8 @@
 <div class="space-y-5">
 
 {{-- Filter --}}
-<div class="card">
-    <form method="GET" class="flex flex-wrap gap-3 items-end">
+<div class="card overflow-x-auto">
+    <form method="GET" class="flex gap-3 items-end min-w-max">
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Cari</label>
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama produk..." class="form-input w-44">
@@ -29,11 +29,28 @@
                 <option value="price" {{ request('sort')==='price'?'selected':'' }}>Harga</option>
             </select>
         </div>
-        <button type="submit" class="btn-primary text-sm">Filter</button>
-        <a href="{{ route('manager.products.index') }}" class="btn-secondary text-sm">Reset</a>
+        <button type="submit" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                onmouseout="this.style.backgroundColor='#2D54BF'">
+                Filter
+            </button>
+        <a href="{{ route('manager.products.index') }}" 
+            class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+            onmouseover="this.style.backgroundColor='#f3f4f6';"
+            onmouseout="this.style.backgroundColor='white';">
+            Reset
+        </a>
 
         <div class="ml-auto flex gap-2 items-center">
-            <a href="{{ route('manager.products.create') }}" class="btn-primary text-sm">+ Tambah Produk</a>
+            <a href="{{ route('manager.products.create') }}" 
+class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
+                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                onmouseout="this.style.backgroundColor='#2D54BF'">
+Tambah Produk
+</a>
             <a href="{{ route('manager.products.trashed') }}" class="inline-flex items-center p-2 text-gray-500 hover:text-red-600 transition-colors" title="Sampah">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/>
@@ -48,7 +65,8 @@
 
     {{-- Tabel --}}
     <div class="card p-0 overflow-hidden">
-        <table class="w-full text-sm">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[700px]">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="py-3 px-4 text-left text-xs font-semibold text-indigo-600 uppercase tracking-wide">Produk</th>
@@ -98,12 +116,12 @@
                             $catName = $product->category?->name ?? '—';
                             $color = $categoryColors[$catName] ?? ['bg' => '#f5f5f5', 'text' => '#616161', 'border' => '#e0e0e0'];
                         @endphp
-                        <span class="px-2 py-0.5 rounded-md text-xs font-medium"
+                        <span class="px-2 py-0.5 rounded-md text-xs font-medium whitespace-nowrap"
                               style="background-color: {{ $color['bg'] }}; color: {{ $color['text'] }}; border: 1px solid {{ $color['border'] }};">
                             {{ $catName }}
                         </span>
                     </td>
-                    <td class="py-3 px-4 text-right font-semibold text-gray-900">
+                    <td class="py-3 px-4 text-right font-semibold text-gray-900 whitespace-nowrap">
                         Rp {{ number_format($product->price, 0, ',', '.') }}
                     </td>
                     <td class="py-3 px-4 text-center">
@@ -181,12 +199,11 @@
             @endforelse
             </tbody>
         </table>
-        <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
+        </div>
+         <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
             <div class="pagination-custom">
                 {{ $products->links() }}
             </div>
-        </div>
     </div>
-
 </div>
 @endsection

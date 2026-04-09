@@ -3,9 +3,9 @@
 @section('page-title', 'Edit Produk')
 
 @section('content')
-<div class="max-w-3xl space-y-5" x-data="editProduct()">
+<div class="max-w-3xl space-y-5 mx-auto" x-data="editProduct()">
 
-    <a href="{{ route('manager.products.index') }}" class="text-sm text-gray-400 hover:text-gray-600">← Kembali</a>
+    <!-- <a href="{{ route('manager.products.index') }}" class="text-sm text-gray-400 hover:text-gray-600">← Kembali</a> -->
 
     {{-- TABS --}}
     <div class="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
@@ -24,6 +24,11 @@
                 <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
             </svg>
             Variasi
+            @if($product->variants->count() > 0)
+                <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                    {{ $product->variants->count() }}
+                </span>
+            @endif
         </button>
         <button type="button" @click="tab = 'discounts'"
                 :class="tab === 'discounts' ? 'bg-white shadow text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
@@ -32,8 +37,20 @@
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
             </svg>
             Diskon
+            @if($product->discounts->where('is_active', true)->count() > 0)
+                <span class="bg-red-100 text-red-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                    {{ $product->discounts->where('is_active', true)->count() }}
+                </span>
+            @endif
         </button>
     </div>
+
+    {{-- Flash success --}}
+    @if(session('success'))
+    <div class="bg-green-50 border border-green-200 text-green-800 text-sm px-4 py-3 rounded-lg">
+        {{ session('success') }}
+    </div>
+    @endif
 
     {{-- ══ TAB: INFO ══ --}}
     <div x-show="tab === 'info'">
@@ -41,7 +58,7 @@
             @csrf @method('PUT')
             <div class="space-y-4">
                 <div class="card space-y-4">
-                    <h3 class="font-semibold text-gray-800">Informasi Produk</h3>
+                    <h3 class="font-semibold text-gray-800 border-b border-gray-200 pb-3">Informasi Produk</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nama Produk <span class="text-red-500">*</span></label>
@@ -74,49 +91,61 @@
 
                 <div class="card space-y-3">
                     <h3 class="font-semibold text-gray-800">Foto Produk</h3>
-                    <div class="flex items-start gap-4">
-                        <div class="w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0">
-                            @if($product->image)
-                                <img src="{{ Storage::url($product->image) }}" id="img-preview"
-                                     class="w-full h-full object-cover">
-                            @else
-                                <img id="img-preview" src="" class="w-full h-full object-cover hidden">
-                                <svg xmlns="http://www.w3.org/2000/svg" id="img-placeholder" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                                </svg>
-                            @endif
-                        </div>
-                        <div class="flex-1">
-                            <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
-                                   onchange="previewImage(this)"
-                                   class="block w-full text-sm text-gray-500
-                                          file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                                          file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700
-                                          hover:file:bg-indigo-100 cursor-pointer">
-                            <p class="mt-1.5 text-xs text-gray-400">JPG, PNG, WebP — maks. 2MB</p>
-                            @error('image')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card space-y-4">
+<div class="flex items-center gap-4">
+    <div id="img-box" class="w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0">
+        @if($product->image)
+            <img src="{{ Storage::url($product->image) }}" id="img-preview" class="w-full h-full object-cover">
+        @else
+            <img id="img-preview" src="" class="w-full h-full object-cover hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" id="img-placeholder" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+        @endif
+    </div>
+    <div class="flex flex-col gap-1.5 w-fit">
+        <input type="file" name="image" id="imageInput" accept="image/jpeg,image/png,image/webp"
+               onchange="previewImage(this); document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : 'Belum ada file dipilih'"
+               class="hidden">
+        <button type="button"
+            onclick="document.getElementById('imageInput').click()"
+            class="w-fit inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors mt-4"
+            style="border: 1px solid #2D54BF; background-color: #2D54BF; color: white;"
+            onmouseover="this.style.backgroundColor='#1e3d8f'"
+            onmouseout="this.style.backgroundColor='#2D54BF'">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4l4 4"/>
+            </svg>
+            Upload
+        </button>
+        <span id="fileName" class="text-xs text-gray-500">
+            {{ $product->image ? basename($product->image) : 'Belum ada file dipilih' }}
+        </span>
+        <span class="text-xs text-gray-400">JPG, PNG, WebP, maks. 2MB</span>
+    </div>
+</div>
+@error('image')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    
+                    <div class="space-y-4" style="margin-top: 20px;">
                     <h3 class="font-semibold text-gray-800">Stok & Ketersediaan</h3>
-                    <div class="flex flex-wrap gap-5">
-                        <label class="flex items-center gap-2 cursor-pointer">
+                    <!-- <label class="block text-sm font-medium text-gray-700">Stok & Ketersediaan</label> -->
+                    <div class="flex flex-wrap gap-5" style="margin-top: 8px;">
+                        <div class="flex items-center gap-2">
                             <input type="hidden" name="is_available" value="0">
-                            <input type="checkbox" name="is_available" value="1"
-                                   {{ old('is_available', $product->is_available) ? 'checked' : '' }}
-                                   class="rounded border-gray-300 text-indigo-600">
-                            <span class="text-sm text-gray-700">Tersedia untuk dipesan</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="is_available" id="is_available" value="1"
+                                   {{ old('is_available', '1') ? 'checked' : '' }}
+                                   class="rounded border-gray-300 accent-[#2D54BF] focus:ring-0 focus:outline-none"
+                                   style="outline: none !important; box-shadow: none !important;">
+                            <label for="is_available" class="text-sm text-gray-700">Tersedia untuk dipesan</label>
+                        </div>
+                        <div class="flex items-center gap-2">
                             <input type="hidden" name="track_stock" value="0">
-                            <input type="checkbox" name="track_stock" value="1" id="track-stock-cb"
-                                   {{ old('track_stock', $product->track_stock) ? 'checked' : '' }}
+                            <input type="checkbox" name="track_stock" id="track-stock-cb" value="1"
+                                   {{ old('track_stock') ? 'checked' : '' }}
                                    onchange="document.getElementById('stock-fields').style.display = this.checked ? '' : 'none'"
-                                   class="rounded border-gray-300 text-indigo-600">
-                            <span class="text-sm text-gray-700">Lacak stok</span>
-                        </label>
+                                   class="rounded border-gray-300 accent-[#2D54BF] focus:ring-0 focus:outline-none"
+                                   style="outline: none !important; box-shadow: none !important;">
+                            <label for="track-stock-cb" class="text-sm text-gray-700">Lacak stok</label>
+                        </div>
                     </div>
                     <div id="stock-fields" class="grid grid-cols-2 gap-4"
                          style="{{ old('track_stock', $product->track_stock) ? '' : 'display:none' }}">
@@ -130,12 +159,25 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
 
-            <div class="flex gap-3 mt-4">
-                <button type="submit" class="btn-primary">Simpan Perubahan</button>
-                <a href="{{ route('manager.products.index') }}" class="btn-secondary">Batal</a>
-            </div>
+            <div class="flex gap-3 mt-3 justify-end">
+                    <a href="{{ route('manager.products.index') }}"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+                        onmouseover="this.style.backgroundColor='#f3f4f6';"
+                        onmouseout="this.style.backgroundColor='white';">
+                        Batal
+                    </a>
+                    <button type="submit"
+                        class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                        onmouseover="this.style.backgroundColor='#1e3d8f'"
+                        onmouseout="this.style.backgroundColor='#2D54BF'">
+                        Simpan Perubahan
+                    </button>
+               </div>
         </form>
     </div>
 
@@ -145,7 +187,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="font-semibold text-gray-800">Variasi Produk</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Contoh: ukuran porsi, level pedas, pilihan topping</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Contoh: ukuran porsi, level pedas, pilihan rasa</p>
                 </div>
                 <button type="button" @click="addVariant()" class="btn-primary text-xs">+ Tambah Variasi</button>
             </div>
@@ -156,7 +198,7 @@
                 <div class="space-y-3" x-show="variants.length > 0">
                     <div class="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-500 uppercase px-1">
                         <div class="col-span-3">Nama</div>
-                        <div class="col-span-2">Tipe</div>
+                        <div class="col-span-2">Kategori</div>
                         <div class="col-span-2">±Harga (Rp)</div>
                         <div class="col-span-2">Stok</div>
                         <div class="col-span-2">Tersedia</div>
@@ -167,14 +209,14 @@
                         <div class="grid grid-cols-12 gap-2 items-center bg-gray-50 rounded-lg p-2">
                             <div class="col-span-3">
                                 <input type="text" :name="`variants[${i}][name]`" x-model="v.name"
-                                       placeholder="cth: Porsi Kecil" class="form-input text-sm">
+                                       placeholder="cth: Pedas Sedang" class="form-input text-sm">
                             </div>
                             <div class="col-span-2">
                                 <select :name="`variants[${i}][type]`" x-model="v.type" class="form-input text-sm">
                                     <option value="ukuran">Ukuran</option>
                                     <option value="level">Level</option>
-                                    <option value="topping">Topping</option>
                                     <option value="rasa">Rasa</option>
+                                    <option value="topping">Topping</option>
                                     <option value="lainnya">Lainnya</option>
                                 </select>
                             </div>
@@ -309,24 +351,16 @@
 
 @push('scripts')
 <script>
-// Inisialisasi data di script tag — aman dari masalah encoding di HTML attribute
 document.addEventListener('alpine:init', () => {
     Alpine.data('editProduct', () => ({
+        // FIX: baca tab dari session (dikirim saat simpan varian/diskon)
         tab: '{{ session("tab", "info") }}',
         variants: @json($variants),
 
         addVariant() {
-            this.variants.push({
-                name: '',
-                type: 'ukuran',
-                price_adjustment: 0,
-                stock: 0,
-                is_available: true
-            });
+            this.variants.push({ name: '', type: 'ukuran', price_adjustment: 0, stock: 0, is_available: true });
         },
-        removeVariant(i) {
-            this.variants.splice(i, 1);
-        }
+        removeVariant(i) { this.variants.splice(i, 1); }
     }));
 });
 
@@ -336,9 +370,14 @@ function previewImage(input) {
         reader.onload = e => {
             const preview = document.getElementById('img-preview');
             const placeholder = document.getElementById('img-placeholder');
+            const box = document.getElementById('img-box');
             preview.src = e.target.result;
             preview.classList.remove('hidden');
             if (placeholder) placeholder.style.display = 'none';
+            // Hapus border dashed saat foto diupload
+            if (box) {
+                box.style.border = 'none';
+            }
         };
         reader.readAsDataURL(input.files[0]);
     }

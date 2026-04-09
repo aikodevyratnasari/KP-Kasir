@@ -17,13 +17,11 @@ class StoreCategoryRequest extends FormRequest
         $storeId = (int) ($this->user()->store_id ?? 0);
 
         return [
-            'name'        => [
+            'name' => [
                 'required', 'string', 'max:100',
                 Rule::unique('categories', 'name')
-                    ->where(fn ($q) => $q
-                        ->where('store_id', $storeId)
-                        ->whereNull('deleted_at')
-                    ),
+                    ->where(fn($q) => $q->where('store_id', $storeId))
+                    ->whereNull('deleted_at'),  
             ],
             'description' => ['nullable', 'string', 'max:500'],
             'image'       => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:1024'],

@@ -65,6 +65,15 @@
         @if($item->variant_name)
             <div class="variant-row">Variasi: {{ $item->variant_name }}</div>
         @endif
+        @if($item->discount_label && $item->discount_amount > 0)
+            <div class="item-detail" style="font-style:italic; color:#555;">
+                Diskon: {{ $item->discount_label }}
+            </div>
+            <div class="row item-detail">
+                <span>Harga asli</span>
+                <span style="text-decoration:line-through;">Rp {{ number_format($item->original_price, 0, ',', '.') }}</span>
+            </div>
+        @endif
         <div class="row item-detail">
             <span>{{ $item->quantity }} × Rp {{ number_format($item->unit_price, 0, ',', '.') }}</span>
             <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>

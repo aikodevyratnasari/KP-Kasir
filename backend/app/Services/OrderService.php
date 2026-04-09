@@ -70,6 +70,9 @@ class OrderService
                     'quantity'      => $item['quantity'],
                     'subtotal'      => $item['unit_price'] * $item['quantity'],
                     'special_notes' => $item['special_notes'] ?? null,
+                    'original_price'  => $item['original_price'],
+                    'discount_amount' => $item['discount_amount'],
+                    'discount_label'  => $item['discount_label'],
                 ]);
             }
 
@@ -119,7 +122,9 @@ class OrderService
                 'tax_amount'   => $taxAmount,
                 'total_amount' => $total,
                 'notes'        => $data['notes'] ?? $order->notes,
-                // customer_name tidak diubah saat edit
+                'customer_name' => array_key_exists('customer_name', $data)
+                    ? ($data['customer_name'] ?: null)
+                    : $order->customer_name,
             ]);
 
             foreach ($items as $item) {
@@ -133,6 +138,9 @@ class OrderService
                     'quantity'      => $item['quantity'],
                     'subtotal'      => $item['unit_price'] * $item['quantity'],
                     'special_notes' => $item['special_notes'] ?? null,
+                    'original_price'  => $item['original_price'],
+                    'discount_amount' => $item['discount_amount'],
+                    'discount_label'  => $item['discount_label'],
                 ]);
             }
 
@@ -235,33 +243,44 @@ class OrderService
             $product = Product::with('discounts')->findOrFail($item['product_id']);
             abort_if($product->isOutOfStock() && $product->track_stock, 422, "{$product->name} habis.");
 
-            $unitPrice   = (float) $product->price;
-            $variantId   = $item['variant_id'] ?? null;
-            $variantName = null;
+            $originalPrice = (float) $product->price;
+            $unitPrice     = $originalPrice;
+            $variantId     = $item['variant_id'] ?? null;
+            $variantName   = null;
 
             if ($variantId) {
                 $variant = ProductVariant::find($variantId);
                 if ($variant) {
-                    $unitPrice  += (float) $variant->price_adjustment;
-                    $variantName = $variant->name;
+                    $unitPrice     += (float) $variant->price_adjustment;
+                    $originalPrice += (float) $variant->price_adjustment;
+                    $variantName    = $variant->name;
                 }
             }
 
+            $discountAmount = 0;
+            $discountLabel  = null;
             $activeDiscount = $product->discounts->first(fn($d) => $d->isCurrentlyActive());
+
             if ($activeDiscount) {
-                $unitPrice = $activeDiscount->type === 'percentage'
-                    ? $unitPrice * (1 - (float) $activeDiscount->value / 100)
-                    : max(0, $unitPrice - (float) $activeDiscount->value);
+                $discounted     = $activeDiscount->discountedPrice($unitPrice);
+                $discountAmount = round($unitPrice - $discounted, 2);
+                $unitPrice      = $discounted;
+                $discountLabel  = $activeDiscount->type === 'percentage'
+                    ? $activeDiscount->name . ' (' . number_format($activeDiscount->value, 0) . '% OFF)'
+                    : $activeDiscount->name . ' (Rp ' . number_format($activeDiscount->value, 0, ',', '.') . ' OFF)';
             }
 
             return [
-                'product_id'    => $product->id,
-                'product_name'  => $product->name,
-                'variant_id'    => $variantId,
-                'variant_name'  => $variantName,
-                'unit_price'    => round($unitPrice, 2),
-                'quantity'      => $item['quantity'],
-                'special_notes' => $item['special_notes'] ?? null,
+                'product_id'     => $product->id,
+                'product_name'   => $product->name,
+                'variant_id'     => $variantId,
+                'variant_name'   => $variantName,
+                'original_price' => round($originalPrice, 2),
+                'discount_amount'=> $discountAmount,
+                'discount_label' => $discountLabel,
+                'unit_price'     => round($unitPrice, 2),
+                'quantity'       => $item['quantity'],
+                'special_notes'  => $item['special_notes'] ?? null,
             ];
         })->toArray();
     }

@@ -56,8 +56,12 @@ class ProductController extends Controller
         }
         $product = Product::create($data);
         ActivityLogService::logCreated($product);
-        return redirect()->route('manager.products.index')
-            ->with('success', "Produk {$product->name} berhasil ditambahkan.");
+
+        // FIX: redirect ke edit dengan tab variants terbuka agar bisa langsung tambah varian
+        return redirect()
+            ->route('manager.products.edit', $product)
+            ->with('success', "Produk {$product->name} berhasil ditambahkan. Sekarang tambahkan variasi jika diperlukan.")
+            ->with('tab', 'variants');
     }
 
     public function edit(Product $product): View
@@ -66,8 +70,6 @@ class ProductController extends Controller
 
         $product->load('variants', 'discounts');
 
-        // FIX: gunakan ->values()->toArray() agar hasilnya plain array [...]
-        // bukan Collection yang Alpine.js baca sebagai object {...}
         $variants = $product->variants->map(fn($v) => [
             'name'             => $v->name,
             'type'             => $v->type,
@@ -141,13 +143,13 @@ class ProductController extends Controller
             }
         });
 
-        return back()->with('success', 'Variasi produk disimpan.');
+        return back()->with('success', 'Variasi produk disimpan.')->with('tab', 'variants');
     }
 
     public function destroyVariant(Product $product, ProductVariant $variant): RedirectResponse
     {
         $variant->delete();
-        return back()->with('success', 'Variasi dihapus.');
+        return back()->with('success', 'Variasi dihapus.')->with('tab', 'variants');
     }
 
     // ── DISCOUNTS ─────────────────────────────────────────────────────────────
@@ -169,19 +171,19 @@ class ProductController extends Controller
 
         $product->discounts()->create($data);
 
-        return back()->with('success', 'Diskon berhasil ditambahkan.');
+        return back()->with('success', 'Diskon berhasil ditambahkan.')->with('tab', 'discounts');
     }
 
     public function destroyDiscount(Product $product, ProductDiscount $discount): RedirectResponse
     {
         $discount->delete();
-        return back()->with('success', 'Diskon dihapus.');
+        return back()->with('success', 'Diskon dihapus.')->with('tab', 'discounts');
     }
 
     public function toggleDiscount(Product $product, ProductDiscount $discount): RedirectResponse
     {
         $discount->update(['is_active' => ! $discount->is_active]);
-        return back()->with('success', 'Status diskon diperbarui.');
+        return back()->with('success', 'Status diskon diperbarui.')->with('tab', 'discounts');
     }
 
     // ── BUNDLES ───────────────────────────────────────────────────────────────

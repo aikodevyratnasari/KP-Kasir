@@ -7,6 +7,7 @@ class UpdateOrderRequest extends StoreOrderRequest
     {
         $rules = parent::rules();
         unset($rules['order_type'], $rules['table_id']);
+        $rules['customer_name'] = ['nullable', 'string', 'max:100'];
         return $rules;
     }
 }
