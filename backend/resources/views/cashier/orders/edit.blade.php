@@ -13,6 +13,7 @@
          'quantity'     => $i->quantity,
          'variant_id'   => $i->variant_id ?? null,
          'variant_name' => ($i->variant_id && $i->variant) ? $i->variant->name : null,
+         'special_notes' => $i->special_notes ?? '',
      ])) }}, {{ $taxRate }})">
 
     <div style="flex:1; overflow-y:auto; padding:20px 16px 20px 0;">
@@ -28,9 +29,21 @@
         <form method="POST" action="{{ route('cashier.orders.update', $order) }}" id="order-form">
             @csrf @method('PUT')
             <div class="card mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Pesanan</label>
-                <textarea name="notes" rows="2" class="form-input"
-                          placeholder="Catatan khusus...">{{ old('notes', $order->notes) }}</textarea>
+                <div class="grid grid-cols-1 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Nama Pelanggan <span class="text-gray-400 font-normal text-xs">(opsional)</span>
+                        </label>
+                        <input type="text" name="customer_name"
+                            value="{{ old('customer_name', $order->customer_name) }}"
+                            placeholder="cth: Budi Santoso" class="form-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Pesanan</label>
+                        <textarea name="notes" rows="2" class="form-input"
+                                placeholder="Catatan khusus...">{{ old('notes', $order->notes) }}</textarea>
+                    </div>
+                </div>
             </div>
 
             @foreach($categories as $category)
@@ -127,7 +140,9 @@
                             <span class="text-sm font-bold text-indigo-600" x-text="'Rp ' + formatRp(item.price * item.quantity)"></span>
                         </div>
                         <div class="mt-2">
-                            <input type="text" :name="'items['+index+'][special_notes]'" form="order-form" placeholder="Catatan item..." class="form-input text-xs py-1 bg-white">
+                            <input type="text" :name="'items['+index+'][special_notes]'" form="order-form"
+                            x-model="item.special_notes"
+                            placeholder="Catatan item..." class="form-input text-xs py-1 bg-white">
                         </div>
                     </div>
                 </template>
@@ -181,7 +196,8 @@
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
                                 <p style="font-size:13px; font-weight:600; color:#111827; margin:0;" x-text="v.name"></p>
-                                <p style="font-size:11px; color:#9ca3af; margin:3px 0 0;" x-text="v.type"></p>
+                                <p style="font-size:11px; color:#9ca3af; margin:3px 0 0;"
+                                x-text="v.type ? v.type.charAt(0).toUpperCase() + v.type.slice(1) : ''"></p>
                             </div>
                             <div style="text-align:right; flex-shrink:0; margin-left:12px;">
                                 <p style="font-size:13px; font-weight:700; color:#4f46e5; margin:0;" x-text="'Rp ' + formatRp(variantModal.basePrice + Number(v.price_adjustment||0))"></p>

@@ -32,7 +32,7 @@ class Product extends Model
         static::creating(fn($m) => $m->slug ??= Str::slug($m->name) . '-' . $m->store_id);
     }
 
-    public function category(): BelongsTo      { return $this->belongsTo(Category::class); }
+    public function category(): BelongsTo { return $this->belongsTo(Category::class)->withTrashed(); }
     public function store(): BelongsTo         { return $this->belongsTo(Store::class); }
     public function orderItems(): HasMany       { return $this->hasMany(OrderItem::class); }
     public function stockLogs(): HasMany        { return $this->hasMany(StockLog::class); }

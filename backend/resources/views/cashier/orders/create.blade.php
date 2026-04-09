@@ -234,7 +234,8 @@
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
                                 <p style="font-size:13px; font-weight:600; color:#111827; margin:0;" x-text="v.name"></p>
-                                <p style="font-size:11px; color:#9ca3af; margin:3px 0 0;" x-text="v.type"></p>
+                                <p style="font-size:11px; color:#9ca3af; margin:3px 0 0;"
+                                x-text="v.type ? v.type.charAt(0).toUpperCase() + v.type.slice(1) : ''"></p>
                             </div>
                             <div style="text-align:right; flex-shrink:0; margin-left:12px;">
                                 <p style="font-size:13px; font-weight:700; color:#4f46e5; margin:0;"

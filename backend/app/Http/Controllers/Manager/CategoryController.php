@@ -19,9 +19,9 @@ class CategoryController extends Controller
     {
         $storeId    = $request->get('_store_id');
         $categories = Category::where('store_id', $storeId)
-            ->withCount('products')
-            ->latest()
-            ->paginate(20);
+        ->withCount(['products' => fn($q) => $q->whereNull('deleted_at')])
+        ->latest()
+        ->paginate(20);
 
         return view('manager.categories.index', compact('categories'));
     }

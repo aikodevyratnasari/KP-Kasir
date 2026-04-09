@@ -28,5 +28,8 @@ class Category extends Model
     public function store(): BelongsTo    { return $this->belongsTo(Store::class); }
     public function products(): HasMany   { return $this->hasMany(Product::class); }
 
-    public function hasProducts(): bool   { return $this->products()->exists(); }
+    public function hasProducts(): bool
+    {
+        return $this->products()->whereNull('deleted_at')->exists();
+    }
 }

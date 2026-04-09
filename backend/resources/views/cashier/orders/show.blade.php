@@ -137,7 +137,6 @@
         <div class="card">
             <h2 class="font-semibold text-gray-800 mb-4">Pembayaran</h2>
             <dl class="space-y-1.5 text-sm">
-                {{-- Breakdown harga --}}
                 <div class="flex justify-between">
                     <dt class="text-gray-500">Subtotal</dt>
                     <dd>Rp {{ number_format($order->subtotal, 0, ',', '.') }}</dd>
@@ -216,16 +215,25 @@
                         @if($item->variant_name)
                             <p class="text-xs text-indigo-500">{{ $item->variant_name }}</p>
                         @endif
+                        @if($item->discount_label && $item->discount_amount > 0)
+                            <p class="text-xs text-red-500">🏷 {{ $item->discount_label }}</p>
+                        @endif
                         @if($item->special_notes)
                             <p class="text-xs text-gray-400">{{ $item->special_notes }}</p>
                         @endif
                     </td>
                     <td class="py-2 text-center">{{ $item->quantity }}</td>
-                    <td class="py-2 text-right">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                    <td class="py-2 text-right">
+                        @if($item->discount_amount > 0)
+                            <span class="text-xs text-gray-400 line-through block">
+                                Rp {{ number_format($item->original_price, 0, ',', '.') }}
+                            </span>
+                        @endif
+                        Rp {{ number_format($item->unit_price, 0, ',', '.') }}
+                    </td>
                     <td class="py-2 text-right font-semibold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
                 </tr>
             @endforeach
-                {{-- Baris ringkasan --}}
                 <tr class="border-t border-gray-100">
                     <td colspan="3" class="py-1.5 text-right text-xs text-gray-400">Subtotal</td>
                     <td class="py-1.5 text-right text-xs text-gray-500">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</td>
@@ -242,7 +250,6 @@
         </table>
     </div>
 
-    {{-- Aksi Edit / Batalkan --}}
     @if($order->isPending() && !$order->isFullyPaid())
     <div class="flex gap-3">
         <a href="{{ route('cashier.orders.edit', $order) }}" class="btn-secondary">Edit Pesanan</a>
@@ -267,8 +274,7 @@
 <div id="cancel-modal"
      style="display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;"
      onclick="if(event.target===this){this.style.display='none'; document.body.style.overflow='';}">
-    <div style="background:#fff; border-radius:16px; padding:24px; width:100%; max-width:440px; margin:16px; box-shadow:0 20px 60px rgba(0,0,0,0.2);"
-         onclick="event.stopPropagation()">
+    <div style="background:#fff; border-radius:16px; padding:24px; width:100%; max-width:440px; margin:16px; box-shadow:0 20px 60px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-gray-900 text-base">Batalkan Pesanan</h3>
             <button type="button" onclick="document.getElementById('cancel-modal').style.display='none'; document.body.style.overflow='';" class="text-gray-400 hover:text-gray-600">
@@ -312,6 +318,7 @@
     const allBadgeClasses = ['badge-pending','badge-cooking','badge-ready','badge-completed','badge-cancelled'];
     const statusText = { pending:'Menunggu', cooking:'Dimasak', ready:'Siap Disajikan', completed:'Selesai', cancelled:'Dibatalkan' };
 
+    // FIX: simpan status SEBELUM update, baru bandingkan
     let lastStatus = '{{ $order->status }}';
     let lastIsPaid = {{ $order->isFullyPaid() ? 'true' : 'false' }};
 
@@ -325,12 +332,12 @@
 
     function updateTracker(step) {
         for (let i = 0; i <= 4; i++) {
-            const c = document.getElementById('tracker-circle-' + i);
-            const l = document.getElementById('tracker-label-' + i);
+            const c  = document.getElementById('tracker-circle-' + i);
+            const l  = document.getElementById('tracker-label-' + i);
             const ln = document.getElementById('tracker-line-' + i);
             const done = i <= step;
-            if (c) c.className = 'relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 ' + (done ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-300 text-gray-400');
-            if (l) l.className = 'text-xs mt-1 text-center ' + (done ? 'text-indigo-700 font-semibold' : 'text-gray-400');
+            if (c)  c.className  = 'relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 ' + (done ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-300 text-gray-400');
+            if (l)  l.className  = 'text-xs mt-1 text-center ' + (done ? 'text-indigo-700 font-semibold' : 'text-gray-400');
             if (ln) { ln.className = 'absolute top-4 left-1/2 w-full h-1 rounded-full ' + (i < step ? 'bg-indigo-500' : 'bg-gray-200'); ln.style.zIndex = '0'; }
         }
     }
@@ -340,14 +347,37 @@
             const res  = await fetch(POLL_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             if (!res.ok) return;
             const data = await res.json();
-            if (data.status === lastStatus && data.is_paid === lastIsPaid) return;
-            lastStatus = data.status; lastIsPaid = data.is_paid;
+
+            const statusChanged = data.status !== lastStatus;
+            const paidChanged   = data.is_paid !== lastIsPaid;
+
+            if (!statusChanged && !paidChanged) return;
+
+            // FIX: simpan nilai lama SEBELUM update, baru lakukan perbandingan untuk reload
+            const prevStatus = lastStatus;
+            lastStatus = data.status;
+            lastIsPaid = data.is_paid;
+
+            // Update badge
             const badge = document.getElementById('order-status-badge');
-            if (badge) { badge.classList.remove(...allBadgeClasses); badge.classList.add('badge-' + data.status); badge.textContent = statusText[data.status] || data.status; }
+            if (badge) {
+                badge.classList.remove(...allBadgeClasses);
+                badge.classList.add('badge-' + data.status);
+                badge.textContent = statusText[data.status] || data.status;
+            }
+
+            // Update tracker angka progres (tidak butuh reload)
             updateTracker(getStep(data.status, data.is_paid));
-            if (data.status !== lastStatus) window.location.reload();
-        } catch(e) {}
+
+            // FIX: reload jika status berubah agar tombol aksi (Meja Kosong, Selesai, dll)
+            // ikut terupdate — bandingkan prevStatus dengan data.status yang baru
+            if (statusChanged) {
+                window.location.reload();
+            }
+
+        } catch(e) { /* diam */ }
     }
+
     setInterval(poll, INTERVAL);
 })();
 </script>
