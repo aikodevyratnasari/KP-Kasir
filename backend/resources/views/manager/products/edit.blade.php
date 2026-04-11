@@ -92,16 +92,20 @@
                 <div class="card space-y-3">
                     <h3 class="font-semibold text-gray-800">Foto Produk</h3>
 <div class="flex items-center gap-4">
-    <div id="img-box" class="w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0">
-        @if($product->image)
-            <img src="{{ Storage::url($product->image) }}" id="img-preview" class="w-full h-full object-cover">
-        @else
-            <img id="img-preview" src="" class="w-full h-full object-cover hidden">
-            <svg xmlns="http://www.w3.org/2000/svg" id="img-placeholder" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-            </svg>
-        @endif
-    </div>
+    <div id="img-box" class="w-28 h-28 rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0
+    {{ $product->image ? '' : 'border-2 border-dashed border-gray-300' }}">
+    @if($product->image)
+        <img src="{{ Storage::url($product->image) }}" id="img-preview" class="w-full h-full object-cover">
+        <svg xmlns="http://www.w3.org/2000/svg" id="img-placeholder" class="w-10 h-10 text-gray-300 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+        </svg>
+    @else
+        <img id="img-preview" src="" class="w-full h-full object-cover hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" id="img-placeholder" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+        </svg>
+    @endif
+</div>
     <div class="flex flex-col gap-1.5 w-fit">
         <input type="file" name="image" id="imageInput" accept="image/jpeg,image/png,image/webp"
                onchange="previewImage(this); document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : 'Belum ada file dipilih'"
@@ -189,30 +193,38 @@
                     <h3 class="font-semibold text-gray-800">Variasi Produk</h3>
                     <p class="text-xs text-gray-500 mt-0.5">Contoh: ukuran porsi, level pedas, pilihan rasa</p>
                 </div>
-                <button type="button" @click="addVariant()" class="btn-primary text-xs">+ Tambah Variasi</button>
+                <button type="submit"
+                        @click="addVariant()"
+                        class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                        style="background-color: #d87641; border: 1px solid #d87641;"
+                        onmouseover="this.style.backgroundColor='#ba4a0d'"
+                        onmouseout="this.style.backgroundColor='#d87641'">
+                        + Tambah Variasi
+                    </button>
             </div>
 
             <form method="POST" action="{{ route('manager.products.variants.store', $product) }}">
                 @csrf
 
                 <div class="space-y-3" x-show="variants.length > 0">
-                    <div class="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-500 uppercase px-1">
+                    <div class="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-500 uppercase px-3">
                         <div class="col-span-3">Nama</div>
                         <div class="col-span-2">Kategori</div>
                         <div class="col-span-2">±Harga (Rp)</div>
                         <div class="col-span-2">Stok</div>
-                        <div class="col-span-2">Tersedia</div>
+                        <div class="col-span-2 text-center">Tersedia</div>
                         <div class="col-span-1"></div>
                     </div>
 
                     <template x-for="(v, i) in variants" :key="i">
                         <div class="grid grid-cols-12 gap-2 items-center bg-gray-50 rounded-lg p-2">
+                            <input type="hidden" :name="`variants[${i}][id]`" :value="v.id ?? ''">
                             <div class="col-span-3">
                                 <input type="text" :name="`variants[${i}][name]`" x-model="v.name"
                                        placeholder="cth: Pedas Sedang" class="form-input text-sm">
                             </div>
                             <div class="col-span-2">
-                                <select :name="`variants[${i}][type]`" x-model="v.type" class="form-input text-sm">
+                                <select :name="`variants[${i}][type]`" x-model="v.type" class="form-input text-sm w-30">
                                     <option value="ukuran">Ukuran</option>
                                     <option value="level">Level</option>
                                     <option value="rasa">Rasa</option>
@@ -230,13 +242,17 @@
                             </div>
                             <div class="col-span-2 flex justify-center">
                                 <input type="checkbox" :name="`variants[${i}][is_available]`"
-                                       x-model="v.is_available" value="1"
-                                       class="rounded border-gray-300 text-indigo-600">
+                                    x-model="v.is_available" value="1"
+                                    class="rounded accent-[#2D54BF] focus:ring-0 focus:outline-none"
+                                    style="outline: none !important; box-shadow: none !important;">
                             </div>
                             <div class="col-span-1 flex justify-center">
                                 <button type="button" @click="removeVariant(i)" class="text-red-400 hover:text-red-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                                        <path d="M10 11v6M14 11v6"/>
+                                        <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
                                     </svg>
                                 </button>
                             </div>
@@ -249,7 +265,14 @@
                 </div>
 
                 <div class="flex justify-end mt-4" x-show="variants.length > 0">
-                    <button type="submit" class="btn-primary">Simpan Variasi</button>
+                    <button type="submit"
+
+                        class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                        onmouseover="this.style.backgroundColor='#1e3d8f'"
+                        onmouseout="this.style.backgroundColor='#2D54BF'">
+                        Simpan Variasi
+                    </button>
                 </div>
             </form>
         </div>
@@ -289,14 +312,22 @@
                         <p class="mt-1 text-xs text-gray-400">Kosongkan = tidak ada batas waktu</p>
                     </div>
                     <div class="col-span-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="is_active" value="1" checked class="rounded border-gray-300 text-indigo-600">
-                            <span class="text-sm text-gray-700">Langsung aktif</span>
-                        </label>
-                    </div>
+    <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" name="is_active" value="1" checked 
+               class="rounded border-gray-300 accent-[#2D54BF] focus:ring-0 focus:outline-none"
+               style="outline: none !important; box-shadow: none !important;">
+        <span class="text-sm text-gray-700">Langsung aktif</span>
+    </label>
+</div>
                 </div>
                 <div class="flex justify-end mt-3">
-                    <button type="submit" class="btn-primary text-sm">Tambah Diskon</button>
+                     <button type="submit"
+                        class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                        onmouseover="this.style.backgroundColor='#1e3d8f'"
+                        onmouseout="this.style.backgroundColor='#2D54BF'">
+                        Tambah Diskon
+                    </button>
                 </div>
             </form>
         </div>
@@ -321,25 +352,30 @@
                     </p>
                 </div>
                 @if($disc->isCurrentlyActive())
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Aktif</span>
-                @elseif(!$disc->is_active)
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">Nonaktif</span>
-                @else
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-600">Kadaluarsa</span>
-                @endif
-                <div class="flex items-center gap-2">
-                    <form method="POST" action="{{ route('manager.products.discounts.toggle', [$product, $disc]) }}">
-                        @csrf @method('PATCH')
-                        <button type="submit" class="text-xs text-indigo-500 hover:underline">
-                            {{ $disc->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
-                        </button>
-                    </form>
-                    <form method="POST" action="{{ route('manager.products.discounts.destroy', [$product, $disc]) }}"
-                          onsubmit="return confirm('Hapus diskon ini?')">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="text-xs text-red-500 hover:underline">Hapus</button>
-                    </form>
-                </div>
+    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700" style="margin-right: 150px;">Aktif</span>
+@elseif(!$disc->is_active)
+    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500" style="margin-right: 150px;">Nonaktif</span>
+@else
+    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-600" style="margin-right: 150px;">Kadaluarsa</span>
+@endif
+                <div class="flex items-center justify-center gap-2">
+    <form method="POST" action="{{ route('manager.products.discounts.toggle', [$product, $disc]) }}">
+        @csrf @method('PATCH')
+        <button type="submit"
+    class="px-2 py-0.5 rounded-md text-xs font-semibold transition-colors
+        {{ $disc->is_active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200' }}">
+    {{ $disc->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+</button>
+    </form>
+    <form method="POST" action="{{ route('manager.products.discounts.destroy', [$product, $disc]) }}"
+          onsubmit="return confirm('Hapus diskon ini?')">
+        @csrf @method('DELETE')
+        <button type="submit"
+    class="px-2 py-0.5 rounded-md text-xs font-semibold bg-red-100 text-red-600 hover:bg-red-200 transition-colors">
+    Hapus
+</button>
+    </form>
+</div>
             </div>
             @empty
             <div class="py-8 text-center text-gray-400 text-sm">Belum ada diskon untuk produk ini</div>
@@ -358,7 +394,14 @@ document.addEventListener('alpine:init', () => {
         variants: @json($variants),
 
         addVariant() {
-            this.variants.push({ name: '', type: 'ukuran', price_adjustment: 0, stock: 0, is_available: true });
+            this.variants.push({ 
+                id: null,   // ← tambah ini
+                name: '', 
+                type: 'ukuran', 
+                price_adjustment: 0, 
+                stock: 0, 
+                is_available: false 
+            });
         },
         removeVariant(i) { this.variants.splice(i, 1); }
     }));
@@ -386,6 +429,14 @@ function previewImage(input) {
 function updateDiscountLabel(type) {
     document.getElementById('discount-unit').textContent = type === 'percentage' ? '(%)' : '(Rp)';
 }
+// Auto hide flash message
+setTimeout(() => {
+    document.querySelectorAll('.bg-green-50, .bg-red-50').forEach(el => {
+        el.style.transition = 'opacity 0.5s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+    });
+}, 3000);
 </script>
 @endpush
 @endsection

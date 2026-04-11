@@ -69,14 +69,18 @@ class PollController extends Controller
         $storeId = $request->get('_store_id');
 
         $orders = Order::forStore($storeId)
-            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->with('table')
+            ->whereDate('created_at', today())
             ->latest()
             ->limit(50)
             ->get()
             ->map(fn($o) => [
-                'id'      => $o->id,
-                'status'  => $o->status,
-                'is_paid' => $o->isFullyPaid(),
+                'id'            => $o->id,
+                'order_number'  => $o->order_number,
+                'status'        => $o->status,
+                'is_paid'       => $o->isFullyPaid(),
+                'table'         => $o->table?->number,
+                'customer_name' => $o->customer_name,
             ]);
 
         return response()->json($orders);

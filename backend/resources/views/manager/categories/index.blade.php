@@ -102,19 +102,15 @@
                             onmouseout="this.style.backgroundColor='#fff8ec'">
                             Edit
                         </button>
-                        @if($category->products_count === 0)
-                            <form method="POST" action="{{ route('manager.categories.destroy', $category) }}"
-                                  x-on:submit.prevent="if(confirm('Hapus kategori {{ $category->name }}?')) $el.submit()">
-                                @csrf @method('DELETE')
-                                <button type="submit"
-                                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
-                                    Hapus
-                                </button>
-                            </form>
-                        @else
-                            <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-300 bg-gray-50 border border-gray-200 rounded-lg cursor-not-allowed"
-                                  title="Ada produk di kategori ini">Hapus</span>
-                        @endif
+                       <form method="POST" 
+                        action="{{ route('manager.categories.destroy', $category) }}"
+                        onsubmit="return confirmDeleteCategory('{{ addslashes($category->name) }}', {{ $category->products_count ?? 0 }})">
+                        @csrf @method('DELETE')
+                        <button type="submit"
+                                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
+                            Hapus
+                        </button>
+                    </form>
                     </div>
                 </div>
 
@@ -239,4 +235,18 @@
     }
 </script>
 @endif
+    @push('scripts')
+    <script>
+    function confirmDeleteCategory(name, productCount) {
+        if (productCount > 0) {
+            return confirm(
+                `Hapus kategori "${name}"?\n\n` +
+                `Kategori ini memiliki ${productCount} produk aktif.\n` +
+                `Produk-produk tersebut akan dipindah ke "Tanpa Kategori".`
+            );
+        }
+        return confirm(`Hapus kategori "${name}"?`);
+    }
+    </script>
+    @endpush
 @endsection

@@ -67,10 +67,10 @@ class ProductController extends Controller
     public function edit(Product $product): View
     {
         $categories = Category::where('store_id', $product->store_id)->get();
-
         $product->load('variants', 'discounts');
 
         $variants = $product->variants->map(fn($v) => [
+            'id'               => $v->id,           // ← tambah id
             'name'             => $v->name,
             'type'             => $v->type,
             'price_adjustment' => (float) $v->price_adjustment,
@@ -122,6 +122,7 @@ class ProductController extends Controller
     {
         $data = $request->validate([
             'variants'                    => ['required', 'array', 'min:1'],
+            'variants.*.id'               => ['nullable', 'integer'],  // ← tambah id
             'variants.*.name'             => ['required', 'string', 'max:100'],
             'variants.*.type'             => ['required', 'string', 'max:50'],
             'variants.*.price_adjustment' => ['required', 'numeric'],
@@ -130,16 +131,33 @@ class ProductController extends Controller
         ]);
 
         DB::transaction(function () use ($product, $data) {
-            $product->variants()->delete();
+            $submittedIds = collect($data['variants'])->pluck('id')->filter()->values();
+
+            // Hapus varian yang tidak ada di submit (user klik hapus lalu simpan)
+            $product->variants()->whereNotIn('id', $submittedIds)->delete();
+
             foreach ($data['variants'] as $i => $v) {
-                $product->variants()->create([
-                    'name'             => $v['name'],
-                    'type'             => $v['type'],
-                    'price_adjustment' => $v['price_adjustment'],
-                    'stock'            => $v['stock'],
-                    'is_available'     => isset($v['is_available']) ? 1 : 0,
-                    'sort_order'       => $i,
-                ]);
+                if (!empty($v['id'])) {
+                    // Update existing
+                    $product->variants()->where('id', $v['id'])->update([
+                        'name'             => $v['name'],
+                        'type'             => $v['type'],
+                        'price_adjustment' => $v['price_adjustment'],
+                        'stock'            => $v['stock'],
+                        'is_available'     => isset($v['is_available']) ? 1 : 0,
+                        'sort_order'       => $i,
+                    ]);
+                } else {
+                    // Create new
+                    $product->variants()->create([
+                        'name'             => $v['name'],
+                        'type'             => $v['type'],
+                        'price_adjustment' => $v['price_adjustment'],
+                        'stock'            => $v['stock'],
+                        'is_available'     => isset($v['is_available']) ? 1 : 0,
+                        'sort_order'       => $i,
+                    ]);
+                }
             }
         });
 

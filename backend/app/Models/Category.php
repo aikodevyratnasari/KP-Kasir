@@ -30,6 +30,9 @@ class Category extends Model
 
     public function hasProducts(): bool
     {
-        return $this->products()->whereNull('deleted_at')->exists();
+        return \DB::table('products')
+            ->where('category_id', $this->id)
+            ->whereNull('deleted_at')
+            ->exists();
     }
 }

@@ -20,6 +20,12 @@
         .main-content   { transition: padding-left 0.25s cubic-bezier(0.4,0,0.2,1); }
     </style>
 </head>
+
+{{-- Global Order Notification --}}
+@auth
+    <script src="{{ asset('js/order-notif.js') }}?v={{ filemtime(public_path('js/order-notif.js')) }}"></script>
+@endauth
+
 <body class="font-sans antialiased bg-gray-100">
 
 <div x-data="{ open: localStorage.getItem('sidebarOpen') === 'true' }"

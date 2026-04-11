@@ -159,7 +159,8 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
 
             Route::get('receipts/{payment}',       [ReceiptController::class, 'show'])->name('receipts.show');
             Route::get('receipts/{payment}/print', [ReceiptController::class, 'print'])->name('receipts.print');
-
+            Route::post('receipts/{payment}/email', [ReceiptController::class, 'sendEmail'])->name('receipts.send-email');
+            
             Route::get('tables', [TableController::class, 'index'])->name('tables.index');
 
             Route::get('reservations/create',           [TableController::class, 'createReservation'])->name('reservations.create');
