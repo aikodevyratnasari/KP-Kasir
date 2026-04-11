@@ -19,9 +19,11 @@ class CategoryController extends Controller
     {
         $storeId    = $request->get('_store_id');
         $categories = Category::where('store_id', $storeId)
-        ->withCount(['products' => fn($q) => $q->whereNull('deleted_at')])
-        ->latest()
-        ->paginate(20);
+            ->withCount([
+                'products as products_count' => fn($q) => $q->whereNull('products.deleted_at')
+            ])
+            ->latest()
+            ->paginate(20);
 
         return view('manager.categories.index', compact('categories'));
     }
@@ -83,7 +85,12 @@ class CategoryController extends Controller
     public function destroy(Category $category): RedirectResponse
     {
         $this->authorizeStore($category->store_id);
-        abort_if($category->hasProducts(), 422, 'Tidak dapat menghapus kategori yang masih memiliki produk.');
+
+        // Set category_id produk menjadi null (uncategorized)
+        \DB::table('products')
+            ->where('category_id', $category->id)
+            ->whereNull('deleted_at')
+            ->update(['category_id' => null]);
 
         if ($category->image) {
             Storage::disk('public')->delete($category->image);
@@ -94,7 +101,7 @@ class CategoryController extends Controller
 
         return redirect()
             ->route('manager.categories.index')
-            ->with('success', 'Kategori dihapus');
+            ->with('success', "Kategori {$category->name} dihapus. Produk dipindah ke Tanpa Kategori.");
     }
 
     private function authorizeStore(int $storeId): void

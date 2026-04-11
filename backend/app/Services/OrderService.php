@@ -290,6 +290,11 @@ class OrderService
         $date   = now()->format('Ymd');
         $prefix = "ORD-{$date}-";
 
+        // Gunakan advisory lock PostgreSQL agar tidak race condition
+        // Lock per store agar tidak saling blokir antar store
+        $lockKey = crc32("order_number_{$storeId}_{$date}");
+        \DB::statement("SELECT pg_advisory_xact_lock({$lockKey})");
+
         $last = Order::where('order_number', 'like', $prefix . '%')
             ->where('store_id', $storeId)
             ->orderByDesc('order_number')
