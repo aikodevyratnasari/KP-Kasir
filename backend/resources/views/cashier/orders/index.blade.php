@@ -6,8 +6,8 @@
 <div class="space-y-5">
 
     {{-- Filter --}}
-    <div class="card">
-        <form method="GET" class="flex flex-wrap gap-3 items-end">
+    <div class="card overflow-x-auto">
+        <form method="GET" class="flex gap-3 items-end min-w-max">
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Cari</label>
                 <input type="text" name="search" value="{{ request('search') }}"
@@ -40,7 +40,14 @@
                 <label class="block text-xs font-medium text-gray-600 mb-1">Sampai</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-input">
             </div>
-            <button type="submit" class="btn-primary text-sm">Filter</button>
+            <button type="submit"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
+            style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
+            onmouseover="this.style.backgroundColor='#1e3d8f';"
+            onmouseout="this.style.backgroundColor='#2D54BF';">
+            Filter
+            </button>
+            <!-- <button type="submit" class="btn-primary text-sm">Filter</button> -->
             <a href="{{ route('cashier.orders.index') }}" class="btn-secondary text-sm">Reset</a>
 
             <div class="ml-auto flex items-center gap-1.5 text-xs text-gray-400">
@@ -52,7 +59,8 @@
 
     {{-- Tabel --}}
     <div class="card p-0 overflow-hidden">
-        <table class="w-full text-sm">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[800px]">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Order</th>
@@ -62,15 +70,15 @@
                     <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Kasir</th>
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Bayar</th>
-                    <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
-                    <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase">Aksi</th>
+                    <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase whitespace-nowrap pr-8">Total</th>
+                    <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase whitespace-nowrap pr-8">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
             @forelse($orders as $order)
                 <tr id="order-row-{{ $order->id }}" data-order-id="{{ $order->id }}"
                     class="hover:bg-gray-50 transition-colors">
-                    <td class="py-3 px-4">
+                    <td class="py-3 px-4 whitespace-nowrap">
                         <p class="font-semibold text-gray-900">{{ $order->order_number }}</p>
                         <p class="text-xs text-gray-400">{{ $order->created_at->format('d M, H:i') }}</p>
                     </td>
@@ -101,10 +109,10 @@
                             @endif
                         </span>
                     </td>
-                    <td class="py-3 px-4 text-right font-semibold">
+                    <td class="py-3 px-4 text-right font-semibold whitespace-nowrap align-middle">
                         Rp {{ number_format($order->total_amount, 0, ',', '.') }}
                     </td>
-                    <td class="py-3 px-4 text-right">
+                    <td class="py-3 px-4 text-right align-middle">
                         <a href="{{ route('cashier.orders.show', $order) }}"
                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
                            style="color: white; background-color: #16a34a; border: 1px solid #16a34a;"
@@ -130,11 +138,8 @@
             @endforelse
             </tbody>
         </table>
-        <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
-            {{ $orders->links() }}
-        </div>
     </div>
-
+</div>
 </div>
 @endsection
 

@@ -14,23 +14,25 @@ class ReportMail extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        private string $reportType,
-        private string $from,
-        private string $to,
-        private string $filePath,
-        private string $fileName,
+        public string $reportType,
+        public string $dateFrom,   // $from adalah reserved property Mailable (sender address) — jangan pakai $from
+        public string $dateTo,     // $to   adalah reserved property Mailable (recipients)      — jangan pakai $to
+        public string $filePath,
+        public string $fileName,
     ) {}
 
     public function envelope(): Envelope
     {
         $labels = [
-            'sales'   => 'Laporan Penjualan',
-            'products'=> 'Laporan Produk',
-            'revenue' => 'Analitik Revenue',
+            'sales'    => 'Laporan Penjualan',
+            'products' => 'Laporan Produk',
+            'revenue'  => 'Analitik Revenue',
+            'cashiers' => 'Laporan Kasir',
         ];
 
         return new Envelope(
-            subject: ($labels[$this->reportType] ?? 'Laporan') . ' · ' . $this->from . ' s/d ' . $this->to,
+            subject: ($labels[$this->reportType] ?? 'Laporan')
+                . ' · ' . $this->dateFrom . ' s/d ' . $this->dateTo,
         );
     }
 
@@ -38,8 +40,8 @@ class ReportMail extends Mailable
     {
         return new Content(view: 'emails.report', with: [
             'reportType' => $this->reportType,
-            'from'       => $this->from,
-            'to'         => $this->to,
+            'dateFrom'   => $this->dateFrom,
+            'dateTo'     => $this->dateTo,
         ]);
     }
 

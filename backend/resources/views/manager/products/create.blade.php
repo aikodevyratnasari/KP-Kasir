@@ -116,7 +116,7 @@
                     </div>
                 </div>                
                 </div>
-</div>
+           </div>
 
 
              {{-- Tombol --}}
@@ -126,7 +126,7 @@
                         style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
                         onmouseover="this.style.backgroundColor='#f3f4f6';"
                         onmouseout="this.style.backgroundColor='white';">
-                        Batal
+                        Kembali
                     </a>
                     <button type="submit"
                         class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
@@ -136,7 +136,7 @@
                         Simpan Produk
                     </button>
                </div>
-        </form>
+            </form>
     </div>
 
 

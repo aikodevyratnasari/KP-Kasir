@@ -13,20 +13,30 @@
 <body>
 <div class="card">
     <div class="header">
-        <div class="title">
-            @php $labels = ['sales'=>'Laporan Penjualan','products'=>'Laporan Produk','revenue'=>'Analitik Revenue']; @endphp
-            {{ $labels[$reportType] ?? 'Laporan' }}
+        @php
+            $labels = [
+                'sales'    => 'Laporan Penjualan',
+                'products' => 'Laporan Produk',
+                'revenue'  => 'Analitik Revenue',
+                'cashiers' => 'Laporan Kasir',
+            ];
+        @endphp
+        <div class="title">{{ $labels[$reportType] ?? 'Laporan' }}</div>
+        <div style="font-size:13px; color:#6b7280; margin-top:6px;">
+            Periode: {{ $dateFrom }} s/d {{ $dateTo }}
         </div>
-        <div style="font-size:13px; color:#6b7280; margin-top:6px;">Periode: {{ $from }} s/d {{ $to }}</div>
     </div>
     <p style="font-size:14px; color:#374151;">Halo,</p>
     <p style="font-size:14px; color:#374151; margin-top:8px;">
-        Terlampir {{ $labels[$reportType] ?? 'laporan' }} untuk periode <strong>{{ $from }}</strong> hingga <strong>{{ $to }}</strong>.
+        Terlampir {{ $labels[$reportType] ?? 'laporan' }} untuk periode
+        <strong>{{ $dateFrom }}</strong> hingga <strong>{{ $dateTo }}</strong>.
     </p>
-    <p style="font-size:13px; color:#6b7280; margin-top:16px;">Silakan buka file lampiran untuk melihat detail laporan.</p>
+    <p style="font-size:13px; color:#6b7280; margin-top:16px;">
+        Silakan buka file lampiran untuk melihat detail laporan.
+    </p>
 </div>
 <div class="footer">
-    <p>Email ini dikirim otomatis dari sistem POS.</p>
+    <p>Email ini dikirim otomatis dari sistem DePOS.</p>
 </div>
 </body>
 </html>

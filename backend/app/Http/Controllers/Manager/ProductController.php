@@ -38,7 +38,6 @@ class ProductController extends Controller
             ->withQueryString();
 
         $categories = Category::where('store_id', $storeId)->get();
-
         return view('manager.products.index', compact('products', 'categories'));
     }
 
@@ -57,7 +56,6 @@ class ProductController extends Controller
         $product = Product::create($data);
         ActivityLogService::logCreated($product);
 
-        // FIX: redirect ke edit dengan tab variants terbuka agar bisa langsung tambah varian
         return redirect()
             ->route('manager.products.edit', $product)
             ->with('success', "Produk {$product->name} berhasil ditambahkan. Sekarang tambahkan variasi jika diperlukan.")
@@ -70,7 +68,7 @@ class ProductController extends Controller
         $product->load('variants', 'discounts');
 
         $variants = $product->variants->map(fn($v) => [
-            'id'               => $v->id,           // ← tambah id
+            'id'               => $v->id,
             'name'             => $v->name,
             'type'             => $v->type,
             'price_adjustment' => (float) $v->price_adjustment,
@@ -91,8 +89,7 @@ class ProductController extends Controller
         }
         $product->update($data);
         ActivityLogService::logUpdated($product, $old, $product->toArray());
-        return redirect()->route('manager.products.index')
-            ->with('success', "Produk diperbarui.");
+        return redirect()->route('manager.products.index')->with('success', "Produk diperbarui.");
     }
 
     public function destroy(Product $product): RedirectResponse
@@ -121,24 +118,24 @@ class ProductController extends Controller
     public function storeVariant(Request $request, Product $product): RedirectResponse
     {
         $data = $request->validate([
-            'variants'                    => ['required', 'array', 'min:1'],
-            'variants.*.id'               => ['nullable', 'integer'],  // ← tambah id
-            'variants.*.name'             => ['required', 'string', 'max:100'],
-            'variants.*.type'             => ['required', 'string', 'max:50'],
-            'variants.*.price_adjustment' => ['required', 'numeric'],
-            'variants.*.stock'            => ['required', 'integer', 'min:0'],
+            'variants'                    => ['nullable', 'array'],
+            'variants.*.id'               => ['nullable', 'integer'],
+            'variants.*.name'             => ['required_with:variants.*', 'string', 'max:100'],
+            'variants.*.type'             => ['required_with:variants.*', 'string', 'max:50'],
+            'variants.*.price_adjustment' => ['required_with:variants.*', 'numeric'],
+            'variants.*.stock'            => ['required_with:variants.*', 'integer', 'min:0'],
             'variants.*.is_available'     => ['nullable', 'boolean'],
         ]);
 
         DB::transaction(function () use ($product, $data) {
-            $submittedIds = collect($data['variants'])->pluck('id')->filter()->values();
+            $variants     = $data['variants'] ?? [];
+            $submittedIds = collect($variants)->pluck('id')->filter()->values();
 
-            // Hapus varian yang tidak ada di submit (user klik hapus lalu simpan)
+            // Hapus semua varian yang tidak di-submit (termasuk hapus semua jika array kosong)
             $product->variants()->whereNotIn('id', $submittedIds)->delete();
 
-            foreach ($data['variants'] as $i => $v) {
+            foreach ($variants as $i => $v) {
                 if (!empty($v['id'])) {
-                    // Update existing
                     $product->variants()->where('id', $v['id'])->update([
                         'name'             => $v['name'],
                         'type'             => $v['type'],
@@ -148,7 +145,6 @@ class ProductController extends Controller
                         'sort_order'       => $i,
                     ]);
                 } else {
-                    // Create new
                     $product->variants()->create([
                         'name'             => $v['name'],
                         'type'             => $v['type'],
@@ -188,7 +184,6 @@ class ProductController extends Controller
         $data['min_order_amount'] = $data['min_order_amount'] ?? 0;
 
         $product->discounts()->create($data);
-
         return back()->with('success', 'Diskon berhasil ditambahkan.')->with('tab', 'discounts');
     }
 
@@ -237,18 +232,15 @@ class ProductController extends Controller
             }
             $data['store_id']  = $storeId;
             $data['is_active'] = isset($data['is_active']) ? 1 : 0;
-
             $items = $data['items'];
             unset($data['items']);
-
             $bundle = BundlePackage::create($data);
             foreach ($items as $item) {
                 $bundle->items()->create($item);
             }
         });
 
-        return redirect()->route('manager.bundles.index')
-            ->with('success', 'Paket bundling berhasil dibuat.');
+        return redirect()->route('manager.bundles.index')->with('success', 'Paket bundling berhasil dibuat.');
     }
 
     public function editBundle(BundlePackage $bundle): View
@@ -282,7 +274,6 @@ class ProductController extends Controller
             $data['is_active'] = isset($data['is_active']) ? 1 : 0;
             $items = $data['items'];
             unset($data['items']);
-
             $bundle->update($data);
             $bundle->items()->delete();
             foreach ($items as $item) {
@@ -290,15 +281,13 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('manager.bundles.index')
-            ->with('success', 'Paket bundling diperbarui.');
+        return redirect()->route('manager.bundles.index')->with('success', 'Paket bundling diperbarui.');
     }
 
     public function destroyBundle(BundlePackage $bundle): RedirectResponse
     {
         if ($bundle->image) Storage::disk('public')->delete($bundle->image);
         $bundle->delete();
-        return redirect()->route('manager.bundles.index')
-            ->with('success', 'Paket bundling dihapus.');
+        return redirect()->route('manager.bundles.index')->with('success', 'Paket bundling dihapus.');
     }
 }

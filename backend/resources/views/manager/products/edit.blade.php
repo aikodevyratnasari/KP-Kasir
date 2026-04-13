@@ -45,13 +45,6 @@
         </button>
     </div>
 
-    {{-- Flash success --}}
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 text-sm px-4 py-3 rounded-lg">
-        {{ session('success') }}
-    </div>
-    @endif
-
     {{-- ══ TAB: INFO ══ --}}
     <div x-show="tab === 'info'">
         <form method="POST" action="{{ route('manager.products.update', $product) }}" enctype="multipart/form-data">
@@ -165,14 +158,13 @@
                 </div>
                 </div>
             </div>
-
             <div class="flex gap-3 mt-3 justify-end">
                     <a href="{{ route('manager.products.index') }}"
                         class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
                         style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
                         onmouseover="this.style.backgroundColor='#f3f4f6';"
                         onmouseout="this.style.backgroundColor='white';">
-                        Batal
+                        Kembali
                     </a>
                     <button type="submit"
                         class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
@@ -264,9 +256,8 @@
                     Belum ada variasi. Klik "+ Tambah Variasi" untuk menambahkan.
                 </div>
 
-                <div class="flex justify-end mt-4" x-show="variants.length > 0">
+                <div class="flex justify-end mt-4">
                     <button type="submit"
-
                         class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
                         style="background-color: #2D54BF; border: 1px solid #2D54BF;"
                         onmouseover="this.style.backgroundColor='#1e3d8f'"
@@ -332,15 +323,15 @@
             </form>
         </div>
 
-        <div class="card p-0 overflow-hidden">
+        <div class="card p-0 overflow-x-auto">
             <div class="px-4 py-3 border-b border-gray-100">
                 <h3 class="font-semibold text-gray-800">Daftar Diskon ({{ $product->discounts->count() }})</h3>
             </div>
             @forelse($product->discounts as $disc)
-            <div class="px-4 py-3 flex items-center gap-4 border-b border-gray-50 last:border-0 hover:bg-gray-50">
+            <div class="px-4 py-3 flex items-center justify-between gap-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 min-w-[700px]">
                 <div class="flex-1 min-w-0">
-                    <p class="font-medium text-gray-900 text-sm">{{ $disc->name }}</p>
-                    <p class="text-xs text-gray-500 mt-0.5">
+                    <p class="font-medium text-gray-900 text-sm whitespace-nowrap">{{ $disc->name }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5 whitespace-nowrap">
                         <span class="font-semibold text-indigo-600">
                             {{ $disc->type === 'percentage' ? $disc->value . '%' : 'Rp ' . number_format($disc->value, 0, ',', '.') }}
                         </span>
@@ -352,18 +343,18 @@
                     </p>
                 </div>
                 @if($disc->isCurrentlyActive())
-    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700" style="margin-right: 150px;">Aktif</span>
-@elseif(!$disc->is_active)
-    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500" style="margin-right: 150px;">Nonaktif</span>
-@else
-    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-600" style="margin-right: 150px;">Kadaluarsa</span>
-@endif
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700" style="margin-right: 150px; margin-left: 120px;">Aktif</span>
+                @elseif(!$disc->is_active)
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500" style="margin-right: 150px; margin-left: 120px;">Nonaktif</span>
+                @else
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-600" style="margin-right: 150px; margin-left: 120px;">Kadaluarsa</span>
+                @endif
                 <div class="flex items-center justify-center gap-2">
     <form method="POST" action="{{ route('manager.products.discounts.toggle', [$product, $disc]) }}">
         @csrf @method('PATCH')
         <button type="submit"
-    class="px-2 py-0.5 rounded-md text-xs font-semibold transition-colors
-        {{ $disc->is_active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200' }}">
+    class="px-3 py-1 rounded-lg text-sm font-medium transition-colors
+        {{ $disc->is_active ? 'bg-yellow-400 text-white hover:bg-yellow-500' : 'bg-green-500 text-white hover:bg-green-600' }}">
     {{ $disc->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
 </button>
     </form>
@@ -371,7 +362,10 @@
           onsubmit="return confirm('Hapus diskon ini?')">
         @csrf @method('DELETE')
         <button type="submit"
-    class="px-2 py-0.5 rounded-md text-xs font-semibold bg-red-100 text-red-600 hover:bg-red-200 transition-colors">
+    class="px-3 py-1 rounded-lg text-sm font-medium transition-colors"
+    style="background-color: #ef4444; color: white;"
+    onmouseover="this.style.backgroundColor='#dc2626'"
+    onmouseout="this.style.backgroundColor='#ef4444'">
     Hapus
 </button>
     </form>

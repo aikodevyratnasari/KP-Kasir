@@ -3,14 +3,7 @@
 @section('page-title', 'Pengaturan Toko')
 
 @section('content')
-<div class="max-w-2xl space-y-5">
-
-    @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            {{ session('success') }}
-        </div>
-    @endif
+<div class="max-w-2xl space-y-5 mx-auto">
 
     <form method="POST" action="{{ route('manager.settings.update') }}">
         @csrf @method('PATCH')
@@ -50,12 +43,10 @@
                 <p class="text-xs text-gray-500 mt-0.5">Pajak diterapkan otomatis saat kasir membuat pesanan</p>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4 items-end">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Tarif Pajak (%)
-                        <span class="text-gray-400 font-normal text-xs">— isikan 0 jika tidak ada pajak</span>
-                    </label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tarif Pajak (%)</label>
+                        <p class="text-xs text-gray-400 mb-1">Isikan 0 jika tidak ada pajak</p>
                     <div class="relative">
                         <input type="number" name="tax_rate"
                                value="{{ old('tax_rate', $store->tax_rate) }}"
@@ -92,7 +83,7 @@
                     </div>
                     <div class="flex justify-between pt-1.5 border-t border-gray-200">
                         <span class="font-semibold text-gray-700">Total</span>
-                        <span class="font-bold text-indigo-600" x-text="'Rp ' + fmt(Math.round((Number(price)||0) * (1 + taxRate/100)))"></span>
+                        <span class="font-bold text-black-600" x-text="'Rp ' + fmt(Math.round((Number(price)||0) * (1 + taxRate/100)))"></span>
                     </div>
                 </div>
             </div>
@@ -110,7 +101,13 @@
         </div>
 
         <div class="flex gap-3">
-            <button type="submit" class="btn-primary">Simpan Pengaturan</button>
+            <button type="submit"
+                        class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                        onmouseover="this.style.backgroundColor='#1e3d8f'"
+                        onmouseout="this.style.backgroundColor='#2D54BF'">
+                        Simpan Pengatuan
+            </button>
         </div>
     </form>
 </div>
@@ -133,6 +130,13 @@ function taxPreview(initialRate) {
         }
     }
 }
+setTimeout(() => {
+    document.querySelectorAll('.bg-green-50, .bg-red-50').forEach(el => {
+        el.style.transition = 'opacity 0.5s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+    });
+}, 2000);
 </script>
 @endpush
 @endsection

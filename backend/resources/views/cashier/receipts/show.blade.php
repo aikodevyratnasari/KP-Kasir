@@ -46,7 +46,7 @@
             Kirim Struk via Email
         </h2>
         <form method="POST"
-              action="{{ route('cashier.receipts.email', $payment) }}"
+              action="{{ route('cashier.receipts.send-email', $payment) }}"
               class="flex gap-2">
             @csrf
             <input type="email"

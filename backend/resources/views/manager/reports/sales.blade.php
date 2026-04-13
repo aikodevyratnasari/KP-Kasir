@@ -19,6 +19,15 @@
             </div>
             <button type="submit" class="btn-primary">Filter</button>
             <a href="{{ route('manager.reports.sales') }}" class="btn-secondary">Reset</a>
+
+            {{-- Tombol Download & Kirim --}}
+            <div class="ml-auto">
+                <x-manager.reports.actions
+                    type="sales"
+                    :from="$from->format('Y-m-d')"
+                    :to="$to->format('Y-m-d')"
+                />
+            </div>
         </form>
     </div>
 
