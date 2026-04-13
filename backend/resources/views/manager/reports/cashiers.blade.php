@@ -1,41 +1,85 @@
 @extends('layouts.app')
 @section('title', 'Laporan Kasir')
+@section('page-title', 'Laporan Kasir')
 
 @section('content')
 <div class="space-y-6">
-    <h1 class="page-title">Laporan Performa Kasir</h1>
 
+    {{-- Filter --}}
     <div class="card">
         <form method="GET" class="flex flex-wrap gap-3 items-end">
-            <div><label class="block text-xs font-medium text-gray-600 mb-1">Dari</label>
-                <input type="date" name="from" value="{{ $from->format('Y-m-d') }}" class="form-input w-auto"></div>
-            <div><label class="block text-xs font-medium text-gray-600 mb-1">Sampai</label>
-                <input type="date" name="to" value="{{ $to->format('Y-m-d') }}" class="form-input w-auto"></div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Dari</label>
+                <input type="date" name="from" value="{{ $from->format('Y-m-d') }}" class="form-input w-auto">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Sampai</label>
+                <input type="date" name="to" value="{{ $to->format('Y-m-d') }}" class="form-input w-auto">
+            </div>
             <button type="submit" class="btn-primary">Filter</button>
+            <a href="{{ route('manager.reports.cashiers') }}" class="btn-secondary">Reset</a>
         </form>
     </div>
 
+    {{-- Summary --}}
+    @php
+        $cashiers   = $data['cashiers']    ?? collect();
+        $totalSales = $data['total_sales'] ?? 0;
+        $best       = $data['best']        ?? null;
+    @endphp
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="card">
+            <p class="text-xs text-gray-500 uppercase font-medium">Total Penjualan</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">Rp {{ number_format($totalSales, 0, ',', '.') }}</p>
+        </div>
+        <div class="card">
+            <p class="text-xs text-gray-500 uppercase font-medium">Jumlah Kasir Aktif</p>
+            <p class="text-2xl font-bold text-indigo-600 mt-1">{{ $cashiers->count() }}</p>
+        </div>
+        <div class="card">
+            <p class="text-xs text-gray-500 uppercase font-medium">Kasir Terbaik</p>
+            <p class="text-xl font-bold text-gray-900 mt-1">{{ $best->cashier ?? '-' }}</p>
+            @if($best)
+                <p class="text-xs text-gray-400 mt-0.5">Rp {{ number_format($best->total_sales, 0, ',', '.') }}</p>
+            @endif
+        </div>
+    </div>
+
+    {{-- Tabel --}}
     <div class="card">
-        <table class="w-full text-sm">
-            <thead><tr class="border-b border-gray-100">
-                <th class="py-2 text-left text-gray-500">Nama Kasir</th>
-                <th class="py-2 text-right text-gray-500">Total Pesanan</th>
-                <th class="py-2 text-right text-gray-500">Total Penjualan</th>
-                <th class="py-2 text-right text-gray-500">Rata-rata/Pesanan</th>
-            </tr></thead>
-            <tbody>
-            @forelse($data ?? [] as $row)
-                <tr class="border-b border-gray-50 hover:bg-gray-50">
-                    <td class="py-2 font-medium text-gray-900">{{ $row->cashier_name ?? '-' }}</td>
-                    <td class="py-2 text-right">{{ $row->total_orders ?? 0 }}</td>
-                    <td class="py-2 text-right font-semibold">Rp {{ number_format($row->total_sales ?? 0, 0, ',', '.') }}</td>
-                    <td class="py-2 text-right">Rp {{ number_format($row->avg_order ?? 0, 0, ',', '.') }}</td>
-                </tr>
-            @empty
-                <tr><td colspan="4" class="py-6 text-center text-gray-400">Tidak ada data</td></tr>
-            @endforelse
-            </tbody>
-        </table>
+        <h2 class="font-semibold text-gray-800 mb-4">Performa per Kasir</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-100">
+                        <th class="py-2 text-left text-gray-500 font-medium">Nama Kasir</th>
+                        <th class="py-2 text-right text-gray-500 font-medium">Total Pesanan</th>
+                        <th class="py-2 text-right text-gray-500 font-medium">Total Penjualan</th>
+                        <th class="py-2 text-right text-gray-500 font-medium">Rata-rata/Pesanan</th>
+                        <th class="py-2 text-right text-gray-500 font-medium">Avg Proses (mnt)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @forelse($cashiers as $row)
+                    <tr class="border-b border-gray-50 hover:bg-gray-50">
+                        {{-- Query alias: cashier (bukan cashier_name), order_count, total_sales, avg_order_value, avg_processing_min --}}
+                        <td class="py-2 font-medium text-gray-900">{{ $row->cashier ?? '-' }}</td>
+                        <td class="py-2 text-right">{{ $row->order_count ?? 0 }}</td>
+                        <td class="py-2 text-right font-semibold">Rp {{ number_format($row->total_sales ?? 0, 0, ',', '.') }}</td>
+                        <td class="py-2 text-right">Rp {{ number_format($row->avg_order_value ?? 0, 0, ',', '.') }}</td>
+                        <td class="py-2 text-right text-gray-500">
+                            {{ $row->avg_processing_min ? number_format($row->avg_processing_min, 1) : '-' }}
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="5" class="py-6 text-center text-gray-400">Tidak ada data untuk periode ini</td>
+                    </tr>
+                @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 @endsection

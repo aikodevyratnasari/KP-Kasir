@@ -3,12 +3,9 @@
 @section('page-title', 'Buat Reservasi')
 
 @section('content')
-<div class="max-w-xl space-y-5">
-
-    <a href="{{ route('cashier.tables.index') }}" class="text-sm text-gray-400 hover:text-gray-600">← Kembali ke Status Meja</a>
-
+<div class="max-w-xl space-y-5 mx-auto">
     <div class="card space-y-4">
-        <h3 class="font-semibold text-gray-800">Informasi Reservasi</h3>
+        <h3 class="font-semibold text-gray-800 border-b border-gray-200 pb-3">Informasi Reservasi</h3>
 
         <form method="POST" action="{{ route('cashier.reservations.store') }}">
             @csrf
@@ -76,13 +73,23 @@
                           placeholder="Permintaan khusus, alergi, dll..."
                           class="form-input">{{ old('notes') }}</textarea>
             </div>
-
-            <div class="flex gap-3">
-                <button type="submit" class="btn-primary">Simpan Reservasi</button>
-                <a href="{{ route('cashier.tables.index') }}" class="btn-secondary">Batal</a>
             </div>
+            <div class="flex gap-3 justify-between">
+                <a href="{{ route('cashier.tables.index') }}"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+                        onmouseover="this.style.backgroundColor='#f3f4f6';"
+                        onmouseout="this.style.backgroundColor='white';">
+                        Kembali
+                    </a>
+                <button type="submit"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
+                style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f';"
+                onmouseout="this.style.backgroundColor='#2D54BF';">
+                Simpan Reservasi
+                </button>
+        </div>
         </form>
     </div>
-
-</div>
 @endsection

@@ -9,18 +9,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
-// Tambah use statements:
 use App\Exports\SalesReportExport;
 use App\Exports\ProductReportExport;
 use App\Exports\RevenueReportExport;
+use App\Exports\CashierReportExport;
 use App\Mail\ReportMail;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
     public function __construct(private ReportService $reportService) {}
+
+    // ── Reports Index ────────────────────────────────────────────────────
+    public function index(): View
+    {
+        return view('manager.reports.index');
+    }
 
     // ── Dashboard ────────────────────────────────────────────────────────
     public function dashboard(Request $request): View
@@ -48,7 +54,10 @@ class ReportController extends Controller
         $storeId = $request->get('_store_id');
         $period  = $request->period ?? 'today';
 
-        [$from, $to] = match ($period) {
+        // FIX: [$a,$b] = match(){} causes ParseError when match arms contain arrays.
+        // The parser misreads the ']' inside match arms as closing the outer '['
+        // of the destructuring. Assign to $range first, then destructure.
+        $range = match ($period) {
             'week'   => [now()->startOfWeek(),  now()->endOfWeek()],
             'month'  => [now()->startOfMonth(), now()->endOfMonth()],
             'year'   => [now()->startOfYear(),  now()->endOfYear()],
@@ -59,6 +68,7 @@ class ReportController extends Controller
             ],
             default  => [now()->startOfDay(), now()->endOfDay()],
         };
+        [$from, $to] = $range;
 
         $raw = $this->reportService->dashboardAnalytics($storeId, $from, $to);
 
@@ -82,18 +92,16 @@ class ReportController extends Controller
         [$from, $to] = $this->parseDates($request);
         $raw = $this->reportService->salesReport($request->get('_store_id'), $from, $to);
 
-        $data = [
-            'from'             => $from,
-            'to'               => $to,
-            'totalSales'       => $raw['totalSales']  ?? 0,
-            'totalOrders'      => $raw['orderCount']  ?? 0,
-            'avgTransaction'   => $raw['avgSale']     ?? 0,
-            'byPaymentMethod'  => collect($raw['byMethod'] ?? [])->values(),
-            'byOrderType'      => $raw['byType']      ?? collect(),
-            'dailyTrend'       => $raw['daily']       ?? collect(),
-        ];
-
-        return view('manager.reports.sales', $data);
+        return view('manager.reports.sales', [
+            'from'            => $from,
+            'to'              => $to,
+            'totalSales'      => $raw['totalSales']  ?? 0,
+            'totalOrders'     => $raw['orderCount']  ?? 0,
+            'avgTransaction'  => $raw['avgSale']     ?? 0,
+            'byPaymentMethod' => collect($raw['byMethod'] ?? [])->values(),
+            'byOrderType'     => $raw['byType']      ?? collect(),
+            'dailyTrend'      => $raw['daily']       ?? collect(),
+        ]);
     }
 
     // ── Product Report ───────────────────────────────────────────────────
@@ -122,46 +130,37 @@ class ReportController extends Controller
     }
 
     // ── DOWNLOAD REPORT ──────────────────────────────────────────────────
-    public function download(Request $request, string $type): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\Response
+    public function download(Request $request, string $type): mixed
     {
         $storeId = $request->get('_store_id');
-        $from    = $request->from ?? now()->startOfMonth()->format('Y-m-d');
-        $to      = $request->to   ?? now()->format('Y-m-d');
+        $from    = $request->from   ?? now()->startOfMonth()->format('Y-m-d');
+        $to      = $request->to     ?? now()->format('Y-m-d');
         $format  = $request->format ?? 'xlsx';
+        $period  = $request->period ?? 'daily';
 
-        $fromDate = \Carbon\Carbon::parse($from)->startOfDay();
-        $toDate   = \Carbon\Carbon::parse($to)->endOfDay();
+        $fromDate = Carbon::parse($from)->startOfDay();
+        $toDate   = Carbon::parse($to)->endOfDay();
 
-        $writerType = match($format) {
-            'csv'  => \Maatwebsite\Excel\Excel::CSV,
-            default => \Maatwebsite\Excel\Excel::XLSX,
-        };
+        // ── PDF ──────────────────────────────────────────────────────────
+        if ($format === 'pdf') {
+            $viewData = $this->buildPdfData($type, $storeId, $fromDate, $toDate, $from, $to, $period);
+            $fileName = "laporan-{$type}-{$from}-{$to}.pdf";
 
-        $ext      = $format === 'csv' ? 'csv' : 'xlsx';
-        $fileName = "laporan-{$type}-{$from}-{$to}.{$ext}";
+            return Pdf::loadView('manager.reports.pdf', $viewData)
+                ->setPaper('a4', 'portrait')
+                ->download($fileName);
+        }
 
-        $export = match($type) {
-            'sales' => new SalesReportExport(
-                dailyTrend:       $this->getDailyTrend($storeId, $fromDate, $toDate),
-                byPaymentMethod:  $this->getByPaymentMethod($storeId, $fromDate, $toDate),
-                byOrderType:      $this->getByOrderType($storeId, $fromDate, $toDate),
-                totalSales:       $this->getTotalSales($storeId, $fromDate, $toDate),
-                totalOrders:      $this->getTotalOrders($storeId, $fromDate, $toDate),
-                avgTransaction:   $this->getAvgTransaction($storeId, $fromDate, $toDate),
-                from: $from, to: $to,
-            ),
-            'products' => new ProductReportExport(
-                topByQty:     $this->getTopByQty($storeId, $fromDate, $toDate),
-                topByRevenue: $this->getTopByRevenue($storeId, $fromDate, $toDate),
-                from: $from, to: $to,
-            ),
-            'revenue' => new RevenueReportExport(
-                data:   $this->getRevenueData($storeId, $fromDate, $toDate, $request->period ?? 'daily'),
-                period: $request->period ?? 'daily',
-                from: $from, to: $to,
-            ),
-            default => abort(404),
-        };
+        // ── XLSX / CSV ────────────────────────────────────────────────────
+        $export = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period);
+
+        if ($format === 'csv') {
+            $fileName   = "laporan-{$type}-{$from}-{$to}.csv";
+            $writerType = \Maatwebsite\Excel\Excel::CSV;
+        } else {
+            $fileName   = "laporan-{$type}-{$from}-{$to}.xlsx";
+            $writerType = \Maatwebsite\Excel\Excel::XLSX;
+        }
 
         return Excel::download($export, $fileName, $writerType);
     }
@@ -174,41 +173,30 @@ class ReportController extends Controller
         $storeId = $request->get('_store_id');
         $from    = $request->from ?? now()->startOfMonth()->format('Y-m-d');
         $to      = $request->to   ?? now()->format('Y-m-d');
+        $period  = $request->period ?? 'daily';
 
-        $fromDate = \Carbon\Carbon::parse($from)->startOfDay();
-        $toDate   = \Carbon\Carbon::parse($to)->endOfDay();
+        $fromDate = Carbon::parse($from)->startOfDay();
+        $toDate   = Carbon::parse($to)->endOfDay();
 
-        $fileName = "laporan-{$type}-{$from}-{$to}.xlsx";
-        $filePath = storage_path("app/temp/{$fileName}");
+        $fileName    = "laporan-{$type}-{$from}-{$to}.xlsx";
+        $storagePath = "temp/{$fileName}";
 
-        if (!file_exists(storage_path('app/temp'))) {
-            mkdir(storage_path('app/temp'), 0755, true);
+        // Ensure temp directory exists
+        $tempDir = storage_path('app/temp');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
         }
 
-        $export = match($type) {
-            'sales' => new SalesReportExport(
-                dailyTrend:       $this->getDailyTrend($storeId, $fromDate, $toDate),
-                byPaymentMethod:  $this->getByPaymentMethod($storeId, $fromDate, $toDate),
-                byOrderType:      $this->getByOrderType($storeId, $fromDate, $toDate),
-                totalSales:       $this->getTotalSales($storeId, $fromDate, $toDate),
-                totalOrders:      $this->getTotalOrders($storeId, $fromDate, $toDate),
-                avgTransaction:   $this->getAvgTransaction($storeId, $fromDate, $toDate),
-                from: $from, to: $to,
-            ),
-            'products' => new ProductReportExport(
-                topByQty:     $this->getTopByQty($storeId, $fromDate, $toDate),
-                topByRevenue: $this->getTopByRevenue($storeId, $fromDate, $toDate),
-                from: $from, to: $to,
-            ),
-            'revenue' => new RevenueReportExport(
-                data:   $this->getRevenueData($storeId, $fromDate, $toDate, $request->period ?? 'daily'),
-                period: $request->period ?? 'daily',
-                from: $from, to: $to,
-            ),
-            default => abort(404),
-        };
+        $export = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period);
 
-        Excel::store($export, "temp/{$fileName}", 'local');
+        // Store the file, then resolve its absolute path via Storage::disk so the
+        // path is always correct regardless of storage configuration.
+        Excel::store($export, $storagePath, 'local');
+        $filePath = \Illuminate\Support\Facades\Storage::disk('local')->path($storagePath);
+
+        if (!file_exists($filePath)) {
+            return response()->json(['success' => false, 'message' => 'Gagal membuat file laporan.'], 500);
+        }
 
         try {
             Mail::to($request->email)->send(new ReportMail($type, $from, $to, $filePath, $fileName));
@@ -218,6 +206,67 @@ class ReportController extends Controller
             @unlink($filePath);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    // ── Build Export Object (XLSX/CSV) ────────────────────────────────────
+    private function buildExport(string $type, int $storeId, $fromDate, $toDate, string $from, string $to, string $period): mixed
+    {
+        return match ($type) {
+            'sales' => new SalesReportExport(
+                dailyTrend:      $this->getDailyTrend($storeId, $fromDate, $toDate),
+                byPaymentMethod: $this->getByPaymentMethod($storeId, $fromDate, $toDate),
+                byOrderType:     $this->getByOrderType($storeId, $fromDate, $toDate),
+                totalSales:      $this->getTotalSales($storeId, $fromDate, $toDate),
+                totalOrders:     $this->getTotalOrders($storeId, $fromDate, $toDate),
+                avgTransaction:  $this->getAvgTransaction($storeId, $fromDate, $toDate),
+                from: $from, to: $to,
+            ),
+            'products' => new ProductReportExport(
+                topByQty:     $this->getTopByQty($storeId, $fromDate, $toDate),
+                topByRevenue: $this->getTopByRevenue($storeId, $fromDate, $toDate),
+                from: $from, to: $to,
+            ),
+            // FIXED: was getRevenueData() which returned 'total' column.
+            // Now uses revenueAnalytics() consistent with Blade view and RevenueReportExport.
+            'revenue' => new RevenueReportExport(
+                data:   $this->reportService->revenueAnalytics($storeId, $period, $fromDate, $toDate)['data'] ?? collect(),
+                period: $period,
+                from: $from, to: $to,
+            ),
+            'cashiers' => new CashierReportExport(
+                cashiers: $this->getCashiers($storeId, $fromDate, $toDate),
+                from: $from, to: $to,
+            ),
+            default => abort(404),
+        };
+    }
+
+    // ── Build PDF Data ────────────────────────────────────────────────────
+    private function buildPdfData(string $type, int $storeId, $fromDate, $toDate, string $from, string $to, string $period): array
+    {
+        $base = compact('type', 'from', 'to', 'period');
+
+        return match ($type) {
+            'sales' => array_merge($base, [
+                'totalSales'      => $this->getTotalSales($storeId, $fromDate, $toDate),
+                'totalOrders'     => $this->getTotalOrders($storeId, $fromDate, $toDate),
+                'avgTransaction'  => $this->getAvgTransaction($storeId, $fromDate, $toDate),
+                'byPaymentMethod' => $this->getByPaymentMethod($storeId, $fromDate, $toDate),
+                'byOrderType'     => $this->getByOrderType($storeId, $fromDate, $toDate),
+                'dailyTrend'      => $this->getDailyTrend($storeId, $fromDate, $toDate),
+            ]),
+            'products' => array_merge($base, [
+                'topByQty'     => $this->getTopByQty($storeId, $fromDate, $toDate),
+                'topByRevenue' => $this->getTopByRevenue($storeId, $fromDate, $toDate),
+            ]),
+            'revenue' => array_merge($base, [
+                'data' => $this->reportService->revenueAnalytics($storeId, $period, $fromDate, $toDate),
+            ]),
+            'cashiers' => array_merge($base, [
+                'data' => $this->reportService->cashierReport($storeId, $fromDate, $toDate),
+            ]),
+            default => abort(404),
+        };
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
@@ -283,11 +332,11 @@ class ReportController extends Controller
 
     private function getAvgTransaction(int $storeId, $from, $to): float
     {
-        return (float) \DB::table('orders')
+        return (float) (\DB::table('orders')
             ->where('store_id', $storeId)
             ->whereBetween('created_at', [$from, $to])
             ->whereNotIn('status', ['cancelled'])
-            ->avg('total_amount') ?? 0;
+            ->avg('total_amount') ?? 0);
     }
 
     private function getTopByQty(int $storeId, $from, $to)
@@ -314,7 +363,7 @@ class ReportController extends Controller
 
     private function getRevenueData(int $storeId, $from, $to, string $period)
     {
-        $groupBy = match($period) {
+        $groupBy = match ($period) {
             'weekly'  => "TO_CHAR(created_at, 'IYYY-IW')",
             'monthly' => "TO_CHAR(created_at, 'YYYY-MM')",
             'yearly'  => "TO_CHAR(created_at, 'YYYY')",
@@ -327,5 +376,27 @@ class ReportController extends Controller
             ->whereBetween('created_at', [$from, $to])
             ->whereNotIn('status', ['cancelled'])
             ->groupByRaw($groupBy)->orderByRaw($groupBy)->get();
+    }
+
+    private function getCashiers(int $storeId, $from, $to)
+    {
+        return \DB::table('orders')
+            ->join('users', 'orders.cashier_id', '=', 'users.id')
+            ->where('orders.store_id', $storeId)
+            ->whereNotIn('orders.status', ['cancelled'])
+            ->whereBetween('orders.created_at', [$from, $to])
+            ->selectRaw("
+                users.id AS cashier_id,
+                users.name AS cashier,
+                COUNT(orders.id) AS order_count,
+                COALESCE(SUM(orders.total_amount), 0) AS total_sales,
+                COALESCE(AVG(orders.total_amount), 0) AS avg_order_value,
+                AVG(CASE WHEN orders.completed_at IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (orders.completed_at - orders.created_at)) / 60
+                    ELSE NULL END) AS avg_processing_min
+            ")
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('total_sales')
+            ->get();
     }
 }

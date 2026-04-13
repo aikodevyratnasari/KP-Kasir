@@ -24,7 +24,14 @@
                 <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                 Live
             </span>
-            <a href="{{ route('cashier.reservations.create') }}" class="btn-secondary text-sm">+ Reservasi</a>
+            <a href="{{ route('cashier.reservations.create') }}"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
+                style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f';"
+                onmouseout="this.style.backgroundColor='#2D54BF';">
+                Reservasi
+            </a>
+            <!-- <a href="{{ route('cashier.reservations.create') }}" class="btn-secondary text-sm">+ Reservasi</a> -->
         </div>
     </div>
 
@@ -320,5 +327,19 @@
 
     setInterval(pollTables, INTERVAL);
 })();
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const flash = document.getElementById('flash-success');
+        if (flash) {
+            setTimeout(() => {
+                flash.style.transition = 'opacity 0.5s';
+                flash.style.opacity = '0';
+                setTimeout(() => flash.remove(), 500);
+            }, 3000);
+        }
+    });
+</script>
+@endpush
 </script>
 @endpush

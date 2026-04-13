@@ -29,9 +29,9 @@ class RevenueReportExport implements FromCollection, WithHeadings, WithStyles, W
 
         foreach ($this->data as $row) {
             $rows->push([
-                $row->period ?? $row->date ?? '-',
-                $row->total,
-                $row->count ?? '-',
+                $row->period ?? '-',
+                $row->revenue ?? 0, // ReportService::revenueAnalytics returns 'revenue', not 'total'
+                $row->count   ?? '-',
             ]);
         }
 

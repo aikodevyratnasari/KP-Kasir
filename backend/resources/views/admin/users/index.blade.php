@@ -5,14 +5,9 @@
 @section('content')
 <div class="space-y-5">
 
-    <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ $users->total() }} user terdaftar</p>
-        <a href="{{ route('admin.users.create') }}" class="btn-primary text-sm">+ Tambah User</a>
-    </div>
-
     {{-- Filter --}}
-    <div class="card">
-        <form method="GET" class="flex flex-wrap gap-3 items-end">
+    <div class="card overflow-x-auto">
+        <form method="GET" class="flex flex-wrap gap-3 items-end min-w-max">
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Cari</label>
                 <input type="text" name="search" value="{{ request('search') }}"
@@ -20,7 +15,7 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Role</label>
-                <select name="role" class="form-input w-auto">
+                <select name="role" class="form-input w-44">
                     <option value="">Semua Role</option>
                     @foreach($roles as $role)
                         <option value="{{ $role->slug }}" {{ request('role') === $role->slug ? 'selected' : '' }}>
@@ -31,19 +26,33 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
-                <select name="status" class="form-input w-auto">
+                <select name="status" class="form-input w-44">
                     <option value="">Semua Status</option>
                     <option value="active"   {{ request('status') === 'active'   ? 'selected' : '' }}>Aktif</option>
                     <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
                 </select>
             </div>
-            <button type="submit" class="btn-primary text-sm">Filter</button>
+            <button type="submit" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                onmouseout="this.style.backgroundColor='#2D54BF'">
+                Filter
+            </button>
             <a href="{{ route('admin.users.index') }}" class="btn-secondary text-sm">Reset</a>
+            <div class="ml-auto flex items-center gap-2">
+                <a href= "{{ route('admin.users.create') }}" 
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                    style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                    onmouseover="this.style.backgroundColor='#1e3d8f'"
+                    onmouseout="this.style.backgroundColor='#2D54BF'">
+                    Tambah User
+                </a>
+            </div>
         </form>
     </div>
 
     {{-- Tabel --}}
-    <div class="card p-0 overflow-hidden">
+    <div class="card overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -52,7 +61,7 @@
                     <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Store</th>
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Email</th>
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
-                    <th class="py-2.5 px-4 text-xs font-semibold text-gray-500" style="text-align: right; padding-right: 70px;">AKSI</th>
+                    <th class="py-2.5 px-4 text-xs font-semibold text-gray-500" style="text-align: right; padding-right: 90px;">AKSI</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -70,7 +79,7 @@
                         </div>
                     </td>
 
-                    <td class="py-3 px-4">
+                    <td class="py-3 px-4 whitespace-nowrap">
                         <span class="px-4 py-0.5 rounded-md text-xs font-medium
                             @switch($user->role->slug)
                                 @case('admin')    bg-purple-100 text-purple-700 @break
@@ -82,7 +91,7 @@
                         </span>
                     </td>
 
-                    <td class="py-3 px-4 text-gray-600 text-xs">
+                    <td class="py-3 px-4 text-gray-600 text-xs whitespace-nowrap">
                         {{ $user->store->name ?? '—' }}
                     </td>
 
@@ -133,22 +142,27 @@
                                 Edit
                             </a>
                             @if($user->id !== auth()->id())
-                            <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
-                  onsubmit="return confirm('{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }} user {{ addslashes($user->name) }}?')">
-                @csrf @method('PATCH')
-                <button type="submit"
-                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
-                        style="{{ $user->status === 'active'
-                            ? 'color: #dc2626; background-color: #fff1f2; border: 1px solid #fca5a5;'
-                            : 'color: #16a34a; background-color: #f0fdf4; border: 1px solid #86efac;' }}"
-                        onmouseover="this.style.backgroundColor='{{ $user->status === 'active' ? '#fee2e2' : '#dcfce7' }}';"
-                        onmouseout="this.style.backgroundColor='{{ $user->status === 'active' ? '#fff1f2' : '#f0fdf4' }}';"
-                        onmousedown="this.style.transform='scale(0.98)';"
-                        onmouseup="this.style.transform='scale(1)';">
-                    {{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}
-                </button>
-            </form>
-        @endif
+    <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
+          onsubmit="return confirm('{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }} user {{ addslashes($user->name) }}?')">
+        @csrf @method('PATCH')
+        <button type="submit"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
+                style="{{ $user->status === 'active'
+                    ? 'color: #dc2626; background-color: #fff1f2; border: 1px solid #fca5a5;'
+                    : 'color: #16a34a; background-color: #f0fdf4; border: 1px solid #86efac;' }}"
+                onmouseover="this.style.backgroundColor='{{ $user->status === 'active' ? '#fee2e2' : '#dcfce7' }}';"
+                onmouseout="this.style.backgroundColor='{{ $user->status === 'active' ? '#fff1f2' : '#f0fdf4' }}';"
+                onmousedown="this.style.transform='scale(0.98)';"
+                onmouseup="this.style.transform='scale(1)';">
+            {{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}
+        </button>
+    </form>
+@else
+    <span class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg"
+          style="color: transparent; background-color: transparent; border: 1px solid transparent; pointer-events: none;">
+        Nonaktifkan
+    </span>
+@endif
     </div>
 </td>
                 </tr>
@@ -171,6 +185,8 @@
             {{ $users->links() }}
         </div>
     </div>
-
+<div class="flex items-center justify-between">
+        <p class="text-sm text-gray-500">{{ $users->total() }} user terdaftar</p>
+    </div>
 </div>
 @endsection

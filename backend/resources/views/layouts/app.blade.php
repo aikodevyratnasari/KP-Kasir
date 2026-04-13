@@ -83,7 +83,7 @@
         2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>',
     'Pengaturan'],
-    ['manager.reports.sales',    'manager.reports.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>', 'Laporan'],
+    ['manager.reports.index',    'manager.reports.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>', 'Laporan'],
 ] as [$r, $m, $icon, $label])
     @php $a = request()->routeIs($m); @endphp
     <a href="{{ route($r) }}" title=""
@@ -373,7 +373,7 @@
         @if(session('success') || session('status') || session('error') || $errors->any())
     <div class="px-6 pt-4 space-y-2 flex flex-col items-center">
         @if((session('success') || session('status')) && !request()->routeIs('manager.categories.*'))
-                    <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm flex items-start gap-2.5">
+                    <div id="flash-success" class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm flex items-start gap-2.5">
                         {{-- check-circle --}}
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0 mt-0.5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
@@ -435,5 +435,17 @@
 </div>
 
 @stack('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const flash = document.getElementById('flash-success');
+        if (flash) {
+            setTimeout(() => {
+                flash.style.transition = 'opacity 0.5s';
+                flash.style.opacity = '0';
+                setTimeout(() => flash.remove(), 500);
+            }, 1000);
+        }
+    });
+</script>
 </body>
 </html>

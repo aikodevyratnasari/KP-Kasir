@@ -126,10 +126,13 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
 
             // Reports
             Route::prefix('reports')->name('reports.')->group(function () {
+                Route::get('/',         [ReportController::class, 'index'])->name('index');  // ← tambah ini
                 Route::get('/sales',    [ReportController::class, 'sales'])->name('sales');
                 Route::get('/products', [ReportController::class, 'products'])->name('products');
                 Route::get('/revenue',  [ReportController::class, 'revenue'])->name('revenue');
                 Route::get('/cashiers', [ReportController::class, 'cashiers'])->name('cashiers');
+                Route::get('/{type}/download',    [ReportController::class, 'download'])->name('download');
+                Route::post('/{type}/send-email', [ReportController::class, 'sendReportEmail'])->name('send-email');
             });
 
             // Payments

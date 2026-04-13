@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Detail Pesanan')
+@section('page-title', 'Detail Pesanan')
 
 @section('content')
 <div class="space-y-6 max-w-3xl mx-auto" id="order-detail" data-order-id="{{ $order->id }}">
@@ -112,7 +113,7 @@
 
         {{-- Info Pesanan --}}
         <div class="card">
-            <h2 class="font-semibold text-gray-800 mb-4">Informasi Pesanan</h2>
+            <h2 class="font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-3">Informasi Pesanan</h2>
             <dl class="space-y-2 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">No. Pesanan</dt><dd class="font-medium">{{ $order->order_number }}</dd></div>
                 @if($order->customer_name)
@@ -135,7 +136,7 @@
 
         {{-- Pembayaran --}}
         <div class="card">
-            <h2 class="font-semibold text-gray-800 mb-4">Pembayaran</h2>
+            <h2 class="font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-3">Pembayaran</h2>
             <dl class="space-y-1.5 text-sm">
                 <div class="flex justify-between">
                     <dt class="text-gray-500">Subtotal</dt>
@@ -212,10 +213,10 @@
 
     {{-- Items --}}
     <div class="card">
-        <h2 class="font-semibold text-gray-800 mb-4">Item Pesanan</h2>
+        <h2 class="font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-3">Item Pesanan</h2>
         <table class="w-full text-sm">
             <thead>
-                <tr class="border-b border-gray-100">
+                <tr class="border-b border-gray-500 pb-3">
                     <th class="py-2 text-left text-gray-500">Produk</th>
                     <th class="py-2 text-center text-gray-500">Qty</th>
                     <th class="py-2 text-right text-gray-500">Harga</th>
