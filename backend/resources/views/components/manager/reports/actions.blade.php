@@ -1,6 +1,6 @@
 @props(['type', 'from', 'to', 'period' => null])
 
-<div class="flex items-center gap-2" x-data="{ openSend: false, sendEmail: '', sending: false, feedback: '', feedbackType: '' }">
+<div class="flex items-center gap-2" x-data="{ openSend: false, sendEmail: '', sendFormat: 'xlsx', sending: false, feedback: '', feedbackType: '' }">
 
     {{-- Dropdown Download --}}
     <div class="relative" x-data="{ open: false }">
@@ -78,16 +78,12 @@
         modal "Kirim Struk" di halaman detail pesanan.
     --}}
     <template x-teleport="body">
-        <div x-show="openSend"
-             x-transition:enter="transition ease-out duration-150"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-100"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             @click.self="openSend = false; feedback = ''"
-             style="position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5);
-                    display:flex; align-items:center; justify-content:center; padding:16px;">
+            <div x-show="openSend"
+                x-transition.opacity
+                :style="openSend 
+                    ? 'display:flex; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; padding:16px;' 
+                    : 'display:none;'"
+                @click.self="openSend = false; feedback = ''">
 
             <div x-show="openSend"
                  x-transition:enter="transition ease-out duration-150"
@@ -143,64 +139,65 @@
 
                 {{-- Email --}}
                 <div>
-                    <label class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-indigo-500"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="4" width="20" height="16" rx="2"/>
-                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                        </svg>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                         Email
                     </label>
+
+                    {{-- Pilih Format --}}
+                    <div class="flex gap-2 mb-3">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" x-model="sendFormat" value="xlsx" class="accent-indigo-600"> 
+                            <span class="text-sm text-gray-700">Excel</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" x-model="sendFormat" value="csv" class="accent-indigo-600"> 
+                            <span class="text-sm text-gray-700">CSV</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" x-model="sendFormat" value="pdf" class="accent-indigo-600"> 
+                            <span class="text-sm text-gray-700">PDF</span>
+                        </label>
+                    </div>
+
                     <div class="flex gap-2">
                         <input type="email" x-model="sendEmail"
-                               placeholder="email@contoh.com"
-                               class="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg
-                                      focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200">
+                            placeholder="email@contoh.com"
+                            class="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200">
                         <button type="button"
                                 :disabled="sending"
                                 @click="
                                     if (!sendEmail) return;
                                     sending = true; feedback = '';
-                                    fetch('{{ route('manager.reports.send-email', $type) }}?from={{ $from }}&to={{ $to }}{{ $period ? '&period='.$period : '' }}', {
+                                    fetch('{{ route('manager.reports.send-email', $type) }}?from={{ $from }}&to={{ $to }}{{ isset($period) ? '&period='.$period : '' }}', {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json',
                                             'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
                                             'Accept': 'application/json'
                                         },
-                                        body: JSON.stringify({ email: sendEmail, from: '{{ $from }}', to: '{{ $to }}', period: '{{ $period }}' })
+                                        body: JSON.stringify({ email: sendEmail, from: '{{ $from }}', to: '{{ $to }}', period: '{{ $period ?? 'daily' }}', format: sendFormat })
                                     })
                                     .then(r => r.json())
                                     .then(d => {
                                         sending = false;
-                                        if (d.success) {
-                                            feedbackType = 'ok';
-                                            feedback = 'Laporan berhasil dikirim ke ' + sendEmail;
-                                        } else {
-                                            feedbackType = 'err';
-                                            feedback = d.message || 'Gagal mengirim.';
-                                        }
+                                        if (d.success) { feedbackType = 'ok'; feedback = 'Laporan berhasil dikirim ke ' + sendEmail; }
+                                        else { feedbackType = 'err'; feedback = d.message || 'Gagal mengirim.'; }
                                     })
-                                    .catch(() => {
-                                        sending = false;
-                                        feedbackType = 'err';
-                                        feedback = 'Gagal mengirim. Periksa koneksi.';
-                                    })
+                                    .catch(() => { sending = false; feedbackType = 'err'; feedback = 'Gagal. Periksa koneksi.'; })
                                 "
                                 class="px-4 py-2 text-sm font-medium text-white rounded-lg flex-shrink-0 transition-colors"
-                                :style="sending ? 'background-color:#a5b4fc; cursor:not-allowed;' : 'background-color:#6366f1;'"
+                                :style="sending ? 'background-color:#a5b4fc;' : 'background-color:#6366f1;'"
                                 x-text="sending ? 'Mengirim...' : 'Kirim'">
                         </button>
                     </div>
-                    <p class="text-xs text-gray-400 mt-1.5">Laporan dikirim sebagai lampiran Excel (.xlsx).</p>
+                    <p class="text-xs text-gray-400 mt-1.5" x-text="sendFormat === 'pdf' ? 'Laporan dikirim sebagai lampiran PDF.' : sendFormat === 'csv' ? 'Laporan dikirim sebagai lampiran CSV.' : 'Laporan dikirim sebagai lampiran Excel (.xlsx).'"></p>
 
                     {{-- Feedback --}}
                     <div x-show="feedback"
-                         :class="feedbackType === 'ok'
-                             ? 'bg-green-50 text-green-700 border-green-200'
-                             : 'bg-red-50 text-red-700 border-red-200'"
-                         class="mt-3 text-sm rounded-lg px-3 py-2 border"
-                         x-text="(feedbackType === 'ok' ? '✓ ' : '✕ ') + feedback">
+                        :class="feedbackType === 'ok' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'"
+                        class="mt-3 text-sm rounded-lg px-3 py-2 border"
+                        x-text="(feedbackType === 'ok' ? '✓ ' : '') + feedback">
                     </div>
                 </div>
 

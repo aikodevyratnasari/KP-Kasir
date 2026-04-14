@@ -45,25 +45,76 @@
             </svg>
             Kirim Struk via Email
         </h2>
-        <form method="POST"
-              action="{{ route('cashier.receipts.send-email', $payment) }}"
-              class="flex gap-2">
-            @csrf
+        <div class="flex gap-2" id="email-send-wrap">
             <input type="email"
-                   name="email"
-                   value="{{ old('email', $payment->order->customer_name ? '' : '') }}"
-                   placeholder="contoh@email.com"
-                   class="form-input flex-1 text-sm"
-                   required>
-            <button type="submit"
+                id="receipt-show-email"
+                placeholder="contoh@email.com"
+                class="form-input flex-1 text-sm"
+                required>
+            <button type="button"
+                    id="receipt-show-btn"
+                    onclick="sendReceiptFromShow()"
                     class="btn-primary text-sm inline-flex items-center gap-1.5 flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                 </svg>
                 Kirim
             </button>
-        </form>
+        </div>
+        <div id="receipt-show-feedback" style="display:none;" class="mt-2 text-sm rounded-lg px-3 py-2"></div>
         <p class="text-xs text-gray-400 mt-2">Struk akan dikirim dalam format HTML yang rapi ke email di atas.</p>
+
+        @push('scripts')
+        <script>
+        function sendReceiptFromShow() {
+            const emailInput = document.getElementById('receipt-show-email');
+            const btn        = document.getElementById('receipt-show-btn');
+            const feedback   = document.getElementById('receipt-show-feedback');
+            const email      = emailInput.value.trim();
+
+            if (!email) { emailInput.focus(); return; }
+
+            btn.disabled    = true;
+            btn.innerHTML   = 'Mengirim...';
+            btn.style.backgroundColor = '#a5b4fc';
+            feedback.style.display    = 'none';
+
+            fetch('{{ route('cashier.receipts.send-email', $payment) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ email })
+            })
+            .then(r => r.json())
+            .then(data => {
+                feedback.style.display = 'block';
+                if (data.success) {
+                    feedback.className   = 'mt-2 text-sm rounded-lg px-3 py-2 bg-green-50 text-green-700 border border-green-200';
+                    feedback.textContent = '✓ Struk berhasil dikirim ke ' + email;
+                    btn.innerHTML        = 'Terkirim ✓';
+                    btn.style.backgroundColor = '#22c55e';
+                } else {
+                    feedback.className   = 'mt-2 text-sm rounded-lg px-3 py-2 bg-red-50 text-red-700 border border-red-200';
+                    feedback.textContent = data.message || 'Gagal mengirim.';
+                    btn.disabled         = false;
+                    btn.innerHTML        = '<svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Kirim';
+                    btn.style.backgroundColor = '';
+                }
+            })
+            .catch(() => {
+                feedback.style.display = 'block';
+                feedback.className     = 'mt-2 text-sm rounded-lg px-3 py-2 bg-red-50 text-red-700 border border-red-200';
+                feedback.textContent   = 'Gagal mengirim. Periksa koneksi.';
+                btn.disabled           = false;
+                btn.innerHTML          = 'Kirim';
+                btn.style.backgroundColor = '';
+            });
+        }
+        </script>
+        @endpush
     </div>
 
     {{-- Preview struk --}}
