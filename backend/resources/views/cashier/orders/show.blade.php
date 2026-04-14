@@ -264,16 +264,19 @@
                 </tr>
             </tbody>
         </table>
-    </div>
-
-    @if($order->isPending() && !$order->isFullyPaid())
-    <div class="flex gap-3">
-        <a href="{{ route('cashier.orders.edit', $order) }}" class="btn-secondary">Edit Pesanan</a>
+        @if($order->isPending() && !$order->isFullyPaid())
+    <div class="flex gap-3 mt-3 justify-between">
+        <a href="{{ route('cashier.orders.edit', $order) }}" class="btn-secondary">
+            Edit Pesanan
+        </a>
         <button type="button"
                 onclick="document.getElementById('cancel-modal').style.display='flex'; document.body.style.overflow='hidden';"
-                class="btn-danger">Batalkan</button>
+                class="btn-danger">
+            Batalkan
+        </button>
     </div>
     @endif
+    </div>
 
     <div class="flex justify-start">
         <a href="{{ route('cashier.orders.index') }}"

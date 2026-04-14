@@ -171,37 +171,39 @@ class ReportController extends Controller
         $request->validate(['email' => ['required', 'email', 'max:255']]);
 
         $storeId = $request->get('_store_id');
-        $from    = $request->from ?? now()->startOfMonth()->format('Y-m-d');
-        $to      = $request->to   ?? now()->format('Y-m-d');
+        $from    = $request->from   ?? now()->startOfMonth()->format('Y-m-d');
+        $to      = $request->to     ?? now()->format('Y-m-d');
         $period  = $request->period ?? 'daily';
+        $format  = $request->format ?? 'xlsx';   // ← ambil format dari request
 
         $fromDate = Carbon::parse($from)->startOfDay();
         $toDate   = Carbon::parse($to)->endOfDay();
 
-        $fileName    = "laporan-{$type}-{$from}-{$to}.xlsx";
-        $storagePath = "temp/{$fileName}";
+        $ext      = match($format) { 'csv' => 'csv', 'pdf' => 'pdf', default => 'xlsx' };
+        $fileName = "laporan-{$type}-{$from}-{$to}.{$ext}";
+        $tempDir  = storage_path('app/temp');
+        $filePath = "{$tempDir}/{$fileName}";
 
-        // Ensure temp directory exists
-        $tempDir = storage_path('app/temp');
         if (!file_exists($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
 
-        $export = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period);
-
-        // Store the file, then resolve its absolute path via Storage::disk so the
-        // path is always correct regardless of storage configuration.
-        Excel::store($export, $storagePath, 'local');
-        $filePath = \Illuminate\Support\Facades\Storage::disk('local')->path($storagePath);
-
-        if (!file_exists($filePath)) {
-            return response()->json(['success' => false, 'message' => 'Gagal membuat file laporan.'], 500);
-        }
-
         try {
+            if ($format === 'pdf') {
+                $viewData = $this->buildPdfData($type, $storeId, $fromDate, $toDate, $from, $to, $period);
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('manager.reports.pdf', $viewData)
+                    ->setPaper('a4', 'portrait');
+                file_put_contents($filePath, $pdf->output());
+            } else {
+                $export     = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period);
+                $writerType = $format === 'csv' ? \Maatwebsite\Excel\Excel::CSV : \Maatwebsite\Excel\Excel::XLSX;
+                \Maatwebsite\Excel\Facades\Excel::store($export, "temp/{$fileName}", 'local', $writerType);
+            }
+
             Mail::to($request->email)->send(new ReportMail($type, $from, $to, $filePath, $fileName));
             @unlink($filePath);
             return response()->json(['success' => true]);
+
         } catch (\Exception $e) {
             @unlink($filePath);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

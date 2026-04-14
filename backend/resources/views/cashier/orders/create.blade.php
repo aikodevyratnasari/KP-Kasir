@@ -5,7 +5,7 @@
 @section('content')
 @php $taxRate = auth()->user()->store->tax_rate ?? 10; @endphp
 <div style="display:flex; gap:0; height:calc(100vh - 64px); overflow:hidden;"
-     x-data="orderForm({{ $taxRate }})">
+     x-data="orderForm({{ $taxRate }})" x-init="mounted()">
 
     {{-- ── KIRI: Form + Menu (scrollable) ── --}}
     <div style="flex:1; overflow-y:auto; padding:20px 16px 20px 0;">
@@ -133,8 +133,8 @@
     </div>
 
     {{-- ── KANAN: Keranjang ── --}}
-    <div style="width:320px; flex-shrink:0; display:flex; flex-direction:column; border-left:1px solid #e5e7eb; background:#fff; overflow:hidden;">
-        <div style="padding:16px; border-bottom:1px solid #f1f5f9; flex-shrink:0;">
+    <div id="cart-panel" style="width:320px; flex-shrink:0; display:flex; flex-direction:column; border-left:1px solid #e5e7eb; background:#fff; overflow:hidden;">
+        <div style="padding:16px; border-bottom:1px solid #e5e7eb; flex-shrink:0;">
             <div class="flex items-center justify-between">
                 <h3 class="font-bold text-gray-900">Keranjang</h3>
                 <span x-show="items.length > 0" class="text-xs bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full" x-text="items.length + ' item'"></span>
@@ -142,11 +142,13 @@
         </div>
         <div style="flex:1; overflow-y:auto; padding:12px;">
             <div x-show="items.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 py-12">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mb-2 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                </svg>
-                <p class="text-sm">Klik menu untuk menambahkan</p>
-            </div>
+    <div style="width:80px; height:80px; border-radius:50%; border:2px solid #e5e7eb; background:#f9fafb; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
+        <svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px; color:#d1d5db;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+    </div>
+    <p class="text-sm">Klik menu untuk menambahkan</p>
+</div>
             <div class="space-y-2">
                 <template x-for="(item, index) in items" :key="item.key">
                     <div class="bg-gray-50 rounded-xl p-3">
@@ -160,18 +162,28 @@
                                 <p class="text-sm font-semibold text-gray-900" x-text="item.name"></p>
                                 <p x-show="item.variant_name" class="text-xs text-indigo-500 font-medium mt-0.5" x-text="item.variant_name"></p>
                             </div>
-                            <button type="button" @click="removeItem(index)" class="ml-2 text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </button>
+                            <button type="button" @click="removeItem(index)" 
+        class="ml-2 flex-shrink-0 transition-colors"
+        style="width:20px; height:20px; border-radius:50%; background:#f3f4f6; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#9ca3af;"
+        onmouseover="this.style.backgroundColor='#fee2e2'; this.style.color='#ef4444';"
+        onmouseout="this.style.backgroundColor='#f3f4f6'; this.style.color='#9ca3af';">
+    <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+</button>
                         </div>
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-1.5">
-                                <button type="button" @click="item.quantity > 1 ? item.quantity-- : removeItem(index)"
-                                        class="w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-gray-100 flex items-center justify-center">−</button>
-                                <span class="text-sm font-bold w-6 text-center" x-text="item.quantity"></span>
-                                <button type="button" @click="item.quantity++"
-                                        class="w-7 h-7 rounded-full bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 flex items-center justify-center">+</button>
-                            </div>
+                            <div class="flex items-center" style="border:1.5px solid #d1d5db; border-radius:6px; overflow:hidden;">
+    <button type="button" @click="item.quantity > 1 ? item.quantity-- : removeItem(index)"
+        style="width:28px; height:28px; background:white; border:none; color:#374151; font-size:16px; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; margin-bottom: 3px;"
+        onmouseover="this.style.backgroundColor='#f3f4f6'"
+        onmouseout="this.style.backgroundColor='white'">−</button>
+    <span style="width:32px; height:28px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#111827; border-left:1.5px solid #d1d5db; border-right:1.5px solid #d1d5db;" x-text="item.quantity"></span>
+    <button type="button" @click="item.quantity++"
+        style="width:28px; height:28px; background:white; border:none; color:#2D54BF; font-size:16px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; margin-bottom: 3px;"
+        onmouseover="this.style.backgroundColor='#f3f4f6'"
+        onmouseout="this.style.backgroundColor='white'">+</button>
+</div>
                             <span class="text-sm font-bold text-indigo-600" x-text="'Rp ' + formatRp(item.price * item.quantity)"></span>
                         </div>
                         <div class="mt-2">
@@ -182,24 +194,26 @@
                 </template>
             </div>
         </div>
-        <div style="padding:14px; border-top:1px solid #f1f5f9; flex-shrink:0; background:#fff;">
+        <div style="padding:14px; border-top:1px solid #e5e7eb; flex-shrink:0; background:#fff;">
             <div x-show="items.length > 0">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm text-gray-500">Subtotal</span>
+                    <span class="text-sm text-gray-700">Subtotal</span>
                     <span class="text-sm text-gray-700" x-text="'Rp ' + formatRp(subtotal)"></span>
                 </div>
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs text-gray-400">Pajak ({{ $taxRate }}%)</span>
                     <span class="text-xs text-gray-400" x-text="'Rp ' + formatRp(taxAmount)"></span>
                 </div>
-                <div style="height:1px; background:#f1f5f9; margin-bottom:8px;"></div>
+                <div style="height:1.5px; background:#d1d5db; margin-bottom:8px;"></div>
                 <div class="flex justify-between items-center mb-3">
                     <span class="text-sm font-bold text-gray-700">Total</span>
-                    <span class="text-lg font-bold text-gray-900" x-text="'Rp ' + formatRp(grandTotal)"></span>
+                    <span class="text-sm font-bold text-gray-900" x-text="'Rp ' + formatRp(grandTotal)"></span>
                 </div>
                 <button type="submit" form="order-form"
-                        class="btn-primary w-full justify-center py-3 text-base inline-flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        class="w-full justify-center py-3 text-base inline-flex items-center gap-2 font-medium text-white rounded-lg transition-colors"
+                        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                        onmouseover="this.style.backgroundColor='#1e3d8f'"
+                        onmouseout="this.style.backgroundColor='#2D54BF'">
                     Buat Pesanan
                 </button>
             </div>
@@ -249,6 +263,37 @@
             </div>
         </div>
     </div>
+    {{-- Floating Cart Button (mobile) --}}
+<button id="cart-toggle"
+    @click="
+        const panel = document.getElementById('cart-panel');
+        panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
+    "
+    style="position:fixed; bottom:24px; right:24px; z-index:9998; width:56px; height:56px; border-radius:50%; background:#2D54BF; color:white; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(45,84,191,0.4); transition: transform 0.15s, background 0.15s;"
+    onmouseover="this.style.backgroundColor='#1e3d8f'; this.style.transform='scale(1.08)';"
+    onmouseout="this.style.backgroundColor='#2D54BF'; this.style.transform='scale(1)';"
+    onmousedown="this.style.transform='scale(0.95)';"
+    onmouseup="this.style.transform='scale(1.08)';">
+    <svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+    </svg>
+    <span x-show="items.length > 0"
+          x-text="items.length"
+          style="position:absolute; top:-2px; right:-2px; background:#ef4444; color:white; font-size:10px; font-weight:700; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;">
+    </span>
+</button>
+
+<style>
+@media (min-width: 769px) {
+    #cart-panel { display: flex !important; position: static !important; width: 320px !important; max-height: unset !important; border-radius: 0 !important; box-shadow: none !important; flex-direction: column !important; }
+    #cart-toggle { display: none !important; }
+}
+@media (max-width: 768px) {
+    #cart-panel { display: none; position: fixed !important; bottom: 90px !important; right: 16px !important; width: calc(100vw - 32px) !important; max-height: 70vh !important; border-radius: 16px !important; border: 1px solid #e5e7eb !important; box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important; z-index: 9997 !important; }
+    #cart-toggle { display: flex !important; }
+}
+</style>
+</style>
 </div>
 
 @push('scripts')
@@ -279,7 +324,15 @@ function orderForm(taxRate) {
             this.items.push({ key, product_id: productId, name: productName, price, quantity: 1, variant_id: variantId, variant_name: variantName });
         },
         removeItem(index) { this.items.splice(index, 1); },
-        formatRp(val) { return new Intl.NumberFormat('id-ID').format(Math.round(val)); }
+        formatRp(val) { return new Intl.NumberFormat('id-ID').format(Math.round(val)); },
+        mounted() {
+            window.addEventListener('resize', () => {
+                const panel = document.getElementById('cart-panel');
+                if (window.innerWidth <= 768) {
+                    panel.style.display = 'none';
+                }
+            });
+        }
     }
 }
 </script>
