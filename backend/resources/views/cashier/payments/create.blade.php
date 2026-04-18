@@ -1,13 +1,9 @@
 @extends('layouts.app')
 @section('title', 'Proses Pembayaran')
+@section('page-title', 'Proses Pembayaran')
 
 @section('content')
 <div class="max-w-xl mx-auto space-y-6" x-data="paymentForm({{ $order->remainingBalance() }})">
-    <div class="flex items-center gap-3">
-        <a href="{{ route('cashier.orders.show', $order) }}" class="text-gray-400 hover:text-gray-600">←</a>
-        <h1 class="page-title">Proses Pembayaran</h1>
-    </div>
-
     {{-- Ringkasan --}}
     <div class="card bg-indigo-50 border border-indigo-100">
         <div class="flex justify-between items-center">
@@ -21,7 +17,7 @@
             </div>
         </div>
     </div>
-
+    
     <div class="card">
         <form method="POST" action="{{ route('cashier.payments.store', $order) }}">
             @csrf
@@ -117,17 +113,31 @@
                     <input type="text" name="reference_number" class="form-input">
                 </div>
             </div>
-
-            <button type="submit" class="btn-primary w-full justify-center text-base inline-flex items-center gap-2">
-                {{-- check --}}
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Proses Pembayaran
+            
+            <div class="max-w-xl mx-auto flex justify-start">
+            <button type="submit" 
+            class="btn-primary w-full justify-center text-base inline-flex items-center gap-2 px-5 py-2"
+            style="color:white; background-color:#1c8b59;"
+            onmouseover="this.style.backgroundColor='#0e663e';"
+            onmouseout="this.style.backgroundColor='#1c8b59';">
+            Bayar
             </button>
+</div>
         </form>
     </div>
 </div>
+
+<div class="max-w-xl mx-auto flex justify-start mt-2 mb-4">
+
+        <a href="{{ route('cashier.orders.show', $order) }}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+                        onmouseover="this.style.backgroundColor='#f3f4f6';"
+                        onmouseout="this.style.backgroundColor='white';">
+                        Kembali
+        </a>
+        
+    </div>
 
 @push('scripts')
 <script>

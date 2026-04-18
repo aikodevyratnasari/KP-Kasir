@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Cashier;
 
 use App\Http\Controllers\Controller;
 use App\Mail\ReceiptMail;
-use App\Models\Payment;
-use Illuminate\Http\RedirectResponse;
+use App\Models\Payment;           
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
@@ -48,4 +48,5 @@ class ReceiptController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal mengirim email: ' . $e->getMessage()], 500);
         }
     }
+
 }

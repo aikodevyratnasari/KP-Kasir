@@ -163,14 +163,14 @@
                                 <p x-show="item.variant_name" class="text-xs text-indigo-500 font-medium mt-0.5" x-text="item.variant_name"></p>
                             </div>
                             <button type="button" @click="removeItem(index)" 
-        class="ml-2 flex-shrink-0 transition-colors"
-        style="width:20px; height:20px; border-radius:50%; background:#f3f4f6; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#9ca3af;"
-        onmouseover="this.style.backgroundColor='#fee2e2'; this.style.color='#ef4444';"
-        onmouseout="this.style.backgroundColor='#f3f4f6'; this.style.color='#9ca3af';">
-    <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-    </svg>
-</button>
+                                class="ml-2 flex-shrink-0 transition-colors"
+                                style="width:20px; height:20px; border-radius:50%; background:#f3f4f6; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#9ca3af;"
+                                onmouseover="this.style.backgroundColor='#fee2e2'; this.style.color='#ef4444';"
+                                onmouseout="this.style.backgroundColor='#f3f4f6'; this.style.color='#9ca3af';">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center" style="border:1.5px solid #d1d5db; border-radius:6px; overflow:hidden;">
@@ -267,7 +267,10 @@
 <button id="cart-toggle"
     @click="
         const panel = document.getElementById('cart-panel');
-        panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
+        const overlay = document.getElementById('cart-overlay');
+        panel.classList.add('open');
+        overlay.classList.add('active');
+        document.getElementById('cart-toggle').style.display = 'none';
     "
     style="position:fixed; bottom:24px; right:24px; z-index:9998; width:56px; height:56px; border-radius:50%; background:#2D54BF; color:white; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(45,84,191,0.4); transition: transform 0.15s, background 0.15s;"
     onmouseover="this.style.backgroundColor='#1e3d8f'; this.style.transform='scale(1.08)';"
@@ -284,16 +287,57 @@
 </button>
 
 <style>
-@media (min-width: 769px) {
+/* @media (min-width: 769px) {
     #cart-panel { display: flex !important; position: static !important; width: 320px !important; max-height: unset !important; border-radius: 0 !important; box-shadow: none !important; flex-direction: column !important; }
     #cart-toggle { display: none !important; }
 }
 @media (max-width: 768px) {
     #cart-panel { display: none; position: fixed !important; bottom: 90px !important; right: 16px !important; width: calc(100vw - 32px) !important; max-height: 70vh !important; border-radius: 16px !important; border: 1px solid #e5e7eb !important; box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important; z-index: 9997 !important; }
     #cart-toggle { display: flex !important; }
+} */
+
+ #cart-panel {
+    position: fixed !important;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 340px;
+
+    background: #fff;
+    border-left: 1px solid #e5e7eb;
+    box-shadow: -8px 0 32px rgba(0,0,0,0.15);
+
+    display: flex;
+    flex-direction: column;
+
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+
+    z-index: 9997;
+}
+
+/* kondisi terbuka */
+#cart-panel.open {
+    transform: translateX(0);
+}
+
+#cart-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 9996;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+#cart-overlay.active {
+    opacity: 1;
+    pointer-events: all;
 }
 </style>
 </style>
+<div id="cart-overlay"></div>
 </div>
 
 @push('scripts')
@@ -326,13 +370,27 @@ function orderForm(taxRate) {
         removeItem(index) { this.items.splice(index, 1); },
         formatRp(val) { return new Intl.NumberFormat('id-ID').format(Math.round(val)); },
         mounted() {
-            window.addEventListener('resize', () => {
-                const panel = document.getElementById('cart-panel');
-                if (window.innerWidth <= 768) {
-                    panel.style.display = 'none';
-                }
-            });
-        }
+    const panel = document.getElementById('cart-panel');
+    const overlay = document.getElementById('cart-overlay');
+    const cartBtn = document.getElementById('cart-toggle');
+
+    const closeCart = () => {
+        panel.classList.remove('open');
+        overlay.classList.remove('active');
+        cartBtn.style.display = 'flex';
+    };
+
+    panel.classList.remove('open');
+    overlay.classList.remove('active');
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth <= 768) closeCart();
+    });
+
+    if (overlay) {
+        overlay.addEventListener('click', closeCart);
+    }
+}
     }
 }
 </script>

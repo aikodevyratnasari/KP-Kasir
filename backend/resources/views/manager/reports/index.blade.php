@@ -91,6 +91,26 @@
             </div>
         </a>
 
+        {{-- Pembayaran --}}
+        <a href="{{ route('manager.reports.payments') }}"
+        class="card group hover:shadow-md transition-all hover:-translate-y-0.5 cursor-pointer no-underline"
+        style="border:1.5px solid #e5e7eb; text-decoration:none;"
+        onmouseover="this.style.borderColor='#6366f1';"
+        onmouseout="this.style.borderColor='#e5e7eb';">
+            <div class="flex items-start gap-4">
+                <div class="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-900">Laporan Pembayaran</p>
+                    <p class="text-sm text-gray-500 mt-0.5">Riwayat semua transaksi pembayaran, metode, dan status.</p>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-300 ml-auto flex-shrink-0 mt-1 group-hover:text-indigo-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+        </a>
+
     </div>
 </div>
 @endsection

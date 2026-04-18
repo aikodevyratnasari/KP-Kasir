@@ -41,6 +41,14 @@ class Payment extends Model
         };
     }
 
+    public function getLastPaymentAttribute()
+    {
+        return $this->payments()
+            ->where('status', 'paid')
+            ->latest()
+            ->first();
+    }
+
     public function scopePaid($q)  { return $q->where('status', 'paid'); }
     public function scopeToday($q) { return $q->whereDate('created_at', today()); }
 }

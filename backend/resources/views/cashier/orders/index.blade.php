@@ -40,15 +40,28 @@
                 <label class="block text-xs font-medium text-gray-600 mb-1">Sampai</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-input">
             </div>
-            <button type="submit"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
-            style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
-            onmouseover="this.style.backgroundColor='#1e3d8f';"
-            onmouseout="this.style.backgroundColor='#2D54BF';">
-            Filter
+
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                onmouseout="this.style.backgroundColor='#2D54BF'">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="6" x2="20" y2="6"/>
+                    <circle cx="16" cy="6" r="2"/>
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <circle cx="8" cy="12" r="2"/>
+                    <line x1="4" y1="18" x2="20" y2="18"/>
+                    <circle cx="14" cy="18" r="2"/>
+                </svg>
+                Filter
             </button>
-            <!-- <button type="submit" class="btn-primary text-sm">Filter</button> -->
-            <a href="{{ route('cashier.orders.index') }}" class="btn-secondary text-sm">Reset</a>
+            <a href="{{ route('cashier.orders.index') }}" class="btn-secondary text-sm inline-flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74"/>
+                    <path d="M3 3v6h6"/>
+                </svg>
+                Reset
+            </a>
 
             <div class="ml-auto flex items-center gap-1.5 text-xs text-gray-400">
                 <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>

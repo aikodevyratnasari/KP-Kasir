@@ -157,25 +157,22 @@
                                 <label class="text-sm text-gray-700">Aktif</label>
                             </div>
                         </div>
-                        <div class="flex gap-2">
-                            <button type="submit"
-        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-        style="border: 1px solid #2D54BF; background-color: #2D54BF; color: white;"
-        onmouseover="this.style.backgroundColor='#1e3d8f';"
-        onmouseout="this.style.backgroundColor='#2D54BF';"
-        onmousedown="this.style.transform='scale(0.98)';"
-        onmouseup="this.style.transform='scale(1)';">
-    Simpan
-</button>
-<button type="button" @click="editing = false"
-        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-        style="border: 1px solid #2D54BF; background-color: white; color: #2D54BF;"
-        onmouseover="this.style.backgroundColor='#eef2ff';"
-        onmouseout="this.style.backgroundColor='white';"
-        onmousedown="this.style.transform='scale(0.98)';"
-        onmouseup="this.style.transform='scale(1)';">
-    Batal
-</button>
+                        <div class="flex justify-between items-center">
+                             <button type="submit"
+                                class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                                style="border: 1px solid #2D54BF; background-color: #2D54BF; color: white;"
+                                onmouseover="this.style.backgroundColor='#1e3d8f';"
+                                onmouseout="this.style.backgroundColor='#2D54BF';"
+                                onmousedown="this.style.transform='scale(0.98)';"
+                                onmouseup="this.style.transform='scale(1)';">
+                                Simpan
+                                <button type="button" @click="editing = false"
+                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                                        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+                                                        onmouseover="this.style.backgroundColor='#f3f4f6';"
+                                                        onmouseout="this.style.backgroundColor='white';">
+                                    Batal
+                                </button>
                         </div>
                     </form>
                 </div>
@@ -247,6 +244,23 @@
         }
         return confirm(`Hapus kategori "${name}"?`);
     }
+    </script>
+    @endpush
+    @push('scripts')
+    <script>
+    document.querySelectorAll('.form-input').forEach(input => {
+        ['input', 'change'].forEach(event => {
+            input.addEventListener(event, function() {
+                this.classList.remove('form-input-error', 'border-red-400');
+                this.style.borderColor = '';
+                const parent = this.closest('div');
+                if (parent) {
+                    const errorMsg = parent.querySelector('p.text-red-600');
+                    if (errorMsg) errorMsg.remove();
+                }
+            });
+        });
+    });
     </script>
     @endpush
 @endsection
