@@ -4,8 +4,6 @@
 @section('content')
 <div class="max-w-sm mx-auto space-y-4">
     <div class="flex items-center justify-between">
-        <a href="{{ route('cashier.orders.show', $payment->order) }}"
-           class="text-gray-400 hover:text-gray-600">←</a>
         <h1 class="text-lg font-bold text-gray-900">Struk Pembayaran</h1>
         {{-- Tombol cetak — tab baru agar halaman ini tetap aktif --}}
         <a href="{{ route('cashier.receipts.print', $payment) }}"
@@ -39,10 +37,6 @@
     {{-- Form kirim email --}}
     <div class="card">
         <h2 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-            </svg>
             Kirim Struk via Email
         </h2>
         <div class="flex gap-2" id="email-send-wrap">
@@ -51,14 +45,17 @@
                 placeholder="contoh@email.com"
                 class="form-input flex-1 text-sm"
                 required>
-            <button type="button"
-                    id="receipt-show-btn"
-                    onclick="sendReceiptFromShow()"
-                    class="btn-primary text-sm inline-flex items-center gap-1.5 flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-                Kirim
+            <button type="submit" 
+                id="receipt-show-btn"
+                        onclick="sendReceiptFromShow()"
+                        class="btn-primary text-sm inline-flex items-center gap-1.5 flex-shrink-0 focus:outline-none"
+                        style="color:white; background-color:#e21c1c; outline:none !important; box-shadow:none !important;"
+                        onmouseover="this.style.backgroundColor='#cb0d0d';"
+                        onmouseout="this.style.backgroundColor='#e21c1c';">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                        Kirim
             </button>
         </div>
         <div id="receipt-show-feedback" style="display:none;" class="mt-2 text-sm rounded-lg px-3 py-2"></div>
@@ -213,11 +210,19 @@
             </div>
             @endif
         </div>
-
         <div class="text-center text-xs text-gray-500">
             <p>Terima kasih atas kunjungan Anda!</p>
             <p class="mt-1">Simpan struk ini sebagai bukti pembayaran</p>
         </div>
+    </div>
+    <div class="flex justify-start">
+        <a href="{{ route('cashier.orders.show', $payment->order) }}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+           style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+           onmouseover="this.style.backgroundColor='#f3f4f6';"
+           onmouseout="this.style.backgroundColor='white';">
+           Kembali
+        </a>
     </div>
 </div>
 @endsection

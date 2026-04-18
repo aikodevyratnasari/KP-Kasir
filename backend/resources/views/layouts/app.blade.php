@@ -128,7 +128,7 @@
                 @foreach([
     ['cashier.orders.index',     'cashier.orders.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h6"/></svg>', 'Pesanan'],
     ['cashier.tables.index',     'cashier.tables.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3C7.03 3 3 7.03 3 12h18c0-4.97-4.03-9-9-9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18"/><path stroke-linecap="round" stroke-linejoin="round" d="M2 15h20"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 15v2"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 15v2"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 17h16"/></svg>', 'Dine-In'],
-    ['cashier.payments.history', 'cashier.payments.*',  '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>', 'Pembayaran'],
+    /*['cashier.payments.history', 'cashier.payments.*',  '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>', 'Pembayaran'],*/
 ] as [$r, $m, $icon, $label])
     @php $a = request()->routeIs($m) && !request()->routeIs('cashier.orders.create'); @endphp
     <a href="{{ route($r) }}" title=""
@@ -404,11 +404,7 @@
     </svg>
 </div>
             {{-- Pesan --}}
-            <ul class="text-sm text-gray-600 space-y-1 mb-6">
-                @foreach($errors->all() as $e)
-                    <li>{{ $e }}</li>
-                @endforeach
-            </ul>
+           <p class="text-sm text-gray-600 mb-6">Mohon lengkapi semua field yang wajib diisi dengan benar.</p>
             {{-- Button Close --}}
             <button @click="show = false"
                     class="w-full py-2.5 text-sm font-bold text-white rounded-lg transition-colors"

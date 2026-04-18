@@ -13,6 +13,7 @@ class CashierReportExport implements FromCollection, WithHeadings, WithStyles, W
 {
     public function __construct(
         private $cashiers,
+        private $cancelledPerCashier,  // keyed by cashier_id
         private string $from,
         private string $to,
     ) {}
@@ -21,18 +22,54 @@ class CashierReportExport implements FromCollection, WithHeadings, WithStyles, W
     {
         $rows = collect();
 
-        $rows->push(['LAPORAN PERFORMA KASIR', '', '', '', '']);
-        $rows->push(['Periode', $this->from . ' s/d ' . $this->to, '', '', '']);
-        $rows->push(['', '', '', '', '']);
-        $rows->push(['Nama Kasir', 'Total Pesanan', 'Total Penjualan', 'Rata-rata/Pesanan', 'Avg Proses (mnt)']);
+        // ── Header ───────────────────────────────────────────────────────
+        $rows->push(['LAPORAN PERFORMA KASIR', '', '', '', '', '', '']);
+        $rows->push(['Periode', $this->from . ' s/d ' . $this->to, '', '', '', '', '']);
+        $rows->push(['', '', '', '', '', '', '']);
 
-        foreach ($this->cashiers as $row) {
+        // ── Sub-header kolom ─────────────────────────────────────────────
+        $rows->push([
+            'Nama Kasir',
+            'Pesanan Aktif',
+            'Total Penjualan (Rp)',
+            'Rata-rata/Pesanan (Rp)',
+            'Avg Proses (mnt)',
+            'Dibatalkan (qty)',
+            'Nilai Dibatalkan (Rp)',
+        ]);
+
+        // ── Data ─────────────────────────────────────────────────────────
+        $cashierCollection = collect($this->cashiers);
+        $cancelledMap      = collect($this->cancelledPerCashier);
+
+        foreach ($cashierCollection as $row) {
+            $cancelled = $cancelledMap->get($row->cashier_id);
             $rows->push([
-                $row->cashier,
-                $row->order_count,
-                $row->total_sales,
-                round($row->avg_order_value, 0),
-                $row->avg_processing_min ? round($row->avg_processing_min, 1) : '-',
+                $row->cashier                    ?? '-',
+                (int)   ($row->order_count        ?? 0),
+                (float) ($row->total_sales        ?? 0),
+                (float) round($row->avg_order_value ?? 0, 0),
+                $row->avg_processing_min ? (float) round($row->avg_processing_min, 1) : '-',
+                $cancelled ? (int)   $cancelled->cancelled_count  : 0,
+                $cancelled ? (float) $cancelled->cancelled_amount : 0,
+            ]);
+        }
+
+        if ($cashierCollection->isEmpty()) {
+            $rows->push(['Tidak ada data untuk periode ini', '', '', '', '', '', '']);
+        }
+
+        // ── Baris total ───────────────────────────────────────────────────
+        if ($cashierCollection->isNotEmpty()) {
+            $rows->push(['', '', '', '', '', '', '']);
+            $rows->push([
+                'TOTAL',
+                (int)   $cashierCollection->sum('order_count'),
+                (float) $cashierCollection->sum('total_sales'),
+                '',
+                '',
+                (int)   $cancelledMap->sum('cancelled_count'),
+                (float) $cancelledMap->sum('cancelled_amount'),
             ]);
         }
 
@@ -43,7 +80,10 @@ class CashierReportExport implements FromCollection, WithHeadings, WithStyles, W
 
     public function styles(Worksheet $sheet): array
     {
-        return [1 => ['font' => ['bold' => true, 'size' => 13]]];
+        return [
+            1 => ['font' => ['bold' => true, 'size' => 13]],
+            4 => ['font' => ['bold' => true]],
+        ];
     }
 
     public function title(): string { return 'Laporan Kasir'; }

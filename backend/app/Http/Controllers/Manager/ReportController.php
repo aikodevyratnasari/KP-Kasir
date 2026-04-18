@@ -54,9 +54,6 @@ class ReportController extends Controller
         $storeId = $request->get('_store_id');
         $period  = $request->period ?? 'today';
 
-        // FIX: [$a,$b] = match(){} causes ParseError when match arms contain arrays.
-        // The parser misreads the ']' inside match arms as closing the outer '['
-        // of the destructuring. Assign to $range first, then destructure.
         $range = match ($period) {
             'week'   => [now()->startOfWeek(),  now()->endOfWeek()],
             'month'  => [now()->startOfMonth(), now()->endOfMonth()],
@@ -98,8 +95,10 @@ class ReportController extends Controller
             'totalSales'      => $raw['totalSales']  ?? 0,
             'totalOrders'     => $raw['orderCount']  ?? 0,
             'avgTransaction'  => $raw['avgSale']     ?? 0,
-            'byPaymentMethod' => collect($raw['byMethod'] ?? [])->values(),
+            'byPaymentMethod' => collect($raw['byMethod']  ?? [])->values(),
             'byOrderType'     => $raw['byType']      ?? collect(),
+            // byStatus mencakup SEMUA status termasuk cancelled & pending
+            'byStatus'        => $raw['byStatus']    ?? collect(),
             'dailyTrend'      => $raw['daily']       ?? collect(),
         ]);
     }
@@ -129,6 +128,40 @@ class ReportController extends Controller
         return view('manager.reports.cashiers', compact('data', 'from', 'to'));
     }
 
+    // ── Payment Report ───────────────────────────────────────────────────
+    public function payments(Request $request): View
+    {
+        [$from, $to] = $this->parseDates($request);
+        $storeId = $request->get('_store_id');
+
+        $payments = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+            ->with(['order', 'cashier'])
+            ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
+            ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->latest()
+            ->paginate(50)
+            ->withQueryString();
+
+        // Summary per status (paid, pending, refunded)
+        $summaryByStatus = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+            ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->selectRaw('status, SUM(amount) as total, COUNT(*) as count')
+            ->groupBy('status')
+            ->get()
+            ->keyBy('status');
+
+        $summary = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+            ->where('status', 'paid')
+            ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->selectRaw('SUM(amount) as total, COUNT(*) as count')
+            ->first();
+
+        return view('manager.reports.payments', compact('payments', 'from', 'to', 'summary', 'summaryByStatus'));
+    }
+
     // ── DOWNLOAD REPORT ──────────────────────────────────────────────────
     public function download(Request $request, string $type): mixed
     {
@@ -141,26 +174,16 @@ class ReportController extends Controller
         $fromDate = Carbon::parse($from)->startOfDay();
         $toDate   = Carbon::parse($to)->endOfDay();
 
-        // ── PDF ──────────────────────────────────────────────────────────
         if ($format === 'pdf') {
-            $viewData = $this->buildPdfData($type, $storeId, $fromDate, $toDate, $from, $to, $period);
-            $fileName = "laporan-{$type}-{$from}-{$to}.pdf";
-
+            $viewData = $this->buildPdfData($type, $storeId, $fromDate, $toDate, $from, $to, $period, $request);
             return Pdf::loadView('manager.reports.pdf', $viewData)
                 ->setPaper('a4', 'portrait')
-                ->download($fileName);
+                ->download("laporan-{$type}-{$from}-{$to}.pdf");
         }
 
-        // ── XLSX / CSV ────────────────────────────────────────────────────
-        $export = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period);
-
-        if ($format === 'csv') {
-            $fileName   = "laporan-{$type}-{$from}-{$to}.csv";
-            $writerType = \Maatwebsite\Excel\Excel::CSV;
-        } else {
-            $fileName   = "laporan-{$type}-{$from}-{$to}.xlsx";
-            $writerType = \Maatwebsite\Excel\Excel::XLSX;
-        }
+        $export     = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period, $request);
+        $writerType = $format === 'csv' ? \Maatwebsite\Excel\Excel::CSV : \Maatwebsite\Excel\Excel::XLSX;
+        $fileName   = "laporan-{$type}-{$from}-{$to}." . ($format === 'csv' ? 'csv' : 'xlsx');
 
         return Excel::download($export, $fileName, $writerType);
     }
@@ -170,103 +193,152 @@ class ReportController extends Controller
     {
         $request->validate(['email' => ['required', 'email', 'max:255']]);
 
-        $storeId = $request->get('_store_id');
-        $from    = $request->from   ?? now()->startOfMonth()->format('Y-m-d');
-        $to      = $request->to     ?? now()->format('Y-m-d');
-        $period  = $request->period ?? 'daily';
-        $format  = $request->format ?? 'xlsx';   // ← ambil format dari request
-
+        $storeId  = $request->get('_store_id');
+        $from     = $request->from   ?? now()->startOfMonth()->format('Y-m-d');
+        $to       = $request->to     ?? now()->format('Y-m-d');
+        $period   = $request->period ?? 'daily';
+        $format   = $request->format ?? 'xlsx';
         $fromDate = Carbon::parse($from)->startOfDay();
         $toDate   = Carbon::parse($to)->endOfDay();
 
         $ext      = match($format) { 'csv' => 'csv', 'pdf' => 'pdf', default => 'xlsx' };
         $fileName = "laporan-{$type}-{$from}-{$to}.{$ext}";
-        $tempDir  = storage_path('app/temp');
-        $filePath = "{$tempDir}/{$fileName}";
-
-        if (!file_exists($tempDir)) {
-            mkdir($tempDir, 0755, true);
-        }
+        $filePath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $fileName;
 
         try {
             if ($format === 'pdf') {
-                $viewData = $this->buildPdfData($type, $storeId, $fromDate, $toDate, $from, $to, $period);
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('manager.reports.pdf', $viewData)
-                    ->setPaper('a4', 'portrait');
-                file_put_contents($filePath, $pdf->output());
+                $viewData = $this->buildPdfData($type, $storeId, $fromDate, $toDate, $from, $to, $period, $request);
+                file_put_contents($filePath,
+                    Pdf::loadView('manager.reports.pdf', $viewData)->setPaper('a4', 'portrait')->output()
+                );
             } else {
-                $export     = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period);
+                $export     = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period, $request);
                 $writerType = $format === 'csv' ? \Maatwebsite\Excel\Excel::CSV : \Maatwebsite\Excel\Excel::XLSX;
-                \Maatwebsite\Excel\Facades\Excel::store($export, "temp/{$fileName}", 'local', $writerType);
+                file_put_contents($filePath, Excel::raw($export, $writerType));
             }
 
             Mail::to($request->email)->send(new ReportMail($type, $from, $to, $filePath, $fileName));
             @unlink($filePath);
-            return response()->json(['success' => true]);
 
+            return response()->json(['success' => true]);
         } catch (\Exception $e) {
             @unlink($filePath);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-    // ── Build Export Object (XLSX/CSV) ────────────────────────────────────
-    private function buildExport(string $type, int $storeId, $fromDate, $toDate, string $from, string $to, string $period): mixed
+    // ── Build Export Object (XLSX / CSV) ─────────────────────────────────
+    private function buildExport(string $type, int $storeId, $fromDate, $toDate, string $from, string $to, string $period, ?Request $request = null): mixed
     {
         return match ($type) {
-            'sales' => new SalesReportExport(
-                dailyTrend:      $this->getDailyTrend($storeId, $fromDate, $toDate),
-                byPaymentMethod: $this->getByPaymentMethod($storeId, $fromDate, $toDate),
-                byOrderType:     $this->getByOrderType($storeId, $fromDate, $toDate),
-                totalSales:      $this->getTotalSales($storeId, $fromDate, $toDate),
-                totalOrders:     $this->getTotalOrders($storeId, $fromDate, $toDate),
-                avgTransaction:  $this->getAvgTransaction($storeId, $fromDate, $toDate),
+            'sales' => (function () use ($storeId, $fromDate, $toDate, $from, $to) {
+                $raw = $this->reportService->salesReport($storeId, $fromDate, $toDate);
+                return new SalesReportExport(
+                    dailyTrend:      $raw['daily']      ?? collect(),
+                    byPaymentMethod: collect($raw['byMethod'] ?? [])->values(),
+                    byOrderType:     $raw['byType']     ?? collect(),
+                    byStatus:        $raw['byStatus']   ?? collect(),
+                    totalSales:      (float) ($raw['totalSales'] ?? 0),
+                    totalOrders:     (int)   ($raw['orderCount'] ?? 0),
+                    avgTransaction:  (float) ($raw['avgSale']    ?? 0),
+                    from: $from, to: $to,
+                );
+            })(),
+
+            'products' => (function () use ($storeId, $fromDate, $toDate, $from, $to) {
+                $raw = $this->reportService->productReport($storeId, $fromDate, $toDate);
+                return new ProductReportExport(
+                    topByQty:         $raw['top_by_qty']        ?? collect(),
+                    topByRevenue:     $raw['top_by_revenue']    ?? collect(),
+                    cancelledSummary: $raw['cancelled_summary'] ?? null,
+                    from: $from, to: $to,
+                    cancelledItems:   $raw['cancelled_items']   ?? collect(),
+                );
+            })(),
+
+            'revenue' => (function () use ($storeId, $period, $fromDate, $toDate, $from, $to) {
+                $raw = $this->reportService->revenueAnalytics($storeId, $period, $fromDate, $toDate);
+                return new RevenueReportExport(
+                    data:             $raw['data']               ?? collect(),
+                    period:           $period,
+                    from:             $from,
+                    to:               $to,
+                    nonRevenueOrders: $raw['non_revenue_orders'] ?? collect(),
+                );
+            })(),
+
+            'cashiers' => (function () use ($storeId, $fromDate, $toDate, $from, $to) {
+                $raw = $this->reportService->cashierReport($storeId, $fromDate, $toDate);
+                return new CashierReportExport(
+                    cashiers:          $raw['cashiers']          ?? collect(),
+                    cancelledPerCashier: $raw['cancelled_per_cashier'] ?? collect(),
+                    from: $from, to: $to,
+                );
+            })(),
+
+            'payments' => new \App\Exports\PaymentReportExport(
+                payments: \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+                    ->with(['order', 'cashier'])
+                    ->when($request?->method, fn($q, $m) => $q->where('payment_method', $m))
+                    ->when($request?->status, fn($q, $s) => $q->where('status', $s))
+                    ->whereBetween('created_at', [$fromDate, $toDate])
+                    ->latest()->get(),
                 from: $from, to: $to,
             ),
-            'products' => new ProductReportExport(
-                topByQty:     $this->getTopByQty($storeId, $fromDate, $toDate),
-                topByRevenue: $this->getTopByRevenue($storeId, $fromDate, $toDate),
-                from: $from, to: $to,
-            ),
-            // FIXED: was getRevenueData() which returned 'total' column.
-            // Now uses revenueAnalytics() consistent with Blade view and RevenueReportExport.
-            'revenue' => new RevenueReportExport(
-                data:   $this->reportService->revenueAnalytics($storeId, $period, $fromDate, $toDate)['data'] ?? collect(),
-                period: $period,
-                from: $from, to: $to,
-            ),
-            'cashiers' => new CashierReportExport(
-                cashiers: $this->getCashiers($storeId, $fromDate, $toDate),
-                from: $from, to: $to,
-            ),
+
             default => abort(404),
         };
     }
 
     // ── Build PDF Data ────────────────────────────────────────────────────
-    private function buildPdfData(string $type, int $storeId, $fromDate, $toDate, string $from, string $to, string $period): array
+    private function buildPdfData(string $type, int $storeId, $fromDate, $toDate, string $from, string $to, string $period, ?Request $request = null): array
     {
         $base = compact('type', 'from', 'to', 'period');
 
         return match ($type) {
-            'sales' => array_merge($base, [
-                'totalSales'      => $this->getTotalSales($storeId, $fromDate, $toDate),
-                'totalOrders'     => $this->getTotalOrders($storeId, $fromDate, $toDate),
-                'avgTransaction'  => $this->getAvgTransaction($storeId, $fromDate, $toDate),
-                'byPaymentMethod' => $this->getByPaymentMethod($storeId, $fromDate, $toDate),
-                'byOrderType'     => $this->getByOrderType($storeId, $fromDate, $toDate),
-                'dailyTrend'      => $this->getDailyTrend($storeId, $fromDate, $toDate),
-            ]),
-            'products' => array_merge($base, [
-                'topByQty'     => $this->getTopByQty($storeId, $fromDate, $toDate),
-                'topByRevenue' => $this->getTopByRevenue($storeId, $fromDate, $toDate),
-            ]),
+            'sales' => array_merge($base, (function () use ($storeId, $fromDate, $toDate) {
+                $raw = $this->reportService->salesReport($storeId, $fromDate, $toDate);
+                return [
+                    'totalSales'      => $raw['totalSales']  ?? 0,
+                    'totalOrders'     => $raw['orderCount']  ?? 0,
+                    'avgTransaction'  => $raw['avgSale']     ?? 0,
+                    'byPaymentMethod' => collect($raw['byMethod'] ?? [])->values(),
+                    'byOrderType'     => $raw['byType']      ?? collect(),
+                    'byStatus'        => $raw['byStatus']    ?? collect(),
+                    'dailyTrend'      => $raw['daily']       ?? collect(),
+                ];
+            })()),
+
+            'products' => array_merge($base, (function () use ($storeId, $fromDate, $toDate) {
+                $raw = $this->reportService->productReport($storeId, $fromDate, $toDate);
+                return [
+                    'topByQty'        => $raw['top_by_qty']        ?? collect(),
+                    'topByRevenue'    => $raw['top_by_revenue']    ?? collect(),
+                    'cancelledSummary'=> $raw['cancelled_summary'] ?? null,
+                ];
+            })()),
+
             'revenue' => array_merge($base, [
                 'data' => $this->reportService->revenueAnalytics($storeId, $period, $fromDate, $toDate),
             ]),
-            'cashiers' => array_merge($base, [
-                'data' => $this->reportService->cashierReport($storeId, $fromDate, $toDate),
+
+            'cashiers' => array_merge($base, (function () use ($storeId, $fromDate, $toDate) {
+                $raw = $this->reportService->cashierReport($storeId, $fromDate, $toDate);
+                return [
+                    'data'               => $raw,
+                    'cancelledPerCashier'=> $raw['cancelled_per_cashier'] ?? collect(),
+                ];
+            })()),
+
+            'payments' => array_merge($base, [
+                'payments' => \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+                    ->with(['order', 'cashier'])
+                    ->when($request?->method, fn($q, $m) => $q->where('payment_method', $m))
+                    ->when($request?->status, fn($q, $s) => $q->where('status', $s))
+                    ->whereBetween('created_at', [$fromDate, $toDate])
+                    ->latest()->get(),
             ]),
+
             default => abort(404),
         };
     }
@@ -274,131 +346,8 @@ class ReportController extends Controller
     // ── Helpers ──────────────────────────────────────────────────────────
     private function parseDates(Request $request): array
     {
-        $from = $request->from
-            ? Carbon::parse($request->from)->startOfDay()
-            : now()->copy()->startOfMonth();
-        $to = $request->to
-            ? Carbon::parse($request->to)->endOfDay()
-            : now()->copy()->endOfDay();
+        $from = $request->from ? Carbon::parse($request->from)->startOfDay() : now()->copy()->startOfMonth();
+        $to   = $request->to   ? Carbon::parse($request->to)->endOfDay()     : now()->copy()->endOfDay();
         return [$from, $to];
-    }
-
-    private function getDailyTrend(int $storeId, $from, $to)
-    {
-        return \DB::table('orders')
-            ->selectRaw('DATE(created_at) as date, SUM(total_amount) as total, COUNT(*) as count')
-            ->where('store_id', $storeId)
-            ->whereBetween('created_at', [$from, $to])
-            ->whereNotIn('status', ['cancelled'])
-            ->groupBy('date')->orderBy('date')->get();
-    }
-
-    private function getByPaymentMethod(int $storeId, $from, $to)
-    {
-        return \DB::table('payments')
-            ->join('orders', 'payments.order_id', '=', 'orders.id')
-            ->selectRaw('payment_method, SUM(payments.amount) as total, COUNT(*) as count')
-            ->where('orders.store_id', $storeId)
-            ->where('payments.status', 'paid')
-            ->whereBetween('payments.created_at', [$from, $to])
-            ->groupBy('payment_method')->get();
-    }
-
-    private function getByOrderType(int $storeId, $from, $to)
-    {
-        return \DB::table('orders')
-            ->selectRaw('order_type, SUM(total_amount) as total, COUNT(*) as count')
-            ->where('store_id', $storeId)
-            ->whereBetween('created_at', [$from, $to])
-            ->whereNotIn('status', ['cancelled'])
-            ->groupBy('order_type')->get();
-    }
-
-    private function getTotalSales(int $storeId, $from, $to): float
-    {
-        return (float) \DB::table('orders')
-            ->where('store_id', $storeId)
-            ->whereBetween('created_at', [$from, $to])
-            ->whereNotIn('status', ['cancelled'])
-            ->sum('total_amount');
-    }
-
-    private function getTotalOrders(int $storeId, $from, $to): int
-    {
-        return \DB::table('orders')
-            ->where('store_id', $storeId)
-            ->whereBetween('created_at', [$from, $to])
-            ->whereNotIn('status', ['cancelled'])
-            ->count();
-    }
-
-    private function getAvgTransaction(int $storeId, $from, $to): float
-    {
-        return (float) (\DB::table('orders')
-            ->where('store_id', $storeId)
-            ->whereBetween('created_at', [$from, $to])
-            ->whereNotIn('status', ['cancelled'])
-            ->avg('total_amount') ?? 0);
-    }
-
-    private function getTopByQty(int $storeId, $from, $to)
-    {
-        return \DB::table('order_items')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->selectRaw('product_name, SUM(quantity) as total_qty, SUM(order_items.subtotal) as total_revenue')
-            ->where('orders.store_id', $storeId)
-            ->whereBetween('orders.created_at', [$from, $to])
-            ->whereNotIn('orders.status', ['cancelled'])
-            ->groupBy('product_name')->orderByDesc('total_qty')->limit(20)->get();
-    }
-
-    private function getTopByRevenue(int $storeId, $from, $to)
-    {
-        return \DB::table('order_items')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->selectRaw('product_name, SUM(order_items.subtotal) as total_revenue, SUM(quantity) as total_qty')
-            ->where('orders.store_id', $storeId)
-            ->whereBetween('orders.created_at', [$from, $to])
-            ->whereNotIn('orders.status', ['cancelled'])
-            ->groupBy('product_name')->orderByDesc('total_revenue')->limit(20)->get();
-    }
-
-    private function getRevenueData(int $storeId, $from, $to, string $period)
-    {
-        $groupBy = match ($period) {
-            'weekly'  => "TO_CHAR(created_at, 'IYYY-IW')",
-            'monthly' => "TO_CHAR(created_at, 'YYYY-MM')",
-            'yearly'  => "TO_CHAR(created_at, 'YYYY')",
-            default   => 'DATE(created_at)',
-        };
-
-        return \DB::table('orders')
-            ->selectRaw("{$groupBy} as period, SUM(total_amount) as total, COUNT(*) as count")
-            ->where('store_id', $storeId)
-            ->whereBetween('created_at', [$from, $to])
-            ->whereNotIn('status', ['cancelled'])
-            ->groupByRaw($groupBy)->orderByRaw($groupBy)->get();
-    }
-
-    private function getCashiers(int $storeId, $from, $to)
-    {
-        return \DB::table('orders')
-            ->join('users', 'orders.cashier_id', '=', 'users.id')
-            ->where('orders.store_id', $storeId)
-            ->whereNotIn('orders.status', ['cancelled'])
-            ->whereBetween('orders.created_at', [$from, $to])
-            ->selectRaw("
-                users.id AS cashier_id,
-                users.name AS cashier,
-                COUNT(orders.id) AS order_count,
-                COALESCE(SUM(orders.total_amount), 0) AS total_sales,
-                COALESCE(AVG(orders.total_amount), 0) AS avg_order_value,
-                AVG(CASE WHEN orders.completed_at IS NOT NULL
-                    THEN EXTRACT(EPOCH FROM (orders.completed_at - orders.created_at)) / 60
-                    ELSE NULL END) AS avg_processing_min
-            ")
-            ->groupBy('users.id', 'users.name')
-            ->orderByDesc('total_sales')
-            ->get();
     }
 }

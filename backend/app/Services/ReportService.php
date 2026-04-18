@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
-use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -35,8 +34,8 @@ class ReportService
             ->selectRaw('COUNT(*) as order_count, COALESCE(SUM(total_amount),0) as total_sales')
             ->first();
 
-        $totalSales  = (float) ($summary->total_sales  ?? 0);
-        $totalOrders = (int)   ($summary->order_count  ?? 0);
+        $totalSales  = (float) ($summary->total_sales ?? 0);
+        $totalOrders = (int)   ($summary->order_count ?? 0);
         $avgOrder    = $totalOrders > 0 ? round($totalSales / $totalOrders, 2) : 0;
 
         $topProducts = DB::table('order_items')
@@ -44,74 +43,54 @@ class ReportService
             ->where('orders.store_id', $storeId)
             ->whereBetween('orders.created_at', [$fromStr, $toStr])
             ->whereNotIn('orders.status', ['cancelled'])
-            ->select(
-                'order_items.product_name',
+            ->select('order_items.product_name',
                 DB::raw('SUM(order_items.quantity) as total_qty'),
-                DB::raw('SUM(order_items.subtotal) as total_revenue')
-            )
+                DB::raw('SUM(order_items.subtotal) as total_revenue'))
             ->groupBy('order_items.product_name')
-            ->orderByDesc('total_qty')
-            ->limit(5)
-            ->get();
+            ->orderByDesc('total_qty')->limit(5)->get();
 
-        $recentOrders = Order::forStore($storeId)
-            ->with('cashier', 'table')
-            ->whereBetween('created_at', [$fromStr, $toStr])
-            ->latest()
-            ->limit(10)
-            ->get(['id', 'order_number', 'order_type', 'status', 'total_amount', 'created_at', 'cashier_id', 'table_id']);
+        $recentOrders = Order::forStore($storeId)->with('cashier', 'table')
+            ->whereBetween('created_at', [$fromStr, $toStr])->latest()->limit(10)
+            ->get(['id','order_number','order_type','status','total_amount','created_at','cashier_id','table_id']);
 
         $trend = DB::table('orders')
-            ->where('store_id', $storeId)
-            ->whereBetween('created_at', [$fromStr, $toStr])
+            ->where('store_id', $storeId)->whereBetween('created_at', [$fromStr, $toStr])
             ->whereNotIn('status', ['cancelled'])
             ->selectRaw("DATE(created_at) as date, SUM(total_amount) as total")
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
+            ->groupBy('date')->orderBy('date')->get();
 
         $hourSales = DB::table('orders')
-            ->where('store_id', $storeId)
-            ->whereBetween('created_at', [$fromStr, $toStr])
+            ->where('store_id', $storeId)->whereBetween('created_at', [$fromStr, $toStr])
             ->whereNotIn('status', ['cancelled'])
             ->selectRaw("EXTRACT(HOUR FROM created_at)::int AS hour, SUM(total_amount) AS total")
-            ->groupBy('hour')
-            ->orderBy('hour')
-            ->pluck('total', 'hour');
+            ->groupBy('hour')->orderBy('hour')->pluck('total', 'hour');
 
-        $hourSalesFull = collect(range(0, 23))->mapWithKeys(fn ($h) => [$h => (float) ($hourSales[$h] ?? 0)]);
+        $hourSalesFull = collect(range(0, 23))->mapWithKeys(fn($h) => [$h => (float) ($hourSales[$h] ?? 0)]);
 
         $dayOfWeekSales = DB::table('orders')
-            ->where('store_id', $storeId)
-            ->whereBetween('created_at', [$fromStr, $toStr])
+            ->where('store_id', $storeId)->whereBetween('created_at', [$fromStr, $toStr])
             ->whereNotIn('status', ['cancelled'])
             ->selectRaw("TO_CHAR(created_at,'Dy') AS day, EXTRACT(DOW FROM created_at)::int AS dow, SUM(total_amount) AS total")
-            ->groupBy('day', 'dow')
-            ->orderBy('dow')
-            ->pluck('total', 'day');
+            ->groupBy('day', 'dow')->orderBy('dow')->pluck('total', 'day');
 
         $categoryStats = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->where('orders.store_id', $storeId)
-            ->whereBetween('orders.created_at', [$fromStr, $toStr])
+            ->where('orders.store_id', $storeId)->whereBetween('orders.created_at', [$fromStr, $toStr])
             ->whereNotIn('orders.status', ['cancelled'])
             ->selectRaw('categories.name AS category, SUM(order_items.quantity) AS total_qty, SUM(order_items.subtotal) AS total_revenue')
-            ->groupBy('categories.name')
-            ->orderByDesc('total_revenue')
-            ->get();
+            ->groupBy('categories.name')->orderByDesc('total_revenue')->get();
 
         $paymentMethods = DB::table('payments')
             ->join('orders', 'payments.order_id', '=', 'orders.id')
-            ->where('orders.store_id', $storeId)
-            ->where('payments.status', 'paid')
+            ->where('orders.store_id', $storeId)->where('payments.status', 'paid')
             ->whereBetween('payments.created_at', [$fromStr, $toStr])
             ->selectRaw('payment_method, COUNT(*) AS count, SUM(amount) AS total')
-            ->groupBy('payment_method')
-            ->get();
+            ->groupBy('payment_method')->get();
 
-        $activeOrders = Order::forStore($storeId)->active()->selectRaw('status, COUNT(*) as count')->groupBy('status')->pluck('count', 'status');
+        $activeOrders = Order::forStore($storeId)->active()
+            ->selectRaw('status, COUNT(*) as count')->groupBy('status')->pluck('count', 'status');
 
         return compact(
             'summary', 'totalSales', 'totalOrders', 'avgOrder',
@@ -126,45 +105,37 @@ class ReportService
         $fromDt = $from->copy()->startOfDay()->toDateTimeString();
         $toDt   = $to->copy()->endOfDay()->toDateTimeString();
 
-        $basePayments = fn () => Payment::whereHas('order', fn ($q) => $q->forStore($storeId))
-            ->paid()
-            ->whereBetween('created_at', [$fromDt, $toDt]);
+        $basePayments = fn() => Payment::whereHas('order', fn($q) => $q->forStore($storeId))
+            ->paid()->whereBetween('created_at', [$fromDt, $toDt]);
 
         $totalSales = (float) $basePayments()->sum('amount');
         $orderCount = Order::forStore($storeId)
             ->whereBetween('created_at', [$fromDt, $toDt])
-            ->whereNotIn('status', ['cancelled'])
-            ->count();
+            ->whereNotIn('status', ['cancelled'])->count();
         $avgSale = $orderCount > 0 ? round($totalSales / $orderCount, 2) : 0;
 
         $byMethod = $basePayments()
             ->select('payment_method', DB::raw('SUM(amount) as total'), DB::raw('COUNT(*) as count'))
-            ->groupBy('payment_method')
-            ->get()
-            ->keyBy('payment_method');
+            ->groupBy('payment_method')->get()->keyBy('payment_method');
 
         $byType = Order::forStore($storeId)
             ->whereBetween('created_at', [$fromDt, $toDt])
             ->whereNotIn('status', ['cancelled'])
             ->select('order_type', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
-            ->groupBy('order_type')
-            ->get();
+            ->groupBy('order_type')->get();
 
+        // byStatus: SEMUA status termasuk cancelled & pending — untuk transparency penuh
         $byStatus = Order::forStore($storeId)
             ->whereBetween('created_at', [$fromDt, $toDt])
             ->select('status', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
-            ->groupBy('status')
-            ->get();
+            ->groupBy('status')->get();
 
         $daily = DB::table('payments')
             ->join('orders', 'payments.order_id', '=', 'orders.id')
-            ->where('orders.store_id', $storeId)
-            ->where('payments.status', 'paid')
+            ->where('orders.store_id', $storeId)->where('payments.status', 'paid')
             ->whereBetween('payments.created_at', [$fromDt, $toDt])
             ->selectRaw('DATE(payments.created_at) as date, SUM(payments.amount) as total, COUNT(*) as count')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
+            ->groupBy('date')->orderBy('date')->get();
 
         return compact('totalSales', 'orderCount', 'avgSale', 'byMethod', 'byType', 'byStatus', 'daily');
     }
@@ -174,6 +145,7 @@ class ReportService
         $fromDt = $from->copy()->startOfDay()->toDateTimeString();
         $toDt   = $to->copy()->endOfDay()->toDateTimeString();
 
+        // Data produk hanya dari pesanan yang tidak dibatalkan
         $items = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
@@ -183,20 +155,39 @@ class ReportService
             ->whereBetween('orders.created_at', [$fromDt, $toDt])
             ->selectRaw('order_items.product_name, categories.name AS category, SUM(order_items.quantity) AS total_qty, SUM(order_items.subtotal) AS total_revenue')
             ->groupBy('order_items.product_name', 'categories.name')
-            ->orderByDesc('total_qty')
-            ->get();
+            ->orderByDesc('total_qty')->get();
 
-        $byCategory = $items->groupBy('category')->map(fn ($g) => [
+        $byCategory = $items->groupBy('category')->map(fn($g) => [
             'qty'     => $g->sum('total_qty'),
             'revenue' => $g->sum('total_revenue'),
         ]);
 
+        // Ringkasan pesanan cancelled — berapa order dibatalkan & nilai yang hilang
+        $cancelledSummary = DB::table('orders')
+            ->where('store_id', $storeId)
+            ->where('status', 'cancelled')
+            ->whereBetween('created_at', [$fromDt, $toDt])
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total_amount')
+            ->first();
+
+        // Produk apa saja yang ada di dalam pesanan yang dibatalkan
+        $cancelledItems = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.store_id', $storeId)
+            ->where('orders.status', 'cancelled')
+            ->whereBetween('orders.created_at', [$fromDt, $toDt])
+            ->selectRaw('order_items.product_name, SUM(order_items.quantity) AS total_qty, SUM(order_items.subtotal) AS total_lost')
+            ->groupBy('order_items.product_name')
+            ->orderByDesc('total_qty')->get();
+
         return [
-            'top_by_qty'     => $items->take(10)->values(),
-            'top_by_revenue' => $items->sortByDesc('total_revenue')->take(10)->values(),
-            'least_sold'     => $items->sortBy('total_qty')->take(10)->values(),
-            'by_category'    => $byCategory,
-            'total_items'    => $items->count(),
+            'top_by_qty'        => $items->take(10)->values(),
+            'top_by_revenue'    => $items->sortByDesc('total_revenue')->take(10)->values(),
+            'least_sold'        => $items->sortBy('total_qty')->take(10)->values(),
+            'by_category'       => $byCategory,
+            'total_items'       => $items->count(),
+            'cancelled_summary' => $cancelledSummary,
+            'cancelled_items'   => $cancelledItems,
         ];
     }
 
@@ -205,6 +196,7 @@ class ReportService
         $fromDt = $from->copy()->startOfDay()->toDateTimeString();
         $toDt   = $to->copy()->endOfDay()->toDateTimeString();
 
+        // Pesanan selesai / aktif per kasir (exclude cancelled)
         $rows = DB::table('orders')
             ->join('users', 'orders.cashier_id', '=', 'users.id')
             ->where('orders.store_id', $storeId)
@@ -221,37 +213,54 @@ class ReportService
                     ELSE NULL END) AS avg_processing_min
             ")
             ->groupBy('users.id', 'users.name')
-            ->orderByDesc('total_sales')
-            ->get();
+            ->orderByDesc('total_sales')->get();
+
+        // Pesanan dibatalkan per kasir — untuk transparansi
+        $cancelledPerCashier = DB::table('orders')
+            ->join('users', 'orders.cashier_id', '=', 'users.id')
+            ->where('orders.store_id', $storeId)
+            ->where('orders.status', 'cancelled')
+            ->whereBetween('orders.created_at', [$fromDt, $toDt])
+            ->selectRaw("
+                users.id AS cashier_id,
+                users.name AS cashier,
+                COUNT(orders.id) AS cancelled_count,
+                COALESCE(SUM(orders.total_amount),0) AS cancelled_amount
+            ")
+            ->groupBy('users.id', 'users.name')
+            ->get()
+            ->keyBy('cashier_id');
+
+        // Pesanan pending per kasir
+        $pendingPerCashier = DB::table('orders')
+            ->join('users', 'orders.cashier_id', '=', 'users.id')
+            ->where('orders.store_id', $storeId)
+            ->where('orders.status', 'pending')
+            ->whereBetween('orders.created_at', [$fromDt, $toDt])
+            ->selectRaw("users.id AS cashier_id, COUNT(orders.id) AS pending_count")
+            ->groupBy('users.id')
+            ->get()
+            ->keyBy('cashier_id');
 
         return [
-            'cashiers'    => $rows,
-            'total_sales' => $rows->sum('total_sales'),
-            'best'        => $rows->first(),
+            'cashiers'             => $rows,
+            'total_sales'          => $rows->sum('total_sales'),
+            'best'                 => $rows->first(),
+            'cancelled_per_cashier'=> $cancelledPerCashier,
+            'pending_per_cashier'  => $pendingPerCashier,
         ];
     }
 
-    /**
-     * Revenue analytics grouped by period.
-     *
-     * FIXED: All period formats use MySQL-compatible DATE_FORMAT / standard SQL so
-     * the grouping actually changes when $period changes. Also normalised the
-     * returned column names to 'period', 'revenue', 'count' consistently so that
-     * both the Blade view and the Export class can rely on the same field names.
-     */
     public function revenueAnalytics(int $storeId, string $period, Carbon $from, Carbon $to): array
     {
         $fromDt = $from->copy()->startOfDay()->toDateTimeString();
         $toDt   = $to->copy()->endOfDay()->toDateTimeString();
 
-        // Use standard SQL expressions that work on both PostgreSQL and MySQL.
-        // PostgreSQL: TO_CHAR / DATE_TRUNC; MySQL: DATE_FORMAT / YEARWEEK.
-        // We keep PostgreSQL here as the original code already used it.
         $groupExpr = match ($period) {
             'weekly'  => "TO_CHAR(payments.created_at, 'IYYY\"-W\"IW')",
             'monthly' => "TO_CHAR(payments.created_at, 'YYYY-MM')",
             'yearly'  => "TO_CHAR(payments.created_at, 'YYYY')",
-            default   => "DATE(payments.created_at)",   // 'daily'
+            default   => "DATE(payments.created_at)",
         };
 
         $rows = DB::table('payments')
@@ -259,18 +268,24 @@ class ReportService
             ->where('orders.store_id', $storeId)
             ->where('payments.status', 'paid')
             ->whereBetween('payments.created_at', [$fromDt, $toDt])
-            // Alias columns as 'period', 'revenue', 'count' – consistent for all callers.
             ->selectRaw("{$groupExpr} AS period, SUM(payments.amount) AS revenue, COUNT(*) AS count")
-            ->groupByRaw($groupExpr)
-            ->orderByRaw($groupExpr)
-            ->get();
+            ->groupByRaw($groupExpr)->orderByRaw($groupExpr)->get();
+
+        // Ringkasan order yang tidak menghasilkan revenue (cancelled, pending)
+        $nonRevenueOrders = DB::table('orders')
+            ->where('store_id', $storeId)
+            ->whereIn('status', ['cancelled', 'pending', 'cooking', 'ready'])
+            ->whereBetween('created_at', [$fromDt, $toDt])
+            ->selectRaw('status, COUNT(*) as count, COALESCE(SUM(total_amount),0) as total_amount')
+            ->groupBy('status')->get()->keyBy('status');
 
         return [
-            'data'        => $rows,
-            'labels'      => $rows->pluck('period'),
-            'values'      => $rows->pluck('revenue'),
-            'total'       => (float) $rows->sum('revenue'),
-            'period_type' => $period,
+            'data'               => $rows,
+            'labels'             => $rows->pluck('period'),
+            'values'             => $rows->pluck('revenue'),
+            'total'              => (float) $rows->sum('revenue'),
+            'period_type'        => $period,
+            'non_revenue_orders' => $nonRevenueOrders,
         ];
     }
 
@@ -278,13 +293,10 @@ class ReportService
     {
         $rows = DB::table('payments')
             ->join('orders', 'payments.order_id', '=', 'orders.id')
-            ->where('orders.store_id', $storeId)
-            ->where('payments.status', 'paid')
+            ->where('orders.store_id', $storeId)->where('payments.status', 'paid')
             ->where('payments.created_at', '>=', now()->copy()->subDays($days)->startOfDay())
             ->selectRaw('DATE(payments.created_at) as date, SUM(payments.amount) as total')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->pluck('total', 'date');
+            ->groupBy('date')->orderBy('date')->pluck('total', 'date');
 
         $result = [];
         for ($i = $days - 1; $i >= 0; $i--) {

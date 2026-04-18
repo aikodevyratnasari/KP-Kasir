@@ -10,7 +10,8 @@
     {{-- TABS --}}
     <div class="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
         <button type="button" @click="tab = 'info'"
-                :class="tab === 'info' ? 'bg-white shadow text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                :class="tab === 'info' ? 'shadow font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                :style="tab === 'info' ? 'background-color:#2D54BF; color:white;' : ''"
                 class="px-4 py-2 rounded-lg text-sm transition-all inline-flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/>
@@ -18,7 +19,8 @@
             Info
         </button>
         <button type="button" @click="tab = 'variants'"
-                :class="tab === 'variants' ? 'bg-white shadow text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                :class="tab === 'variants' ? 'shadow font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                :style="tab === 'variants' ? 'background-color:#2D54BF; color:white;' : ''"
                 class="px-4 py-2 rounded-lg text-sm transition-all inline-flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
@@ -31,7 +33,8 @@
             @endif
         </button>
         <button type="button" @click="tab = 'discounts'"
-                :class="tab === 'discounts' ? 'bg-white shadow text-indigo-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                :class="tab === 'discounts' ? 'shadow font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                :style="tab === 'discounts' ? 'background-color:#2D54BF; color:white;' : ''"
                 class="px-4 py-2 rounded-lg text-sm transition-all inline-flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>

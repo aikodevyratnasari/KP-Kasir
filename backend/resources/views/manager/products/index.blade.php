@@ -29,28 +29,41 @@
                 <option value="price" {{ request('sort')==='price'?'selected':'' }}>Harga</option>
             </select>
         </div>
-        <button type="submit" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
                 style="background-color: #2D54BF; border: 1px solid #2D54BF;"
                 onmouseover="this.style.backgroundColor='#1e3d8f'"
                 onmouseout="this.style.backgroundColor='#2D54BF'">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="6" x2="20" y2="6"/>
+                    <circle cx="16" cy="6" r="2"/>
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <circle cx="8" cy="12" r="2"/>
+                    <line x1="4" y1="18" x2="20" y2="18"/>
+                    <circle cx="14" cy="18" r="2"/>
+                </svg>
                 Filter
             </button>
-        <a href="{{ route('manager.products.index') }}" 
-            class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-            style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
-            onmouseover="this.style.backgroundColor='#f3f4f6';"
-            onmouseout="this.style.backgroundColor='white';">
-            Reset
-        </a>
+            <a href="{{ route('manager.products.index') }}" class="btn-secondary text-sm inline-flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74"/>
+                    <path d="M3 3v6h6"/>
+                </svg>
+                Reset
+            </a>
 
         <div class="ml-auto flex gap-2 items-center">
             <a href="{{ route('manager.products.create') }}" 
-class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
-                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
-                onmouseover="this.style.backgroundColor='#1e3d8f'"
-                onmouseout="this.style.backgroundColor='#2D54BF'">
-Tambah Produk
-</a>
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
+               style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+               onmouseover="this.style.backgroundColor='#1e3d8f'"
+               onmouseout="this.style.backgroundColor='#2D54BF'">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"/>
+                    <circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                Tambah Produk
+            </a>
             <a href="{{ route('manager.products.trashed') }}" class="inline-flex items-center p-2 text-gray-500 hover:text-red-600 transition-colors" title="Sampah">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/>
@@ -146,9 +159,6 @@ Tambah Produk
                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold
                             {{ $product->is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
                             @if($product->is_available)
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="20 6 9 17 4 12"/>
-                                </svg>
                                 Ya
                             @else
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -161,22 +171,31 @@ Tambah Produk
                     <td class="py-3 px-4 text-center">
                         <div class="flex justify-center items-center gap-2">
                             <a href="{{ route('manager.products.edit', $product) }}"
-                               class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-                               style="color: #EF8F00; background-color: #fff8ec; border: 1px solid #EF8F00;"
-                               onmouseover="this.style.backgroundColor='#ffefd0'"
-                               onmouseout="this.style.backgroundColor='#fff8ec'"
-                               onmousedown="this.style.transform='scale(0.95)'"
-                               onmouseup="this.style.transform='scale(1)'">
-                                Edit
+                               class="inline-flex items-center justify-center transition-all p-1"
+                               style="color: #EF8F00;"
+                               onmouseover="this.style.color='#cc7a00';"
+                               onmouseout="this.style.color='#EF8F00';"
+                               title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
                             </a>
                             <form method="POST" action="{{ route('manager.products.destroy', $product) }}"
                                   onsubmit="return confirm('Hapus produk {{ addslashes($product->name) }}?')">
                                 @csrf @method('DELETE')
                                 <button type="submit"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-                                        onmousedown="this.style.transform='scale(0.95)'"
-                                        onmouseup="this.style.transform='scale(1)'">
-                                    Hapus
+                                        class="inline-flex items-center justify-center transition-all p-1"
+                                        style="color: #dc2626; background: none; border: none;"
+                                        onmouseover="this.style.color='#b91c1c';"
+                                        onmouseout="this.style.color='#dc2626';"
+                                        title="Hapus">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                                        <path d="M10 11v6M14 11v6"/>
+                                        <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                                    </svg>
                                 </button>
                             </form>
                         </div>

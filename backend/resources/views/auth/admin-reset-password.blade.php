@@ -4,10 +4,6 @@
 
 @section('content')
 <div class="max-w-lg mx-auto space-y-5">
-    <div class="flex items-center gap-3">
-        <a href="{{ route('admin.users.edit', $user) }}" class="text-gray-400 hover:text-gray-600">←</a>
-        <h1 class="page-title">Ubah Password</h1>
-    </div>
 
     {{-- Info user --}}
     <div class="card">
@@ -35,7 +31,7 @@
 
     {{-- Form --}}
     <div class="card">
-        <h3 class="font-semibold text-gray-800 mb-6">Buat Password Baru</h3>
+        <h3 class="font-semibold text-gray-800 mb-6 border-b border-gray-200">Buat Password Baru</h3>
 
         <form method="POST" action="{{ route('admin.users.reset-password', $user) }}">
             @csrf
@@ -61,8 +57,11 @@
                             </svg>
                         </button>
                     </div>
-                    <p class="mt-1.5 text-xs text-gray-400">Min. 8 karakter, mengandung huruf besar, huruf kecil, dan angka</p>
-                    @error('password') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    @error('password')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @else
+                        <p class="mt-1.5 text-xs text-gray-400">Min. 8 karakter, mengandung huruf besar, huruf kecil, dan angka</p>
+                    @enderror
                 </div>
 
                 {{-- Konfirmasi Password --}}
@@ -87,11 +86,26 @@
                 </div>
             </div>
 
-            <div class="flex gap-3 mt-6 pt-5 border-t border-gray-100">
-                <button type="submit" class="btn-primary">Simpan Password Baru</button>
-                <a href="{{ route('admin.users.edit', $user) }}" class="btn-secondary">Batal</a>
+            <div class="flex gap-3 mt-6 pt-5 border-t border-gray-100 justify-end">
+                <button type="submit" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF;"
+                    onmouseover="this.style.backgroundColor='#1e3d8f'"
+                    onmouseout="this.style.backgroundColor='#2D54BF'"
+                    onmousedown="this.style.transform='scale(0.98)';"
+                    onmouseup="this.style.transform='scale(1)';">
+                    Simpan Password Baru
+                </button>
             </div>
         </form>
     </div>
+    <div class="flex items-center gap-3">
+            <a href="{{ route('admin.users.edit', $user) }}"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+                        onmouseover="this.style.backgroundColor='#f3f4f6';"
+                        onmouseout="this.style.backgroundColor='white';">
+                Kembali
+            </a>
+        </div>
 </div>
 @endsection

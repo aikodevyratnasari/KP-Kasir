@@ -27,7 +27,6 @@
             <button type="submit" class="btn-primary">Tampilkan</button>
             <a href="{{ route('manager.reports.revenue') }}" class="btn-secondary">Reset</a>
 
-            {{-- Tombol Download & Kirim --}}
             <div class="ml-auto">
                 <x-manager.reports.actions
                     type="revenue"
@@ -41,15 +40,22 @@
 
     {{-- Summary --}}
     @php
-        $rows       = $data['data']        ?? collect();
-        $totalRev   = $data['total']       ?? 0;
-        $periodType = $data['period_type'] ?? $period;
+        $rows            = $data['data']               ?? collect();
+        $totalRev        = $data['total']              ?? 0;
+        $periodType      = $data['period_type']        ?? $period;
+        $nonRevenueOrders= $data['non_revenue_orders'] ?? collect();
+
+        $cancelledData   = $nonRevenueOrders->get('cancelled');
+        $pendingData     = $nonRevenueOrders->get('pending');
+        $cookingData     = $nonRevenueOrders->get('cooking');
+        $readyData       = $nonRevenueOrders->get('ready');
     @endphp
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="card">
             <p class="text-xs text-gray-500 uppercase font-medium">Total Revenue</p>
             <p class="text-2xl font-bold text-gray-900 mt-1">Rp {{ number_format($totalRev, 0, ',', '.') }}</p>
+            <p class="text-xs text-gray-400 mt-1">Dari pembayaran lunas</p>
         </div>
         <div class="card">
             <p class="text-xs text-gray-500 uppercase font-medium">Jumlah Periode</p>
@@ -63,7 +69,41 @@
         </div>
     </div>
 
-    {{-- Tabel Data --}}
+    {{-- Pesanan Non-Revenue --}}
+    @if($nonRevenueOrders->isNotEmpty())
+    <div class="card">
+        <h2 class="font-semibold text-gray-800 mb-1">Pesanan Tidak Menghasilkan Revenue</h2>
+        <p class="text-xs text-gray-400 mb-4">Pesanan dalam periode ini yang belum atau tidak menghasilkan pembayaran lunas</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            @php
+                $nonRevConfig = [
+                    'cancelled' => ['label' => 'Dibatalkan', 'bg' => '#fef2f2', 'border' => '#fca5a5', 'text' => '#991b1b', 'icon' => '✕'],
+                    'pending'   => ['label' => 'Pending',    'bg' => '#fff7ed', 'border' => '#fdba74', 'text' => '#9a3412', 'icon' => '⏳'],
+                    'cooking'   => ['label' => 'Dimasak',    'bg' => '#fffbeb', 'border' => '#fcd34d', 'text' => '#92400e', 'icon' => '🍳'],
+                    'ready'     => ['label' => 'Siap Saji',  'bg' => '#eff6ff', 'border' => '#93c5fd', 'text' => '#1d4ed8', 'icon' => '🔔'],
+                ];
+            @endphp
+            @foreach($nonRevConfig as $statusKey => $cfg)
+                @php $nr = $nonRevenueOrders->get($statusKey); @endphp
+                @if($nr)
+                <div style="background:{{ $cfg['bg'] }}; border:1px solid {{ $cfg['border'] }}; color:{{ $cfg['text'] }}; border-radius:10px; padding:12px;">
+                    <p style="font-size:11px; font-weight:600; text-transform:uppercase; opacity:0.8;">{{ $cfg['icon'] }} {{ $cfg['label'] }}</p>
+                    <p style="font-size:24px; font-weight:700; margin-top:4px;">{{ $nr->count }}</p>
+                    <p style="font-size:11px; margin-top:2px; opacity:0.7;">Rp {{ number_format($nr->total_amount, 0, ',', '.') }}</p>
+                </div>
+                @endif
+            @endforeach
+        </div>
+        @if($cancelledData)
+        <div class="mt-3 px-3 py-2 rounded-lg text-xs" style="background:#fef2f2; border:1px solid #fca5a5; color:#991b1b;">
+            ⚠ <strong>{{ $cancelledData->count }} pesanan dibatalkan</strong> senilai
+            Rp {{ number_format($cancelledData->total_amount, 0, ',', '.') }} tidak termasuk dalam total revenue di atas.
+        </div>
+        @endif
+    </div>
+    @endif
+
+    {{-- Tabel Data Revenue --}}
     <div class="card">
         <h2 class="font-semibold text-gray-800 mb-4">
             Data Revenue
@@ -84,7 +124,6 @@
                 @forelse($rows as $row)
                     <tr class="border-b border-gray-50 hover:bg-gray-50">
                         <td class="py-2 text-gray-700">{{ $row->period ?? '-' }}</td>
-                        {{-- ReportService returns 'revenue' column, not 'total' --}}
                         <td class="py-2 text-right font-semibold">Rp {{ number_format($row->revenue ?? 0, 0, ',', '.') }}</td>
                         <td class="py-2 text-right text-gray-600">{{ $row->count ?? '-' }}</td>
                     </tr>

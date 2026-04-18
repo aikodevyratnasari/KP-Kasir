@@ -1,12 +1,9 @@
 @extends('layouts.app')
 @section('title', 'Tambah User')
+@section('page-title', 'Tambah User Baru')
 
 @section('content')
 <div class="max-w-xl mx-auto space-y-6">
-    <div class="flex items-center gap-3">
-        <a href="{{ route('admin.users.index') }}" class="text-gray-400 hover:text-gray-600">←</a>
-        <h1 class="page-title">Tambah User Baru</h1>
-    </div>
 
     <div class="card">
         <form method="POST" action="{{ route('admin.users.store') }}">
@@ -60,12 +57,41 @@
                     <input type="text" name="phone" value="{{ old('phone') }}" class="form-input">
                 </div>
             </div>
-
-            <div class="flex gap-3 mt-6">
-                <button type="submit" class="btn-primary">Simpan User</button>
-                <a href="{{ route('admin.users.index') }}" class="btn-secondary">Batal</a>
-            </div>
         </form>
     </div>
+    <div class="flex justify-between mt-6">
+        <a href="{{ route('admin.users.index') }}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+           style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+           onmouseover="this.style.backgroundColor='#f3f4f6';"
+           onmouseout="this.style.backgroundColor='white';">
+            Kembali
+        </a>
+        <button type="submit"
+                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f';"
+                onmouseout="this.style.backgroundColor='#2D54BF';"
+                onmousedown="this.style.transform='scale(0.98)';"
+                onmouseup="this.style.transform='scale(1)';">
+            Simpan User
+        </button>
+    </div>
 </div>
+@push('scripts')
+<script>
+document.querySelectorAll('.form-input').forEach(input => {
+    input.addEventListener('input', function() {
+        this.classList.remove('form-input-error');
+        const errorMsg = this.closest('div').querySelector('p.text-red-600');
+        if (errorMsg) errorMsg.remove();
+    });
+    input.addEventListener('change', function() {
+        this.classList.remove('form-input-error');
+        const errorMsg = this.closest('div').querySelector('p.text-red-600');
+        if (errorMsg) errorMsg.remove();
+    });
+});
+</script>
+@endpush
 @endsection

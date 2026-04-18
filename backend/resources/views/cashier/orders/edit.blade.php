@@ -14,38 +14,52 @@
          'variant_id'   => $i->variant_id ?? null,
          'variant_name' => ($i->variant_id && $i->variant) ? $i->variant->name : null,
          'special_notes' => $i->special_notes ?? '',
-     ])) }}, {{ $taxRate }})">
+     ])) }}, {{ $taxRate }})" x-init="mounted()">
 
+    {{-- ── KIRI: Form + Menu (scrollable) ── --}}
     <div style="flex:1; overflow-y:auto; padding:20px 16px 20px 0;">
         <div class="flex items-center gap-3 mb-4">
-            <a href="{{ route('cashier.orders.show', $order) }}" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-                </svg>
-            </a>
-            <h1 class="page-title">Edit Pesanan #{{ $order->order_number }}</h1>
+            <h1 class="page-title">Pesanan #{{ $order->order_number }}</h1>
         </div>
 
         <form method="POST" action="{{ route('cashier.orders.update', $order) }}" id="order-form">
             @csrf @method('PUT')
             <div class="card mb-4">
-                <div class="grid grid-cols-1 gap-3">
-                    <div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Nama Pelanggan <span class="text-gray-400 font-normal text-xs">(opsional)</span>
                         </label>
                         <input type="text" name="customer_name"
-                            value="{{ old('customer_name', $order->customer_name) }}"
-                            placeholder="cth: Budi Santoso" class="form-input">
+                               value="{{ old('customer_name', $order->customer_name) }}"
+                               placeholder="cth: Budi Santoso" class="form-input">
                     </div>
-                    <div>
+                    <div class="sm:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Pesanan</label>
                         <textarea name="notes" rows="2" class="form-input"
-                                placeholder="Catatan khusus...">{{ old('notes', $order->notes) }}</textarea>
+                                  placeholder="Catatan khusus...">{{ old('notes', $order->notes) }}</textarea>
+                    </div>
+                    <div class="sm:col-span-2 flex justify-between items-center pt-1">
+
+                    <a href="{{ route('cashier.orders.show', $order) }}"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+                        onmouseover="this.style.backgroundColor='#f3f4f6';"
+                        onmouseout="this.style.backgroundColor='white';">
+                        Batal
+                    </a>
+                        <button type="submit" form="order-form"
+                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                                style="background-color:#2D54BF; border:1px solid #2D54BF;"
+                                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                                onmouseout="this.style.backgroundColor='#2D54BF'">
+                            Simpan Perubahan
+                        </button>
                     </div>
                 </div>
             </div>
-
+            
+            {{-- ── Pilih Menu ── --}}
             @foreach($categories as $category)
                 @if($category->products->where('is_available', true)->count() > 0)
                 <div style="margin-bottom:32px;">
@@ -75,23 +89,49 @@
                              @endif>
                             <div style="height:110px; background:#f8fafc; overflow:hidden; position:relative;">
                                 @if($product->image)
-                                    <img src="{{ Storage::url($product->image) }}" alt="{{ $product->name }}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; color:#d1d5db;"><svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
+                                    <img src="{{ Storage::url($product->image) }}" alt="{{ $product->name }}"
+                                         style="width:100%; height:100%; object-fit:cover; display:block;"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; color:#d1d5db;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+                                    </div>
                                 @else
-                                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#d1d5db;"><svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
+                                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#d1d5db;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+                                    </div>
                                 @endif
-                                @if($hasVariants)<div style="position:absolute; top:6px; right:6px; background:#6366f1; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">{{ $variants->count() }} variasi</div>@endif
-                                @if($hasDiscount)<div style="position:absolute; top:6px; left:6px; background:#ef4444; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">{{ $activeDisc->type === 'percentage' ? number_format($activeDisc->value,0).'%' : 'DISKON' }} OFF</div>@endif
+                                @if($hasVariants)
+                                    <div style="position:absolute; top:6px; right:6px; background:#6366f1; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">
+                                        {{ $variants->count() }} variasi
+                                    </div>
+                                @endif
+                                @if($hasDiscount)
+                                    <div style="position:absolute; top:6px; left:6px; background:#ef4444; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">
+                                        {{ $activeDisc->type === 'percentage' ? number_format($activeDisc->value,0).'%' : 'DISKON' }} OFF
+                                    </div>
+                                @endif
                             </div>
                             <div style="padding:10px 12px 12px;">
                                 <p style="font-size:13px; font-weight:600; color:#111827; margin:0 0 3px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ $product->name }}</p>
-                                @if($product->description)<p style="font-size:11px; color:#9ca3af; margin:0 0 6px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">{{ $product->description }}</p>@else<div style="margin-bottom:6px;"></div>@endif
+                                @if($product->description)
+                                    <p style="font-size:11px; color:#9ca3af; margin:0 0 6px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">{{ $product->description }}</p>
+                                @else
+                                    <div style="margin-bottom:6px;"></div>
+                                @endif
                                 <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
                                     <div>
-                                        <span style="font-size:13px; font-weight:700; color:#4f46e5;">@if($hasVariants) Mulai @endif Rp {{ number_format($displayPrice, 0, ',', '.') }}</span>
-                                        @if($hasDiscount)<span style="font-size:10px; color:#9ca3af; text-decoration:line-through; display:block; margin-top:1px;">Rp {{ number_format($product->price, 0, ',', '.') }}</span>@endif
+                                        <span style="font-size:13px; font-weight:700; color:#4f46e5;">
+                                            @if($hasVariants) Mulai @endif Rp {{ number_format($displayPrice, 0, ',', '.') }}
+                                        </span>
+                                        @if($hasDiscount)
+                                            <span style="font-size:10px; color:#9ca3af; text-decoration:line-through; display:block; margin-top:1px;">
+                                                Rp {{ number_format($product->price, 0, ',', '.') }}
+                                            </span>
+                                        @endif
                                     </div>
-                                    @if($product->track_stock)<span style="font-size:10px; color:#9ca3af; background:#f3f4f6; padding:2px 6px; border-radius:10px; flex-shrink:0;">Stok {{ $product->stock }}</span>@endif
+                                    @if($product->track_stock)
+                                        <span style="font-size:10px; color:#9ca3af; background:#f3f4f6; padding:2px 6px; border-radius:10px; flex-shrink:0;">Stok {{ $product->stock }}</span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -103,9 +143,9 @@
         </form>
     </div>
 
-    {{-- Keranjang --}}
-    <div style="width:320px; flex-shrink:0; display:flex; flex-direction:column; border-left:1px solid #e5e7eb; background:#fff; overflow:hidden;">
-        <div style="padding:16px; border-bottom:1px solid #f1f5f9; flex-shrink:0;">
+    {{-- ── KANAN: Keranjang ── --}}
+    <div id="cart-panel" style="width:320px; flex-shrink:0; display:flex; flex-direction:column; border-left:1px solid #e5e7eb; background:#fff; overflow:hidden;">
+        <div style="padding:16px; border-bottom:1px solid #e5e7eb; flex-shrink:0;">
             <div class="flex items-center justify-between">
                 <h3 class="font-bold text-gray-900">Keranjang</h3>
                 <span x-show="items.length > 0" class="text-xs bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full" x-text="items.length + ' item'"></span>
@@ -113,7 +153,11 @@
         </div>
         <div style="flex:1; overflow-y:auto; padding:12px;">
             <div x-show="items.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 py-12">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mb-2 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                <div style="width:80px; height:80px; border-radius:50%; border:2px solid #e5e7eb; background:#f9fafb; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px; color:#d1d5db;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                </div>
                 <p class="text-sm">Klik menu untuk menambahkan</p>
             </div>
             <div class="space-y-2">
@@ -121,50 +165,68 @@
                     <div class="bg-gray-50 rounded-xl p-3">
                         <input type="hidden" :name="'items['+index+'][product_id]'" :value="item.product_id" form="order-form">
                         <input type="hidden" :name="'items['+index+'][quantity]'" :value="item.quantity" form="order-form">
-                        <template x-if="item.variant_id"><input type="hidden" :name="'items['+index+'][variant_id]'" :value="item.variant_id" form="order-form"></template>
+                        <template x-if="item.variant_id">
+                            <input type="hidden" :name="'items['+index+'][variant_id]'" :value="item.variant_id" form="order-form">
+                        </template>
                         <div class="flex items-start justify-between mb-1.5">
                             <div class="flex-1 leading-tight">
                                 <p class="text-sm font-semibold text-gray-900" x-text="item.name"></p>
                                 <p x-show="item.variant_name" class="text-xs text-indigo-500 font-medium mt-0.5" x-text="item.variant_name"></p>
                             </div>
-                            <button type="button" @click="removeItem(index)" class="ml-2 text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <button type="button" @click="removeItem(index)"
+                                class="ml-2 flex-shrink-0 transition-colors"
+                                style="width:20px; height:20px; border-radius:50%; background:#f3f4f6; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#9ca3af;"
+                                onmouseover="this.style.backgroundColor='#fee2e2'; this.style.color='#ef4444';"
+                                onmouseout="this.style.backgroundColor='#f3f4f6'; this.style.color='#9ca3af';">
+                                <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
                             </button>
                         </div>
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-1.5">
-                                <button type="button" @click="item.quantity > 1 ? item.quantity-- : removeItem(index)" class="w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-gray-100 flex items-center justify-center">−</button>
-                                <span class="text-sm font-bold w-6 text-center" x-text="item.quantity"></span>
-                                <button type="button" @click="item.quantity++" class="w-7 h-7 rounded-full bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 flex items-center justify-center">+</button>
+                            <div class="flex items-center" style="border:1.5px solid #d1d5db; border-radius:6px; overflow:hidden;">
+                                <button type="button" @click="item.quantity > 1 ? item.quantity-- : removeItem(index)"
+                                    style="width:28px; height:28px; background:white; border:none; color:#374151; font-size:16px; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; margin-bottom:3px;"
+                                    onmouseover="this.style.backgroundColor='#f3f4f6'"
+                                    onmouseout="this.style.backgroundColor='white'">−</button>
+                                <span style="width:32px; height:28px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#111827; border-left:1.5px solid #d1d5db; border-right:1.5px solid #d1d5db;" x-text="item.quantity"></span>
+                                <button type="button" @click="item.quantity++"
+                                    style="width:28px; height:28px; background:white; border:none; color:#2D54BF; font-size:16px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; margin-bottom:3px;"
+                                    onmouseover="this.style.backgroundColor='#f3f4f6'"
+                                    onmouseout="this.style.backgroundColor='white'">+</button>
                             </div>
                             <span class="text-sm font-bold text-indigo-600" x-text="'Rp ' + formatRp(item.price * item.quantity)"></span>
                         </div>
                         <div class="mt-2">
                             <input type="text" :name="'items['+index+'][special_notes]'" form="order-form"
-                            x-model="item.special_notes"
-                            placeholder="Catatan item..." class="form-input text-xs py-1 bg-white">
+                                   x-model="item.special_notes"
+                                   placeholder="Catatan item..." class="form-input text-xs py-1 bg-white">
                         </div>
                     </div>
                 </template>
             </div>
         </div>
-        <div style="padding:14px; border-top:1px solid #f1f5f9; flex-shrink:0; background:#fff;">
+        <div style="padding:14px; border-top:1px solid #e5e7eb; flex-shrink:0; background:#fff;">
             <div x-show="items.length > 0">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm text-gray-500">Subtotal</span>
+                    <span class="text-sm text-gray-700">Subtotal</span>
                     <span class="text-sm text-gray-700" x-text="'Rp ' + formatRp(subtotal)"></span>
                 </div>
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs text-gray-400">Pajak ({{ $taxRate }}%)</span>
                     <span class="text-xs text-gray-400" x-text="'Rp ' + formatRp(taxAmount)"></span>
                 </div>
-                <div style="height:1px; background:#f1f5f9; margin-bottom:8px;"></div>
+                <div style="height:1.5px; background:#d1d5db; margin-bottom:8px;"></div>
                 <div class="flex justify-between items-center mb-3">
                     <span class="text-sm font-bold text-gray-700">Total</span>
-                    <span class="text-lg font-bold text-gray-900" x-text="'Rp ' + formatRp(grandTotal)"></span>
+                    <span class="text-sm font-bold text-gray-900" x-text="'Rp ' + formatRp(grandTotal)"></span>
                 </div>
-                <button type="submit" form="order-form" class="btn-primary w-full justify-center py-3 text-base inline-flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                {{-- Tombol submit pakai rute update milik edit --}}
+                <button type="submit" form="order-form"
+                        class="w-full justify-center py-3 text-base inline-flex items-center gap-2 font-medium text-white rounded-lg transition-colors"
+                        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                        onmouseover="this.style.backgroundColor='#1e3d8f'"
+                        onmouseout="this.style.backgroundColor='#2D54BF'">
                     Simpan Perubahan
                 </button>
             </div>
@@ -172,7 +234,7 @@
         </div>
     </div>
 
-    {{-- Modal Varian — hanya varian, tidak ada "Standar" --}}
+    {{-- ── MODAL PILIH VARIAN ── --}}
     <div :style="variantModal.open
                     ? 'display:flex; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;'
                     : 'display:none;'"
@@ -183,7 +245,10 @@
                     <h3 style="font-size:14px; font-weight:700; color:#111827; margin:0;" x-text="variantModal.productName"></h3>
                     <p style="font-size:11px; color:#9ca3af; margin:4px 0 0;">Pilih variasi produk</p>
                 </div>
-                <button type="button" @click="variantModal.open = false" style="color:#9ca3af; background:none; border:none; cursor:pointer; padding:4px; border-radius:6px; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.color='#374151'; this.style.background='#f3f4f6';" onmouseout="this.style.color='#9ca3af'; this.style.background='none';">
+                <button type="button" @click="variantModal.open = false"
+                        style="color:#9ca3af; background:none; border:none; cursor:pointer; padding:4px; border-radius:6px; display:flex; align-items:center; justify-content:center;"
+                        onmouseover="this.style.color='#374151'; this.style.background='#f3f4f6';"
+                        onmouseout="this.style.color='#9ca3af'; this.style.background='none';">
                     <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
@@ -200,8 +265,10 @@
                                 x-text="v.type ? v.type.charAt(0).toUpperCase() + v.type.slice(1) : ''"></p>
                             </div>
                             <div style="text-align:right; flex-shrink:0; margin-left:12px;">
-                                <p style="font-size:13px; font-weight:700; color:#4f46e5; margin:0;" x-text="'Rp ' + formatRp(variantModal.basePrice + Number(v.price_adjustment||0))"></p>
-                                <p x-show="Number(v.price_adjustment) !== 0" style="font-size:10px; color:#9ca3af; margin:2px 0 0;" x-text="(Number(v.price_adjustment)>0?'+':'-')+' Rp '+formatRp(Math.abs(Number(v.price_adjustment)))"></p>
+                                <p style="font-size:13px; font-weight:700; color:#4f46e5; margin:0;"
+                                   x-text="'Rp ' + formatRp(variantModal.basePrice + Number(v.price_adjustment||0))"></p>
+                                <p x-show="Number(v.price_adjustment) !== 0" style="font-size:10px; color:#9ca3af; margin:2px 0 0;"
+                                   x-text="(Number(v.price_adjustment)>0?'+':'-')+' Rp '+formatRp(Math.abs(Number(v.price_adjustment)))"></p>
                             </div>
                         </div>
                     </div>
@@ -210,6 +277,64 @@
         </div>
     </div>
 
+    {{-- Floating Cart Button --}}
+    <button id="cart-toggle"
+        @click="
+            const panel = document.getElementById('cart-panel');
+            const overlay = document.getElementById('cart-overlay');
+            panel.classList.add('open');
+            overlay.classList.add('active');
+            document.getElementById('cart-toggle').style.display = 'none';
+        "
+        style="position:fixed; bottom:24px; right:24px; z-index:9998; width:56px; height:56px; border-radius:50%; background:#2D54BF; color:white; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(45,84,191,0.4); transition: transform 0.15s, background 0.15s;"
+        onmouseover="this.style.backgroundColor='#1e3d8f'; this.style.transform='scale(1.08)';"
+        onmouseout="this.style.backgroundColor='#2D54BF'; this.style.transform='scale(1)';"
+        onmousedown="this.style.transform='scale(0.95)';"
+        onmouseup="this.style.transform='scale(1.08)';">
+        <svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        <span x-show="items.length > 0"
+              x-text="items.length"
+              style="position:absolute; top:-2px; right:-2px; background:#ef4444; color:white; font-size:10px; font-weight:700; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;">
+        </span>
+    </button>
+
+    <style>
+        #cart-panel {
+            position: fixed !important;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: 340px;
+            background: #fff;
+            border-left: 1px solid #e5e7eb;
+            box-shadow: -8px 0 32px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.25s ease;
+            z-index: 9997;
+        }
+        #cart-panel.open {
+            transform: translateX(0);
+        }
+        #cart-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 9996;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        #cart-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+    </style>
+
+    <div id="cart-overlay"></div>
 </div>
 
 @push('scripts')
@@ -229,17 +354,39 @@ function orderForm(initial = [], taxRate) {
             const key = 'p_' + id;
             const ex  = this.items.find(i => i.key === key);
             if (ex) { ex.quantity++; return; }
-            this.items.push({ key, product_id: id, name, price: Number(price), quantity: 1, variant_id: null, variant_name: null });
+            this.items.push({ key, product_id: id, name, price: Number(price), quantity: 1, variant_id: null, variant_name: null, special_notes: '' });
         },
         addItemWithVariant(productId, productName, basePrice, variantId, variantName, priceAdjustment) {
             const price = Number(basePrice) + (Number(priceAdjustment) || 0);
             const key   = 'p_' + productId + '_v_' + variantId;
             const ex    = this.items.find(i => i.key === key);
             if (ex) { ex.quantity++; return; }
-            this.items.push({ key, product_id: productId, name: productName, price, quantity: 1, variant_id: variantId, variant_name: variantName });
+            this.items.push({ key, product_id: productId, name: productName, price, quantity: 1, variant_id: variantId, variant_name: variantName, special_notes: '' });
         },
         removeItem(index) { this.items.splice(index, 1); },
-        formatRp(val) { return new Intl.NumberFormat('id-ID').format(Math.round(val)); }
+        formatRp(val) { return new Intl.NumberFormat('id-ID').format(Math.round(val)); },
+        mounted() {
+            const panel = document.getElementById('cart-panel');
+            const overlay = document.getElementById('cart-overlay');
+            const cartBtn = document.getElementById('cart-toggle');
+
+            const closeCart = () => {
+                panel.classList.remove('open');
+                overlay.classList.remove('active');
+                cartBtn.style.display = 'flex';
+            };
+
+            panel.classList.remove('open');
+            overlay.classList.remove('active');
+
+            window.addEventListener('resize', () => {
+                if (window.innerWidth <= 768) closeCart();
+            });
+
+            if (overlay) {
+                overlay.addEventListener('click', closeCart);
+            }
+        }
     }
 }
 </script>

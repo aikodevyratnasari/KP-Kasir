@@ -92,4 +92,20 @@
         </div>
         </form>
     </div>
+    @push('scripts')
+<script>
+document.querySelectorAll('.form-input').forEach(input => {
+    input.addEventListener('input', function() {
+        this.classList.remove('border-red-400');
+        const errorMsg = this.closest('div').querySelector('p.text-red-600');
+        if (errorMsg) errorMsg.remove();
+    });
+    input.addEventListener('change', function() {
+        this.classList.remove('border-red-400');
+        const errorMsg = this.closest('div').querySelector('p.text-red-600');
+        if (errorMsg) errorMsg.remove();
+    });
+});
+</script>
+@endpush
 @endsection
