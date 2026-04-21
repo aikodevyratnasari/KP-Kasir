@@ -130,6 +130,12 @@ class ReportService
             ->select('status', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
             ->groupBy('status')->get();
 
+        // byPaymentStatus: ringkasan status payment (paid, refunded, pending)
+        $byPaymentStatus = Payment::whereHas('order', fn($q) => $q->forStore($storeId))
+            ->whereBetween('created_at', [$fromDt, $toDt])
+            ->select('status', DB::raw('COUNT(*) as count'), DB::raw('SUM(amount) as total'))
+            ->groupBy('status')->get();
+
         $daily = DB::table('payments')
             ->join('orders', 'payments.order_id', '=', 'orders.id')
             ->where('orders.store_id', $storeId)->where('payments.status', 'paid')
@@ -137,7 +143,7 @@ class ReportService
             ->selectRaw('DATE(payments.created_at) as date, SUM(payments.amount) as total, COUNT(*) as count')
             ->groupBy('date')->orderBy('date')->get();
 
-        return compact('totalSales', 'orderCount', 'avgSale', 'byMethod', 'byType', 'byStatus', 'daily');
+        return compact('totalSales', 'orderCount', 'avgSale', 'byMethod', 'byType', 'byStatus', 'byPaymentStatus', 'daily');
     }
 
     public function productReport(int $storeId, Carbon $from, Carbon $to): array
@@ -145,7 +151,6 @@ class ReportService
         $fromDt = $from->copy()->startOfDay()->toDateTimeString();
         $toDt   = $to->copy()->endOfDay()->toDateTimeString();
 
-        // Data produk hanya dari pesanan yang tidak dibatalkan
         $items = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
@@ -162,7 +167,6 @@ class ReportService
             'revenue' => $g->sum('total_revenue'),
         ]);
 
-        // Ringkasan pesanan cancelled — berapa order dibatalkan & nilai yang hilang
         $cancelledSummary = DB::table('orders')
             ->where('store_id', $storeId)
             ->where('status', 'cancelled')
@@ -170,7 +174,6 @@ class ReportService
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total_amount')
             ->first();
 
-        // Produk apa saja yang ada di dalam pesanan yang dibatalkan
         $cancelledItems = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('orders.store_id', $storeId)
@@ -196,7 +199,6 @@ class ReportService
         $fromDt = $from->copy()->startOfDay()->toDateTimeString();
         $toDt   = $to->copy()->endOfDay()->toDateTimeString();
 
-        // Pesanan selesai / aktif per kasir (exclude cancelled)
         $rows = DB::table('orders')
             ->join('users', 'orders.cashier_id', '=', 'users.id')
             ->where('orders.store_id', $storeId)
@@ -215,7 +217,6 @@ class ReportService
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total_sales')->get();
 
-        // Pesanan dibatalkan per kasir — untuk transparansi
         $cancelledPerCashier = DB::table('orders')
             ->join('users', 'orders.cashier_id', '=', 'users.id')
             ->where('orders.store_id', $storeId)
@@ -231,7 +232,6 @@ class ReportService
             ->get()
             ->keyBy('cashier_id');
 
-        // Pesanan pending per kasir
         $pendingPerCashier = DB::table('orders')
             ->join('users', 'orders.cashier_id', '=', 'users.id')
             ->where('orders.store_id', $storeId)
@@ -271,13 +271,22 @@ class ReportService
             ->selectRaw("{$groupExpr} AS period, SUM(payments.amount) AS revenue, COUNT(*) AS count")
             ->groupByRaw($groupExpr)->orderByRaw($groupExpr)->get();
 
-        // Ringkasan order yang tidak menghasilkan revenue (cancelled, pending)
+        // Ringkasan order yang tidak menghasilkan revenue (cancelled, pending, dll.)
         $nonRevenueOrders = DB::table('orders')
             ->where('store_id', $storeId)
             ->whereIn('status', ['cancelled', 'pending', 'cooking', 'ready'])
             ->whereBetween('created_at', [$fromDt, $toDt])
             ->selectRaw('status, COUNT(*) as count, COALESCE(SUM(total_amount),0) as total_amount')
             ->groupBy('status')->get()->keyBy('status');
+
+        // Ringkasan refund dalam periode
+        $refundSummary = DB::table('payments')
+            ->join('orders', 'payments.order_id', '=', 'orders.id')
+            ->where('orders.store_id', $storeId)
+            ->where('payments.status', 'refunded')
+            ->whereBetween('payments.refunded_at', [$fromDt, $toDt])
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(payments.refund_amount), SUM(payments.amount), 0) as total')
+            ->first();
 
         return [
             'data'               => $rows,
@@ -286,6 +295,7 @@ class ReportService
             'total'              => (float) $rows->sum('revenue'),
             'period_type'        => $period,
             'non_revenue_orders' => $nonRevenueOrders,
+            'refund_summary'     => $refundSummary,
         ];
     }
 

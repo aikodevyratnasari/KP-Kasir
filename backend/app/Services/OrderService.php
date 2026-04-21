@@ -150,10 +150,28 @@ class OrderService
         });
     }
 
+    /**
+     * Batalkan pesanan.
+     *
+     * Aturan pembatalan:
+     * - Pesanan yang sudah selesai (completed) tidak dapat dibatalkan.
+     * - Pesanan yang sudah dibatalkan tidak dapat dibatalkan lagi.
+     * - Pesanan yang sudah dalam status COOKING di dapur tidak dapat dibatalkan
+     *   (karena makanan sudah mulai dimasak).
+     * - Pesanan yang sudah lunas (isFullyPaid) TETAP BISA dibatalkan selama
+     *   dapur belum mulai memasak (kitchen status: waiting_payment atau queued).
+     *   Pembatalan ini akan men-trigger refund otomatis pada payment yang ada.
+     */
     public function cancel(Order $order, string $reason, int $cancelledBy): Order
     {
         abort_if($order->isCompleted(), 422, 'Pesanan yang sudah selesai tidak dapat dibatalkan.');
         abort_if($order->isCancelled(), 422, 'Pesanan sudah dibatalkan.');
+
+        // Cek apakah dapur sudah mulai memasak
+        $kitchenOrder = $order->kitchenOrder;
+        if ($kitchenOrder && in_array($kitchenOrder->status, ['cooking', 'ready'])) {
+            abort(422, 'Pesanan tidak dapat dibatalkan karena dapur sudah mulai memasak.');
+        }
 
         return DB::transaction(function () use ($order, $reason, $cancelledBy) {
             $old = $order->status;
@@ -165,8 +183,26 @@ class OrderService
                 'cancelled_at'  => now(),
             ]);
 
+            // Bebaskan meja jika dine-in
             if ($order->table_id) {
                 Table::where('id', $order->table_id)->update(['status' => 'available']);
+            }
+
+            // Update kitchen order jika ada
+            if ($order->kitchenOrder) {
+                $order->kitchenOrder->update(['status' => 'cancelled']);
+            }
+
+            // Jika pesanan sudah ada pembayaran lunas, otomatis refund semua payment
+            $paidPayments = $order->payments()->where('status', 'paid')->get();
+            foreach ($paidPayments as $payment) {
+                $payment->update([
+                    'status'        => 'refunded',
+                    'refund_amount' => $payment->amount,
+                    'refund_reason' => 'Pesanan dibatalkan: ' . $reason,
+                    'refunded_at'   => now(),
+                    'refunded_by'   => $cancelledBy,
+                ]);
             }
 
             $this->stock->restoreForOrder($order->load('items.product'));
@@ -291,7 +327,6 @@ class OrderService
         $prefix = "ORD-{$date}-";
 
         // Gunakan advisory lock PostgreSQL agar tidak race condition
-        // Lock per store agar tidak saling blokir antar store
         $lockKey = crc32("order_number_{$storeId}_{$date}");
         \DB::statement("SELECT pg_advisory_xact_lock({$lockKey})");
 
@@ -303,5 +338,21 @@ class OrderService
         $seq = $last ? ((int) substr($last, -3)) + 1 : 1;
 
         return $prefix . str_pad($seq, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Cek apakah pesanan masih bisa dibatalkan.
+     * Digunakan di view untuk menampilkan/menyembunyikan tombol Batalkan.
+     */
+    public static function canCancel(Order $order): bool
+    {
+        if ($order->isCompleted() || $order->isCancelled()) {
+            return false;
+        }
+        $kitchen = $order->kitchenOrder;
+        if ($kitchen && in_array($kitchen->status, ['cooking', 'ready'])) {
+            return false;
+        }
+        return true;
     }
 }

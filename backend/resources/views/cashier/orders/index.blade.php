@@ -89,13 +89,21 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
             @forelse($orders as $order)
+                @php
+                    // Eager-loaded dari controller: ->with('cashier', 'table')
+                    // Untuk kolom Bayar, kita butuh payments — pastikan controller juga eager-load payments
+                    // atau gunakan lazy load di sini. Jika sudah di-eager-load, tidak ada N+1.
+                    $payments      = $order->relationLoaded('payments') ? $order->payments : $order->payments;
+                    $hasRefund     = $payments->contains('status', 'refunded');
+                    $hasPaid       = $payments->contains('status', 'paid');
+                    $isFullyPaid   = $order->isFullyPaid();
+                @endphp
                 <tr id="order-row-{{ $order->id }}" data-order-id="{{ $order->id }}"
                     class="hover:bg-gray-50 transition-colors">
                     <td class="py-3 px-4 whitespace-nowrap">
                         <p class="font-semibold text-gray-900">{{ $order->order_number }}</p>
                         <p class="text-xs text-gray-400">{{ $order->created_at->format('d M, H:i') }}</p>
                     </td>
-                    {{-- Kolom Pelanggan --}}
                     <td class="py-3 px-4 text-gray-700 text-xs">
                         {{ $order->customer_name ?? '—' }}
                     </td>
@@ -113,15 +121,28 @@
                             {{ ucfirst($order->status) }}
                         </span>
                     </td>
+
+                    {{--
+                        Prioritas badge Bayar:
+                        1. Refund  — ada payment berstatus 'refunded' (pesanan dibatalkan setelah lunas)
+                        2. Lunas   — remainingBalance() <= 0 (tidak ada refund)
+                        3. Sebagian — ada payment 'paid' tapi belum lunas penuh
+                        4. Belum   — belum ada pembayaran sama sekali
+                    --}}
                     <td class="py-3 px-4 text-center">
                         <span class="order-paid-badge">
-                            @if($order->isFullyPaid())
+                            @if($hasRefund)
+                                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">Refund</span>
+                            @elseif($isFullyPaid)
                                 <span class="badge badge-completed">Lunas</span>
+                            @elseif($hasPaid)
+                                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">Sebagian</span>
                             @else
                                 <span class="badge badge-pending_payment">Belum</span>
                             @endif
                         </span>
                     </td>
+
                     <td class="py-3 px-4 text-right font-semibold whitespace-nowrap align-middle">
                         Rp {{ number_format($order->total_amount, 0, ',', '.') }}
                     </td>
@@ -152,7 +173,10 @@
             </tbody>
         </table>
     </div>
-</div>
+    </div>
+
+    {{ $orders->links() }}
+
 </div>
 @endsection
 
@@ -169,6 +193,19 @@
         completed: 'badge-completed',
         cancelled: 'badge-cancelled',
     };
+
+    function renderPaidBadge(o) {
+        if (o.has_refund) {
+            return '<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">Refund</span>';
+        }
+        if (o.is_paid) {
+            return '<span class="badge badge-completed">Lunas</span>';
+        }
+        if (o.has_partial) {
+            return '<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">Sebagian</span>';
+        }
+        return '<span class="badge badge-pending_payment">Belum</span>';
+    }
 
     async function pollOrders() {
         try {
@@ -189,9 +226,7 @@
 
                 const paidBadge = row.querySelector('.order-paid-badge');
                 if (paidBadge) {
-                    paidBadge.innerHTML = o.is_paid
-                        ? '<span class="badge badge-completed">Lunas</span>'
-                        : '<span class="badge badge-pending_payment">Belum</span>';
+                    paidBadge.innerHTML = renderPaidBadge(o);
                 }
             });
 

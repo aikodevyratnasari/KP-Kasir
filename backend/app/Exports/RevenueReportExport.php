@@ -17,6 +17,7 @@ class RevenueReportExport implements FromCollection, WithHeadings, WithStyles, W
         private string $from,
         private string $to,
         private $nonRevenueOrders = null, // Collection keyed by status
+        private $refundSummary = null,   // stdClass|null: count, total dari payment refunded
     ) {}
 
     public function collection()
@@ -44,9 +45,21 @@ class RevenueReportExport implements FromCollection, WithHeadings, WithStyles, W
         if ($dataCollection->isEmpty()) {
             $rows->push(['Tidak ada data untuk periode ini', '', '']);
         } else {
-            $rows->push(['TOTAL', (float) $dataCollection->sum('revenue'), (int) $dataCollection->sum('count')]);
+            $rows->push([
+                'TOTAL REVENUE',
+                (float) $dataCollection->sum('revenue'),
+                (int)   $dataCollection->sum('count'),
+            ]);
         }
         $rows->push(['', '', '']);
+
+        // ── Ringkasan Refund ──────────────────────────────────────────────
+        if ($this->refundSummary && $this->refundSummary->count > 0) {
+            $rows->push(['RINGKASAN REFUND', '', '']);
+            $rows->push(['Total Transaksi Direfund', (int) $this->refundSummary->count, '']);
+            $rows->push(['Total Nilai Refund (Rp)', (float) $this->refundSummary->total, '']);
+            $rows->push(['', '', '']);
+        }
 
         // ── Pesanan Non-Revenue ───────────────────────────────────────────
         $rows->push(['PESANAN TIDAK MENGHASILKAN REVENUE', '', '']);
@@ -59,6 +72,7 @@ class RevenueReportExport implements FromCollection, WithHeadings, WithStyles, W
             'cooking'   => 'Dimasak',
             'ready'     => 'Siap Saji',
         ];
+        $hasData = false;
         foreach (['cancelled', 'pending', 'cooking', 'ready'] as $key) {
             $nr = $nonRev->get($key);
             if ($nr) {
@@ -67,9 +81,10 @@ class RevenueReportExport implements FromCollection, WithHeadings, WithStyles, W
                     (int)   $nr->count,
                     (float) $nr->total_amount,
                 ]);
+                $hasData = true;
             }
         }
-        if ($nonRev->isEmpty()) {
+        if (!$hasData) {
             $rows->push(['Tidak ada pesanan non-revenue dalam periode ini.', '', '']);
         }
 

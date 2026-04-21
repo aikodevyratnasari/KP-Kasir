@@ -12,8 +12,9 @@
     .section { margin-bottom: 20px; }
     .section-title { font-size: 12px; font-weight: bold; color: #181375; text-transform: uppercase;
                      letter-spacing: 0.05em; padding: 6px 0; border-bottom: 2px solid #181375; margin-bottom: 10px; }
-    .section-title.red { color: #991b1b; border-color: #991b1b; }
+    .section-title.red    { color: #991b1b; border-color: #991b1b; }
     .section-title.orange { color: #9a3412; border-color: #f97316; }
+    .section-title.green  { color: #166534; border-color: #16a34a; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
     th { background: #f1f5f9; text-align: left; padding: 7px 8px; font-size: 10px;
          font-weight: bold; color: #374151; border-bottom: 1px solid #d1d5db; }
@@ -30,8 +31,7 @@
     .alert-red    { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
     .alert-orange { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
     .alert-blue   { background: #eff6ff; border: 1px solid #93c5fd; color: #1d4ed8; }
-    .status-grid  { display: table; width: 100%; border-collapse: separate; border-spacing: 4px; margin-bottom: 10px; }
-    .status-cell  { display: table-cell; padding: 8px; border-radius: 6px; text-align: center; }
+    .alert-green  { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
     .gap { height: 8px; }
 </style>
 </head>
@@ -85,6 +85,54 @@
         </table>
     </div>
 
+    {{-- Ringkasan Status Pembayaran --}}
+    @php
+        $byPayStatusMap = collect($byPaymentStatus ?? [])->keyBy('status');
+        $paidPay     = $byPayStatusMap->get('paid');
+        $refundedPay = $byPayStatusMap->get('refunded');
+        $pendingPay  = $byPayStatusMap->get('pending');
+    @endphp
+    @if($byPayStatusMap->isNotEmpty())
+    <div class="section">
+        <div class="section-title green">Ringkasan Status Pembayaran</div>
+        <table>
+            <thead><tr>
+                <th>Status Pembayaran</th>
+                <th class="right">Jumlah Transaksi</th>
+                <th class="right">Total (Rp)</th>
+            </tr></thead>
+            <tbody>
+            @if($paidPay)
+            <tr>
+                <td><span class="badge" style="background:#dcfce7;color:#166534;">Lunas</span></td>
+                <td class="right">{{ (int) $paidPay->count }}</td>
+                <td class="right">Rp {{ number_format($paidPay->total, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($refundedPay)
+            <tr>
+                <td><span class="badge" style="background:#ffedd5;color:#9a3412;">Refund</span></td>
+                <td class="right">{{ (int) $refundedPay->count }}</td>
+                <td class="right">Rp {{ number_format($refundedPay->total, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($pendingPay)
+            <tr>
+                <td><span class="badge" style="background:#fef9c3;color:#854d0e;">Pending</span></td>
+                <td class="right">{{ (int) $pendingPay->count }}</td>
+                <td class="right">Rp {{ number_format($pendingPay->total, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            </tbody>
+        </table>
+        @if($refundedPay && $refundedPay->count > 0)
+        <div class="alert alert-orange" style="margin-top:8px;">
+            ⚠ {{ (int) $refundedPay->count }} transaksi direfund senilai Rp {{ number_format($refundedPay->total, 0, ',', '.') }} dalam periode ini.
+        </div>
+        @endif
+    </div>
+    @endif
+
     {{-- Rekap Status Pesanan --}}
     @php
         $byStatusMap = collect($byStatus ?? [])->keyBy('status');
@@ -95,7 +143,7 @@
             'pending'   => ['label' => 'Pending',    'bg' => '#fff7ed', 'border' => '#fdba74', 'color' => '#9a3412'],
             'cancelled' => ['label' => 'Dibatalkan', 'bg' => '#fef2f2', 'border' => '#fca5a5', 'color' => '#991b1b'],
         ];
-        $cancelledRow  = $byStatusMap->get('cancelled');
+        $cancelledRow   = $byStatusMap->get('cancelled');
         $totalAllOrders = collect($byStatus ?? [])->sum('count');
     @endphp
 
@@ -200,13 +248,10 @@
 {{-- ════════════════════════════════════════════════════════════════ --}}
 @elseif($type === 'products')
 
-    {{-- Catatan: data hanya dari pesanan non-cancelled --}}
     <div class="alert alert-blue" style="margin-bottom:16px;">
         ℹ Data produk di bawah hanya dari pesanan yang <strong>tidak dibatalkan</strong>.
-        Lihat bagian "Pesanan Dibatalkan" di bawah untuk detail pesanan yang batal.
     </div>
 
-    {{-- Peringatan cancelled --}}
     @if(isset($cancelledSummary) && $cancelledSummary && $cancelledSummary->count > 0)
     <div class="section">
         <div class="section-title red">⚠ Ringkasan Pesanan Dibatalkan</div>
@@ -234,7 +279,6 @@
     </div>
     @endif
 
-    {{-- Top by Qty --}}
     <div class="section">
         <div class="section-title">🔥 Top Produk (Qty)</div>
         <table>
@@ -251,7 +295,6 @@
         </table>
     </div>
 
-    {{-- Top by Revenue --}}
     <div class="section">
         <div class="section-title">💰 Top Produk (Revenue)</div>
         <table>
@@ -274,14 +317,14 @@
 @elseif($type === 'revenue')
 
     @php
-        $rows            = $data['data']               ?? collect();
-        $totalRev        = $data['total']              ?? 0;
-        $nonRevenueOrders= $data['non_revenue_orders'] ?? collect();
+        $rows             = $data['data']               ?? collect();
+        $totalRev         = $data['total']              ?? 0;
+        $nonRevenueOrders = $data['non_revenue_orders'] ?? collect();
+        $refundSummary    = $data['refund_summary']     ?? ($refundSummary ?? null);
 
         $periodLabels = ['daily'=>'Harian','weekly'=>'Mingguan','monthly'=>'Bulanan','yearly'=>'Tahunan'];
     @endphp
 
-    {{-- Summary Revenue --}}
     <div class="section">
         <div class="section-title">Ringkasan Revenue (dari Pembayaran Lunas)</div>
         <table>
@@ -303,6 +346,26 @@
             </tr>
         </table>
     </div>
+
+    {{-- Ringkasan Refund --}}
+    @if($refundSummary && $refundSummary->count > 0)
+    <div class="section">
+        <div class="section-title orange">Ringkasan Refund Periode Ini</div>
+        <table>
+            <tr>
+                <td style="width:50%; padding:10px; background:#fff7ed; border:1px solid #fdba74;">
+                    <div style="font-size:9px;color:#9a3412;font-weight:bold;">Transaksi Direfund</div>
+                    <div style="font-size:16px;font-weight:bold;color:#9a3412;margin-top:2px;">{{ (int) $refundSummary->count }}</div>
+                </td>
+                <td style="width:4px;"></td>
+                <td style="width:50%; padding:10px; background:#fff7ed; border:1px solid #fdba74;">
+                    <div style="font-size:9px;color:#9a3412;font-weight:bold;">Total Nilai Refund</div>
+                    <div style="font-size:14px;font-weight:bold;color:#9a3412;margin-top:2px;">Rp {{ number_format($refundSummary->total, 0, ',', '.') }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    @endif
 
     {{-- Pesanan Non-Revenue --}}
     @if(collect($nonRevenueOrders)->isNotEmpty())
@@ -337,7 +400,6 @@
     </div>
     @endif
 
-    {{-- Data Revenue per Periode --}}
     <div class="section">
         <div class="section-title">Data Revenue — {{ $periodLabels[$period] ?? $period }}</div>
         <table>
@@ -372,8 +434,7 @@
         $best                = $data['best']                  ?? null;
         $cancelledPerCashier = $data['cancelled_per_cashier'] ?? collect();
         $cancelledMap        = collect($cancelledPerCashier)->keyBy('cashier_id');
-
-        $totalCancelled = $cancelledMap->sum('cancelled_count');
+        $totalCancelled      = $cancelledMap->sum('cancelled_count');
     @endphp
 
     @if($best)
@@ -465,6 +526,7 @@
 
     @php
         $paymentList = $payments ?? collect();
+        $unpaidList  = $unpaidOrders ?? collect();
         $byStatusPay = $paymentList->groupBy('status')->map(fn($g) => [
             'count' => $g->count(),
             'total' => $g->sum('amount'),
@@ -479,16 +541,18 @@
             <tbody>
             @php
                 $payStatusCfg = [
-                    'paid'     => ['label' => 'Lunas',   'color' => '#166534'],
-                    'pending'  => ['label' => 'Pending', 'color' => '#9a3412'],
-                    'refunded' => ['label' => 'Refund',  'color' => '#9a3412'],
+                    'paid'     => ['label' => 'Lunas',   'color' => '#166534', 'bg' => '#dcfce7'],
+                    'refunded' => ['label' => 'Refund',  'color' => '#9a3412', 'bg' => '#ffedd5'],
+                    'pending'  => ['label' => 'Pending', 'color' => '#854d0e', 'bg' => '#fef9c3'],
                 ];
             @endphp
             @foreach($payStatusCfg as $key => $cfg)
                 @php $stat = $byStatusPay->get($key); @endphp
                 @if($stat)
                 <tr>
-                    <td style="color:{{ $cfg['color'] }};font-weight:bold;">{{ $cfg['label'] }}</td>
+                    <td>
+                        <span class="badge" style="background:{{ $cfg['bg'] }};color:{{ $cfg['color'] }};">{{ $cfg['label'] }}</span>
+                    </td>
                     <td class="right">{{ $stat['count'] }}</td>
                     <td class="right">Rp {{ number_format($stat['total'], 0, ',', '.') }}</td>
                 </tr>
@@ -496,16 +560,71 @@
             @endforeach
             </tbody>
             <tr class="total-row">
-                <td>TOTAL</td>
+                <td>TOTAL TRANSAKSI</td>
                 <td class="right">{{ $paymentList->count() }}</td>
                 <td class="right">Rp {{ number_format($paymentList->sum('amount'), 0, ',', '.') }}</td>
             </tr>
         </table>
+
+        {{-- Alert refund jika ada --}}
+        @php $refundedStat = $byStatusPay->get('refunded'); @endphp
+        @if($refundedStat && $refundedStat['count'] > 0)
+        <div class="alert alert-orange" style="margin-top:8px;">
+            ⚠ {{ $refundedStat['count'] }} transaksi direfund senilai Rp {{ number_format($refundedStat['total'], 0, ',', '.') }}.
+        </div>
+        @endif
     </div>
+
+    {{-- Pesanan Belum Bayar --}}
+    @if($unpaidList->isNotEmpty())
+    <div class="section">
+        <div class="section-title orange">Pesanan Aktif Belum Dibayar ({{ $unpaidList->count() }})</div>
+        <div class="alert alert-orange" style="margin-bottom:8px;">
+            Total nilai yang belum dibayar: <strong>Rp {{ number_format($unpaidList->sum('total_amount'), 0, ',', '.') }}</strong>
+        </div>
+        <table>
+            <thead><tr>
+                <th>No. Pesanan</th>
+                <th>Pelanggan</th>
+                <th>Kasir</th>
+                <th class="right">Total (Rp)</th>
+                <th>Status</th>
+                <th>Dibuat</th>
+            </tr></thead>
+            <tbody>
+            @foreach($unpaidList as $o)
+            <tr>
+                <td>{{ $o->order_number ?? '-' }}</td>
+                <td>{{ $o->customer_name ?? '—' }}</td>
+                <td>{{ $o->cashier?->name ?? '-' }}</td>
+                <td class="right">Rp {{ number_format($o->total_amount, 0, ',', '.') }}</td>
+                <td>
+                    @php
+                        $stColors = ['cooking' => '#92400e', 'ready' => '#1d4ed8', 'pending' => '#9a3412'];
+                        $stBgs    = ['cooking' => '#fffbeb',  'ready' => '#eff6ff',  'pending' => '#fff7ed'];
+                        $stLabels = ['cooking' => 'Dimasak',  'ready' => 'Siap',     'pending' => 'Pending'];
+                    @endphp
+                    <span class="badge"
+                          style="background:{{ $stBgs[$o->status] ?? '#f3f4f6' }};color:{{ $stColors[$o->status] ?? '#374151' }};">
+                        {{ $stLabels[$o->status] ?? ucfirst($o->status) }}
+                    </span>
+                </td>
+                <td>{{ $o->created_at->format('d M Y H:i') }}</td>
+            </tr>
+            @endforeach
+            </tbody>
+            <tr class="total-row">
+                <td colspan="3">TOTAL BELUM BAYAR</td>
+                <td class="right">Rp {{ number_format($unpaidList->sum('total_amount'), 0, ',', '.') }}</td>
+                <td colspan="2">{{ $unpaidList->count() }} pesanan</td>
+            </tr>
+        </table>
+    </div>
+    @endif
 
     {{-- Daftar Pembayaran --}}
     <div class="section">
-        <div class="section-title">Daftar Pembayaran</div>
+        <div class="section-title">Daftar Transaksi Pembayaran</div>
         <table>
             <thead>
                 <tr>
@@ -529,8 +648,8 @@
                     <td>
                         @php
                             $lbl = match($p->status) { 'paid' => 'Lunas', 'refunded' => 'Refund', 'pending' => 'Pending', default => ucfirst($p->status) };
-                            $clr = match($p->status) { 'paid' => '#166534', 'refunded' => '#9a3412', default => '#854d0e' };
-                            $bg  = match($p->status) { 'paid' => '#dcfce7', 'refunded' => '#ffedd5', default => '#fef9c3' };
+                            $clr = match($p->status) { 'paid' => '#166534', 'refunded' => '#9a3412', 'pending' => '#854d0e', default => '#374151' };
+                            $bg  = match($p->status) { 'paid' => '#dcfce7', 'refunded' => '#ffedd5', 'pending' => '#fef9c3', default => '#f3f4f6' };
                         @endphp
                         <span class="badge" style="background:{{ $bg }};color:{{ $clr }};">{{ $lbl }}</span>
                     </td>
@@ -540,6 +659,13 @@
                 <tr><td colspan="7" class="empty">Tidak ada data pembayaran</td></tr>
             @endforelse
             </tbody>
+            @if($paymentList->count() > 0)
+            <tr class="total-row">
+                <td colspan="4">TOTAL</td>
+                <td class="right">Rp {{ number_format($paymentList->sum('amount'), 0, ',', '.') }}</td>
+                <td colspan="2">{{ $paymentList->count() }} transaksi</td>
+            </tr>
+            @endif
         </table>
     </div>
 @endif

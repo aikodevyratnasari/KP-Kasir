@@ -22,6 +22,7 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
         private float $avgTransaction,
         private string $from,
         private string $to,
+        private $byPaymentStatus = null,  // ringkasan per status payment (paid/refunded/pending)
     ) {}
 
     public function collection()
@@ -39,6 +40,21 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
         $rows->push(['Total Pesanan Aktif (excl. cancelled)', $this->totalOrders, '']);
         $rows->push(['Rata-rata per Transaksi', $this->avgTransaction, '']);
         $rows->push(['', '', '']);
+
+        // ── Ringkasan Status Payment ──────────────────────────────────────
+        if ($this->byPaymentStatus) {
+            $payStatus = collect($this->byPaymentStatus);
+            $rows->push(['RINGKASAN STATUS PEMBAYARAN', '', '']);
+            $rows->push(['Status Pembayaran', 'Jumlah Transaksi', 'Total (Rp)']);
+            $statusLabels = ['paid' => 'Lunas', 'refunded' => 'Refund', 'pending' => 'Pending'];
+            foreach (['paid', 'refunded', 'pending'] as $key) {
+                $s = $payStatus->where('status', $key)->first();
+                if ($s) {
+                    $rows->push([$statusLabels[$key], (int) $s->count, (float) $s->total]);
+                }
+            }
+            $rows->push(['', '', '']);
+        }
 
         // ── Rekap Status Pesanan (semua status) ──────────────────────────
         $rows->push(['REKAP STATUS PESANAN', '', '']);
@@ -66,7 +82,11 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
                 $rows->push([ucfirst($s->status), (int) $s->count, (float) $s->total]);
             }
         }
-        $rows->push(['TOTAL SEMUA PESANAN', collect($this->byStatus)->sum('count'), collect($this->byStatus)->sum('total')]);
+        $rows->push([
+            'TOTAL SEMUA PESANAN',
+            collect($this->byStatus)->sum('count'),
+            collect($this->byStatus)->sum('total'),
+        ]);
         $rows->push(['', '', '']);
 
         // ── Tren Harian ───────────────────────────────────────────────────
@@ -83,7 +103,11 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
         if ($dailyCollection->isEmpty()) {
             $rows->push(['Tidak ada data', '', '']);
         } else {
-            $rows->push(['TOTAL', (float) $dailyCollection->sum('total'), (int) $dailyCollection->sum('count')]);
+            $rows->push([
+                'TOTAL',
+                (float) $dailyCollection->sum('total'),
+                (int)   $dailyCollection->sum('count'),
+            ]);
         }
         $rows->push(['', '', '']);
 
@@ -104,7 +128,11 @@ class SalesReportExport implements FromCollection, WithHeadings, WithStyles, Wit
         $rows->push(['Tipe', 'Total (Rp)', 'Jumlah Pesanan']);
         $typeCollection = collect($this->byOrderType);
         foreach ($typeCollection as $t) {
-            $rows->push([ucwords(str_replace('_', ' ', $t->order_type)), (float) $t->total, (int) $t->count]);
+            $rows->push([
+                ucwords(str_replace('_', ' ', $t->order_type)),
+                (float) $t->total,
+                (int)   $t->count,
+            ]);
         }
         if ($typeCollection->isEmpty()) {
             $rows->push(['Tidak ada data', '', '']);

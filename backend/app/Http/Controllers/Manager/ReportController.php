@@ -17,93 +17,76 @@ use App\Mail\ReportMail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
     public function __construct(private ReportService $reportService) {}
 
-    // ── Reports Index ────────────────────────────────────────────────────
     public function index(): View
     {
         return view('manager.reports.index');
     }
 
-    // ── Dashboard ────────────────────────────────────────────────────────
     public function dashboard(Request $request): View
     {
         $storeId = $request->get('_store_id');
         $raw     = $this->reportService->dashboardToday($storeId);
-
-        $data = array_merge($raw, [
+        $data    = array_merge($raw, [
             'totalSalesToday'  => $raw['totalSales']  ?? 0,
             'totalOrdersToday' => $raw['totalOrders'] ?? 0,
             'avgOrderValue'    => $raw['avgOrder']    ?? 0,
-            'weeklyTrend'      => collect($raw['trend'] ?? [])->map(fn($r) => (object)[
-                'date'  => $r->date,
-                'total' => $r->total,
-            ])->values()->toArray(),
+            'weeklyTrend'      => collect($raw['trend'] ?? [])->map(fn($r) => (object)['date' => $r->date, 'total' => $r->total])->values()->toArray(),
             'lowStockProducts' => $raw['lowStock'] ?? collect(),
         ]);
-
         return view('manager.dashboard', $data);
     }
 
-    // ── Dashboard filter (AJAX) ──────────────────────────────────────────
     public function dashboardFilter(Request $request): JsonResponse
     {
         $storeId = $request->get('_store_id');
         $period  = $request->period ?? 'today';
-
-        $range = match ($period) {
+        $range   = match ($period) {
             'week'   => [now()->startOfWeek(),  now()->endOfWeek()],
             'month'  => [now()->startOfMonth(), now()->endOfMonth()],
             'year'   => [now()->startOfYear(),  now()->endOfYear()],
             'all'    => [now()->subYears(10)->startOfDay(), now()->endOfDay()],
-            'custom' => [
-                Carbon::parse($request->from)->startOfDay(),
-                Carbon::parse($request->to)->endOfDay(),
-            ],
+            'custom' => [Carbon::parse($request->from)->startOfDay(), Carbon::parse($request->to)->endOfDay()],
             default  => [now()->startOfDay(), now()->endOfDay()],
         };
         [$from, $to] = $range;
-
         $raw = $this->reportService->dashboardAnalytics($storeId, $from, $to);
-
         return response()->json([
-            'totalSales'   => $raw['totalSales']  ?? 0,
-            'totalOrders'  => $raw['totalOrders'] ?? 0,
-            'avgOrder'     => $raw['avgOrder']    ?? 0,
-            'activeOrders' => $raw['activeOrders'] ?? [],
-            'topProducts'  => $raw['topProducts']  ?? [],
-            'recentOrders' => $raw['recentOrders'] ?? [],
-            'trend'        => collect($raw['trend'] ?? [])->map(fn($r) => [
-                'date'  => $r->date,
-                'total' => $r->total,
-            ])->values(),
+            'totalSales'   => $raw['totalSales']   ?? 0,
+            'totalOrders'  => $raw['totalOrders']  ?? 0,
+            'avgOrder'     => $raw['avgOrder']      ?? 0,
+            'activeOrders' => $raw['activeOrders']  ?? [],
+            'topProducts'  => $raw['topProducts']   ?? [],
+            'recentOrders' => $raw['recentOrders']  ?? [],
+            'trend'        => collect($raw['trend'] ?? [])->map(fn($r) => ['date' => $r->date, 'total' => $r->total])->values(),
         ]);
     }
 
-    // ── Sales Report ─────────────────────────────────────────────────────
+    // ── Sales ─────────────────────────────────────────────────────────────
     public function sales(Request $request): View
     {
         [$from, $to] = $this->parseDates($request);
         $raw = $this->reportService->salesReport($request->get('_store_id'), $from, $to);
-
         return view('manager.reports.sales', [
-            'from'            => $from,
-            'to'              => $to,
-            'totalSales'      => $raw['totalSales']  ?? 0,
-            'totalOrders'     => $raw['orderCount']  ?? 0,
-            'avgTransaction'  => $raw['avgSale']     ?? 0,
-            'byPaymentMethod' => collect($raw['byMethod']  ?? [])->values(),
-            'byOrderType'     => $raw['byType']      ?? collect(),
-            // byStatus mencakup SEMUA status termasuk cancelled & pending
-            'byStatus'        => $raw['byStatus']    ?? collect(),
-            'dailyTrend'      => $raw['daily']       ?? collect(),
+            'from'             => $from,
+            'to'               => $to,
+            'totalSales'       => $raw['totalSales']       ?? 0,
+            'totalOrders'      => $raw['orderCount']       ?? 0,
+            'avgTransaction'   => $raw['avgSale']          ?? 0,
+            'byPaymentMethod'  => collect($raw['byMethod'] ?? [])->values(),
+            'byOrderType'      => $raw['byType']           ?? collect(),
+            'byStatus'         => $raw['byStatus']         ?? collect(),
+            'byPaymentStatus'  => $raw['byPaymentStatus']  ?? collect(),
+            'dailyTrend'       => $raw['daily']            ?? collect(),
         ]);
     }
 
-    // ── Product Report ───────────────────────────────────────────────────
+    // ── Products ──────────────────────────────────────────────────────────
     public function products(Request $request): View
     {
         [$from, $to] = $this->parseDates($request);
@@ -111,7 +94,7 @@ class ReportController extends Controller
         return view('manager.reports.products', array_merge($data, compact('from', 'to')));
     }
 
-    // ── Revenue Report ───────────────────────────────────────────────────
+    // ── Revenue ───────────────────────────────────────────────────────────
     public function revenue(Request $request): View
     {
         [$from, $to] = $this->parseDates($request);
@@ -120,7 +103,7 @@ class ReportController extends Controller
         return view('manager.reports.revenue', compact('data', 'from', 'to', 'period'));
     }
 
-    // ── Cashier Report ───────────────────────────────────────────────────
+    // ── Cashiers ──────────────────────────────────────────────────────────
     public function cashiers(Request $request): View
     {
         [$from, $to] = $this->parseDates($request);
@@ -128,7 +111,7 @@ class ReportController extends Controller
         return view('manager.reports.cashiers', compact('data', 'from', 'to'));
     }
 
-    // ── Payment Report ───────────────────────────────────────────────────
+    // ── Payments ──────────────────────────────────────────────────────────
     public function payments(Request $request): View
     {
         [$from, $to] = $this->parseDates($request);
@@ -143,7 +126,15 @@ class ReportController extends Controller
             ->paginate(50)
             ->withQueryString();
 
-        // Summary per status (paid, pending, refunded)
+        // Summary hanya paid
+        $summary = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+            ->where('status', 'paid')
+            ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->selectRaw('SUM(amount) as total, COUNT(*) as count')
+            ->first();
+
+        // Summary per status payment (paid, refunded, pending)
         $summaryByStatus = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
             ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
@@ -152,25 +143,31 @@ class ReportController extends Controller
             ->get()
             ->keyBy('status');
 
-        $summary = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
-            ->where('status', 'paid')
-            ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
+        // Pesanan belum bayar (pending/cooking/ready) dalam periode
+        $unpaidOrders = \App\Models\Order::forStore($storeId)
+            ->whereIn('status', ['pending', 'cooking', 'ready'])
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
-            ->selectRaw('SUM(amount) as total, COUNT(*) as count')
-            ->first();
+            ->with(['cashier', 'table'])
+            ->get();
 
-        return view('manager.reports.payments', compact('payments', 'from', 'to', 'summary', 'summaryByStatus'));
+        // Jika filter status diset ke paid/refunded, kosongkan unpaid
+        if ($request->status && $request->status !== 'pending') {
+            $unpaidOrders = collect();
+        }
+
+        return view('manager.reports.payments', compact(
+            'payments', 'from', 'to', 'summary', 'summaryByStatus', 'unpaidOrders'
+        ));
     }
 
-    // ── DOWNLOAD REPORT ──────────────────────────────────────────────────
+    // ── Download ──────────────────────────────────────────────────────────
     public function download(Request $request, string $type): mixed
     {
-        $storeId = $request->get('_store_id');
-        $from    = $request->from   ?? now()->startOfMonth()->format('Y-m-d');
-        $to      = $request->to     ?? now()->format('Y-m-d');
-        $format  = $request->format ?? 'xlsx';
-        $period  = $request->period ?? 'daily';
-
+        $storeId  = $request->get('_store_id');
+        $from     = $request->from   ?? now()->startOfMonth()->format('Y-m-d');
+        $to       = $request->to     ?? now()->format('Y-m-d');
+        $format   = $request->format ?? 'xlsx';
+        $period   = $request->period ?? 'daily';
         $fromDate = Carbon::parse($from)->startOfDay();
         $toDate   = Carbon::parse($to)->endOfDay();
 
@@ -183,12 +180,10 @@ class ReportController extends Controller
 
         $export     = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period, $request);
         $writerType = $format === 'csv' ? \Maatwebsite\Excel\Excel::CSV : \Maatwebsite\Excel\Excel::XLSX;
-        $fileName   = "laporan-{$type}-{$from}-{$to}." . ($format === 'csv' ? 'csv' : 'xlsx');
-
-        return Excel::download($export, $fileName, $writerType);
+        return Excel::download($export, "laporan-{$type}-{$from}-{$to}.{$format}", $writerType);
     }
 
-    // ── SEND EMAIL REPORT ────────────────────────────────────────────────
+    // ── Send Email ────────────────────────────────────────────────────────
     public function sendReportEmail(Request $request, string $type): JsonResponse
     {
         $request->validate(['email' => ['required', 'email', 'max:255']]);
@@ -200,7 +195,6 @@ class ReportController extends Controller
         $format   = $request->format ?? 'xlsx';
         $fromDate = Carbon::parse($from)->startOfDay();
         $toDate   = Carbon::parse($to)->endOfDay();
-
         $ext      = match($format) { 'csv' => 'csv', 'pdf' => 'pdf', default => 'xlsx' };
         $fileName = "laporan-{$type}-{$from}-{$to}.{$ext}";
         $filePath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $fileName;
@@ -208,18 +202,14 @@ class ReportController extends Controller
         try {
             if ($format === 'pdf') {
                 $viewData = $this->buildPdfData($type, $storeId, $fromDate, $toDate, $from, $to, $period, $request);
-                file_put_contents($filePath,
-                    Pdf::loadView('manager.reports.pdf', $viewData)->setPaper('a4', 'portrait')->output()
-                );
+                file_put_contents($filePath, Pdf::loadView('manager.reports.pdf', $viewData)->setPaper('a4')->output());
             } else {
                 $export     = $this->buildExport($type, $storeId, $fromDate, $toDate, $from, $to, $period, $request);
                 $writerType = $format === 'csv' ? \Maatwebsite\Excel\Excel::CSV : \Maatwebsite\Excel\Excel::XLSX;
                 file_put_contents($filePath, Excel::raw($export, $writerType));
             }
-
             Mail::to($request->email)->send(new ReportMail($type, $from, $to, $filePath, $fileName));
             @unlink($filePath);
-
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             @unlink($filePath);
@@ -227,21 +217,22 @@ class ReportController extends Controller
         }
     }
 
-    // ── Build Export Object (XLSX / CSV) ─────────────────────────────────
+    // ── Build Export ──────────────────────────────────────────────────────
     private function buildExport(string $type, int $storeId, $fromDate, $toDate, string $from, string $to, string $period, ?Request $request = null): mixed
     {
         return match ($type) {
             'sales' => (function () use ($storeId, $fromDate, $toDate, $from, $to) {
                 $raw = $this->reportService->salesReport($storeId, $fromDate, $toDate);
                 return new SalesReportExport(
-                    dailyTrend:      $raw['daily']      ?? collect(),
+                    dailyTrend:      $raw['daily']           ?? collect(),
                     byPaymentMethod: collect($raw['byMethod'] ?? [])->values(),
-                    byOrderType:     $raw['byType']     ?? collect(),
-                    byStatus:        $raw['byStatus']   ?? collect(),
+                    byOrderType:     $raw['byType']          ?? collect(),
+                    byStatus:        $raw['byStatus']        ?? collect(),
                     totalSales:      (float) ($raw['totalSales'] ?? 0),
                     totalOrders:     (int)   ($raw['orderCount'] ?? 0),
                     avgTransaction:  (float) ($raw['avgSale']    ?? 0),
                     from: $from, to: $to,
+                    byPaymentStatus: $raw['byPaymentStatus'] ?? collect(),
                 );
             })(),
 
@@ -264,13 +255,14 @@ class ReportController extends Controller
                     from:             $from,
                     to:               $to,
                     nonRevenueOrders: $raw['non_revenue_orders'] ?? collect(),
+                    refundSummary:    $raw['refund_summary']     ?? null,
                 );
             })(),
 
             'cashiers' => (function () use ($storeId, $fromDate, $toDate, $from, $to) {
                 $raw = $this->reportService->cashierReport($storeId, $fromDate, $toDate);
                 return new CashierReportExport(
-                    cashiers:          $raw['cashiers']          ?? collect(),
+                    cashiers:            $raw['cashiers']              ?? collect(),
                     cancelledPerCashier: $raw['cancelled_per_cashier'] ?? collect(),
                     from: $from, to: $to,
                 );
@@ -283,6 +275,10 @@ class ReportController extends Controller
                     ->when($request?->status, fn($q, $s) => $q->where('status', $s))
                     ->whereBetween('created_at', [$fromDate, $toDate])
                     ->latest()->get(),
+                unpaidOrders: \App\Models\Order::forStore($storeId)
+                    ->whereIn('status', ['pending', 'cooking', 'ready'])
+                    ->whereBetween('created_at', [$fromDate, $toDate])
+                    ->with('cashier')->get(),
                 from: $from, to: $to,
             ),
 
@@ -294,40 +290,42 @@ class ReportController extends Controller
     private function buildPdfData(string $type, int $storeId, $fromDate, $toDate, string $from, string $to, string $period, ?Request $request = null): array
     {
         $base = compact('type', 'from', 'to', 'period');
-
         return match ($type) {
             'sales' => array_merge($base, (function () use ($storeId, $fromDate, $toDate) {
                 $raw = $this->reportService->salesReport($storeId, $fromDate, $toDate);
                 return [
-                    'totalSales'      => $raw['totalSales']  ?? 0,
-                    'totalOrders'     => $raw['orderCount']  ?? 0,
-                    'avgTransaction'  => $raw['avgSale']     ?? 0,
+                    'totalSales'      => $raw['totalSales']      ?? 0,
+                    'totalOrders'     => $raw['orderCount']      ?? 0,
+                    'avgTransaction'  => $raw['avgSale']         ?? 0,
                     'byPaymentMethod' => collect($raw['byMethod'] ?? [])->values(),
-                    'byOrderType'     => $raw['byType']      ?? collect(),
-                    'byStatus'        => $raw['byStatus']    ?? collect(),
-                    'dailyTrend'      => $raw['daily']       ?? collect(),
+                    'byOrderType'     => $raw['byType']          ?? collect(),
+                    'byStatus'        => $raw['byStatus']        ?? collect(),
+                    'byPaymentStatus' => $raw['byPaymentStatus'] ?? collect(),
+                    'dailyTrend'      => $raw['daily']           ?? collect(),
                 ];
             })()),
 
             'products' => array_merge($base, (function () use ($storeId, $fromDate, $toDate) {
                 $raw = $this->reportService->productReport($storeId, $fromDate, $toDate);
                 return [
-                    'topByQty'        => $raw['top_by_qty']        ?? collect(),
-                    'topByRevenue'    => $raw['top_by_revenue']    ?? collect(),
-                    'cancelledSummary'=> $raw['cancelled_summary'] ?? null,
+                    'topByQty'         => $raw['top_by_qty']        ?? collect(),
+                    'topByRevenue'     => $raw['top_by_revenue']    ?? collect(),
+                    'cancelledSummary' => $raw['cancelled_summary'] ?? null,
+                    'cancelledItems'   => $raw['cancelled_items']   ?? collect(),
                 ];
             })()),
 
-            'revenue' => array_merge($base, [
-                'data' => $this->reportService->revenueAnalytics($storeId, $period, $fromDate, $toDate),
-            ]),
+            'revenue' => array_merge($base, (function () use ($storeId, $fromDate, $toDate, $period) {
+                $raw = $this->reportService->revenueAnalytics($storeId, $period, $fromDate, $toDate);
+                return [
+                    'data'          => $raw,
+                    'refundSummary' => $raw['refund_summary'] ?? null,
+                ];
+            })()),
 
             'cashiers' => array_merge($base, (function () use ($storeId, $fromDate, $toDate) {
                 $raw = $this->reportService->cashierReport($storeId, $fromDate, $toDate);
-                return [
-                    'data'               => $raw,
-                    'cancelledPerCashier'=> $raw['cancelled_per_cashier'] ?? collect(),
-                ];
+                return ['data' => $raw, 'cancelledPerCashier' => $raw['cancelled_per_cashier'] ?? collect()];
             })()),
 
             'payments' => array_merge($base, [
@@ -337,13 +335,16 @@ class ReportController extends Controller
                     ->when($request?->status, fn($q, $s) => $q->where('status', $s))
                     ->whereBetween('created_at', [$fromDate, $toDate])
                     ->latest()->get(),
+                'unpaidOrders' => \App\Models\Order::forStore($storeId)
+                    ->whereIn('status', ['pending', 'cooking', 'ready'])
+                    ->whereBetween('created_at', [$fromDate, $toDate])
+                    ->with('cashier')->get(),
             ]),
 
             default => abort(404),
         };
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────
     private function parseDates(Request $request): array
     {
         $from = $request->from ? Carbon::parse($request->from)->startOfDay() : now()->copy()->startOfMonth();

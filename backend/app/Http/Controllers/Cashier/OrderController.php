@@ -25,7 +25,7 @@ class OrderController extends Controller
     {
         $storeId = $request->get('_store_id');
         $orders  = Order::forStore($storeId)
-            ->with('cashier', 'table')
+            ->with('cashier', 'table', 'payments') // ← tambah 'payments' agar badge Refund/Lunas/Sebagian tidak N+1
             ->when($request->status,     fn($q, $s) => $q->where('status', $s))
             ->when($request->order_type, fn($q, $t) => $q->where('order_type', $t))
             ->when($request->search,     fn($q, $s) => $q->where('order_number', 'like', "%{$s}%"))
@@ -46,9 +46,7 @@ class OrderController extends Controller
             ->with(['products' => function ($q) {
                 $q->where('is_available', true)
                   ->with([
-                      // Load varian yang tersedia
                       'variants' => fn($q2) => $q2->where('is_available', true)->orderBy('sort_order'),
-                      // Load diskon agar bisa cek isCurrentlyActive() di blade tanpa N+1
                       'discounts',
                   ]);
             }])
@@ -138,5 +136,29 @@ class OrderController extends Controller
         ActivityLogService::log('order_completed', $order, description: "Order #{$order->order_number} selesai, meja dikosongkan.");
         return redirect()->route('cashier.tables.index')
             ->with('success', "Pesanan #{$order->order_number} selesai. Meja {$order->table?->number} kembali tersedia.");
+    }
+
+    /**
+     * Poll endpoint untuk live update tabel pesanan.
+     * Mengembalikan status terbaru beserta info pembayaran (is_paid, has_refund, has_partial).
+     */
+    public function poll(Request $request): JsonResponse
+    {
+        $storeId = $request->get('_store_id');
+
+        $orders = Order::forStore($storeId)
+            ->with('payments')
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(fn(Order $o) => [
+                'id'          => $o->id,
+                'status'      => $o->status,
+                'is_paid'     => $o->isFullyPaid(),
+                'has_refund'  => $o->payments->contains('status', 'refunded'),
+                'has_partial' => $o->payments->contains('status', 'paid') && ! $o->isFullyPaid(),
+            ]);
+
+        return response()->json($orders);
     }
 }

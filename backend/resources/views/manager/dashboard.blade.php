@@ -17,8 +17,8 @@
     cursor: pointer;
     transition: all 0.15s ease;
 }
-.filter-btn:hover { border-color: #6366f1; color: #6366f1; }
-.filter-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+.filter-btn:hover { border-color: #2D54BF; color: #2D54BF; }
+.filter-btn.active { background: #2D54BF; color: white; border-color: #2D54BF; }
 .stat-value { transition: all 0.3s ease; }
 </style>
 
@@ -59,7 +59,10 @@
                        value="{{ now()->format('Y-m-d') }}"
                        class="form-input text-sm py-1.5 w-36">
                 <button onclick="loadCustomRange()"
-                        class="filter-btn active text-sm py-1.5 px-3">Terapkan</button>
+                        class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                        onmouseover="this.style.backgroundColor='#1e3d8f'"
+                        onmouseout="this.style.backgroundColor='#2D54BF'">Terapkan</button>
             </div>
         </div>
     </div>
@@ -102,11 +105,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- Top Products --}}
         <div class="card">
-            <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                {{-- trophy --}}
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
-                </svg>
+            <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2-mb-4 pb-3 border-b border-gray-250">
                 Top Produk
             </h2>
             <div id="top-products-list">
@@ -119,19 +118,17 @@
                         <span class="text-sm font-semibold">{{ $p->total_qty }} pcs</span>
                     </div>
                 @empty
-                    <p class="text-sm text-gray-400 text-center py-6">Belum ada data</p>
+                    <div class="flex items-center justify-center h-40">
+                        <p class="text-sm text-gray-400">Belum ada data</p>
+                    </div>
                 @endforelse
             </div>
         </div>
 
         {{-- Chart --}}
         <div class="card lg:col-span-2">
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center justify-between mb-4 mb-4 pb-3 border-b border-gray-250">
                 <h2 class="font-semibold text-gray-800 flex items-center gap-2" id="chart-title-wrapper">
-                    {{-- trending up --}}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
-                    </svg>
                     <span id="chart-title">Tren Penjualan Hari Ini</span>
                 </h2>
                 <div id="chart-loading" class="hidden">
@@ -150,36 +147,39 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- Recent Orders --}}
         <div class="card lg:col-span-2">
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-250">
                 <h2 class="font-semibold text-gray-800 flex items-center gap-2">
-                    {{-- receipt --}}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/>
-                    </svg>
+                    {{-- clock --}}
                     Pesanan Terbaru
                 </h2>
-                <a href="{{ route('cashier.orders.index') }}" class="text-xs text-indigo-600 hover:underline">Lihat semua →</a>
+                 <a href="{{ route('cashier.orders.index') }}" 
+                        class="ml-auto inline-flex items-center px-2 py-1 text-xs font-medium text-white rounded-lg transition-colors"
+                        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                        onmouseover="this.style.backgroundColor='#1e3d8f'"
+                        onmouseout="this.style.backgroundColor='#2D54BF'">
+                        Lihat Semua
+                 </a>
             </div>
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b border-gray-100 text-left">
-                        <th class="py-2 text-gray-500 font-medium">No. Pesanan</th>
-                        <th class="py-2 text-gray-500 font-medium">Tipe</th>
-                        <th class="py-2 text-gray-500 font-medium">Status</th>
-                        <th class="py-2 text-right text-gray-500 font-medium">Total</th>
+                        <th class="py-2 text-gray-500 font-medium w-28">No. Pesanan</th>
+                        <th class="py-2 text-gray-500 font-medium w-28">Tipe</th>
+                        <th class="py-2 text-gray-500 font-medium w-28">Status</th>
+                        <th class="py-2 text-left text-gray-500 font-medium w-28">Total</th>
                     </tr>
                 </thead>
                 <tbody id="recent-orders-body">
                     @forelse($recentOrders ?? [] as $order)
                         <tr class="border-b border-gray-50 hover:bg-gray-50">
-                            <td class="py-2">
+                            <td class="py-2 w-48">
                                 <a href="{{ route('cashier.orders.show', $order) }}" class="font-medium text-indigo-600 hover:underline">
                                     {{ $order->order_number }}
                                 </a>
                             </td>
-                            <td class="py-2 text-gray-600 capitalize">{{ str_replace('_', '-', $order->order_type) }}</td>
-                            <td class="py-2"><span class="badge badge-{{ $order->status }}">{{ ucfirst($order->status) }}</span></td>
-                            <td class="py-2 text-right font-semibold">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td>
+                            <td class="py-2 text-gray-600 capitalize w-28">{{ str_replace('_', '-', $order->order_type) }}</td>
+                            <td class="py-2 w-28"><span class="badge badge-{{ $order->status }}">{{ ucfirst($order->status) }}</span></td>
+                            <td class="py-2 text-left font-semibold w-28">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada pesanan</td></tr>
@@ -189,14 +189,12 @@
         </div>
 
         {{-- Low Stock --}}
-        <div class="card">
+        <div class="card ">
+            <div class="flex items-center justify-between mb-2 pb-1 border-b border-gray-250">
             <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                {{-- alert triangle --}}
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
                 Stok Menipis
             </h2>
+        </div>
             @forelse($lowStockProducts ?? [] as $p)
                 <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                     <span class="text-sm text-gray-700 truncate flex-1">{{ $p->name }}</span>
@@ -205,11 +203,7 @@
                     </span>
                 </div>
             @empty
-                <div class="text-sm text-green-600 text-center py-6 flex flex-col items-center gap-2">
-                    {{-- check circle --}}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
+                <div class="text-sm text-gray-400 text-center py-6 flex flex-col items-center gap-2">
                     Semua stok aman
                 </div>
             @endforelse
@@ -362,10 +356,10 @@ function updateRecentOrders(orders) {
     }
     el.innerHTML = orders.map(o => `
         <tr class="border-b border-gray-50 hover:bg-gray-50">
-            <td class="py-2"><a href="/cashier/orders/${o.id}" class="font-medium text-indigo-600 hover:underline">${o.order_number}</a></td>
-            <td class="py-2 text-gray-600 capitalize">${o.order_type.replace('_','-')}</td>
-            <td class="py-2"><span class="badge badge-${o.status}">${capitalize(o.status)}</span></td>
-            <td class="py-2 text-right font-semibold">Rp ${formatRp(o.total_amount)}</td>
+            <td class="py-2 w-48"><a href="/cashier/orders/${o.id}" class="font-medium text-indigo-600 hover:underline">${o.order_number}</a></td>
+            <td class="py-2 text-gray-600 capitalize w-28">${o.order_type.replace('_','-')}</td>
+            <td class="py-2 w-28"><span class="badge badge-${o.status}">${capitalize(o.status)}</span></td>
+            <td class="py-2 text-left font-semibold w-28">Rp ${formatRp(o.total_amount)}</td>
         </tr>
     `).join('');
 }
