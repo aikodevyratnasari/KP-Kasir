@@ -296,6 +296,12 @@
     #cart-toggle { display: flex !important; }
 } */
 
+    .field-error {
+    border: 2px solid #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
+    border-radius: 8px;
+}
+
  #cart-panel {
     position: fixed !important;
     top: 0;
@@ -393,6 +399,24 @@ function orderForm(taxRate) {
 }
     }
 }
+document.getElementById('order-form').addEventListener('submit', function(e) {
+    const tableSelect = document.querySelector('select[name="table_id"]');
+    const orderType = document.querySelector('select[name="order_type"]').value;
+
+    document.querySelectorAll('.field-error').forEach(el => {
+        el.classList.remove('field-error');
+    });
+
+    if (orderType === 'dine_in' && tableSelect && !tableSelect.value) {
+        tableSelect.classList.add('field-error');
+    }
+});
+
+document.querySelector('select[name="table_id"]')?.addEventListener('change', function() {
+    if (this.value) {
+        this.classList.remove('field-error');
+    }
+});
 </script>
 @endpush
 @endsection

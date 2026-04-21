@@ -171,34 +171,39 @@
             @if($order->payments->count() > 0)
             <div class="mt-3 pt-3 border-t border-gray-100 space-y-1">
                 @foreach($order->payments as $p)
-                <div class="flex justify-between text-xs text-gray-500">
-                    <span>{{ $p->methodLabel() }} — {{ $p->created_at->format('H:i') }}</span>
-                    <span>Rp {{ number_format($p->amount, 0, ',', '.') }}</span>
+                <div class="flex justify-between text-xs">
+                    <span class="text-gray-500">{{ $p->methodLabel() }} — {{ $p->created_at->format('H:i') }}</span>
+                    <span class="flex items-center gap-1.5">
+                        <span>Rp {{ number_format($p->amount, 0, ',', '.') }}</span>
+                        @if($p->status === 'refunded')
+                            <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-700">Refund</span>
+                        @endif
+                    </span>
                 </div>
                 @endforeach
             </div>
             @endif
 
-            @php $lastPayment = $order->payments->last(); @endphp
+            @php $lastPayment = $order->payments->where('status', 'paid')->last(); @endphp
 
             <div id="payment-actions">
                 @if($order->remainingBalance() > 0 && !$order->isCancelled())
                     <a href="{{ route('cashier.payments.create', $order) }}"
-    class="btn-success w-full justify-center mt-4 inline-flex items-center gap-1.5"
-    style="color:white; background-color:#1c8b59;"
-    onmouseover="this.style.backgroundColor='#0e663e';"
-    onmouseout="this.style.backgroundColor='#1c8b59';">
-        Proses Pembayaran
-</a>
+                       class="btn-success w-full justify-center mt-4 inline-flex items-center gap-1.5"
+                       style="color:white; background-color:#1c8b59;"
+                       onmouseover="this.style.backgroundColor='#0e663e';"
+                       onmouseout="this.style.backgroundColor='#1c8b59';">
+                        Proses Pembayaran
+                    </a>
 
                 @elseif($order->isFullyPaid() && $lastPayment)
                     {{-- Cetak Struk --}}
                     <a href="{{ route('cashier.receipts.print', $lastPayment) }}"
-                    target="_blank" rel="noopener noreferrer"
-                    class="w-full justify-center mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
-                    style="color:white; background-color:#EF8F00; border:1px solid #EF8F00;"
-                    onmouseover="this.style.backgroundColor='#cc7a00';"
-                    onmouseout="this.style.backgroundColor='#EF8F00';">
+                       target="_blank" rel="noopener noreferrer"
+                       class="w-full justify-center mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
+                       style="color:white; background-color:#EF8F00; border:1px solid #EF8F00;"
+                       onmouseover="this.style.backgroundColor='#cc7a00';"
+                       onmouseout="this.style.backgroundColor='#EF8F00';">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                         Cetak Struk
                     </a>
@@ -271,35 +276,76 @@
                 </tr>
             </tbody>
         </table>
-        @if($order->isPending() && !$order->isFullyPaid())
-    <div class="flex gap-3 mt-3 justify-between">
-        <!-- KODE ASLI ANDA SUDAH BENAR 100% -->
 
-        <a href="{{ route('cashier.orders.edit', $order) }}"
-           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
-           style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
-           onmouseover="this.style.backgroundColor='#1e3d8f';"
-           onmouseout="this.style.backgroundColor='#2D54BF';">
-            Edit Pesanan
-        </a>
-    
-        <button type="button"
-                onclick="document.getElementById('cancel-modal').style.display='flex'; document.body.style.overflow='hidden';"
-                class="btn-danger">
-            Batalkan
-        </button>
-    </div>
-    @endif
+        {{--
+            Logika tombol aksi:
+            - Edit: hanya jika pending DAN belum lunas
+            - Batalkan: bisa selama dapur belum memasak (status kitchen bukan cooking/ready)
+                        bahkan jika sudah lunas → akan otomatis direfund
+        --}}
+        @php
+            $kitchenOrder   = $order->kitchenOrder;
+            $kitchenCooking = $kitchenOrder && in_array($kitchenOrder->status, ['cooking', 'ready']);
+            $canCancel      = ! $order->isCompleted() && ! $order->isCancelled() && ! $kitchenCooking;
+            $canEdit        = $order->isPending() && ! $order->isFullyPaid();
+        @endphp
+
+        {{-- Info status dapur --}}
+        @if($kitchenOrder && ! $order->isCancelled() && ! $order->isCompleted())
+            @php
+                $kitchenStatusConfig = [
+                    'waiting_payment' => ['label' => 'Menunggu Pembayaran', 'bg' => '#fefce8', 'border' => '#fde047', 'text' => '#854d0e'],
+                    'queued'          => ['label' => 'Antrian Dapur',        'bg' => '#eff6ff', 'border' => '#93c5fd', 'text' => '#1d4ed8'],
+                    'cooking'         => ['label' => 'Sedang Dimasak ⚠',    'bg' => '#fff7ed', 'border' => '#fb923c', 'text' => '#9a3412'],
+                    'ready'           => ['label' => 'Siap Disajikan',       'bg' => '#f0fdf4', 'border' => '#86efac', 'text' => '#166534'],
+                ];
+                $ksCfg = $kitchenStatusConfig[$kitchenOrder->status] ?? ['label' => ucfirst($kitchenOrder->status), 'bg' => '#f9fafb', 'border' => '#e5e7eb', 'text' => '#374151'];
+            @endphp
+            <div class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+                 style="background:{{ $ksCfg['bg'] }};border:1px solid {{ $ksCfg['border'] }};color:{{ $ksCfg['text'] }};">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                    <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+                </svg>
+                <span>Status Dapur: <strong>{{ $ksCfg['label'] }}</strong></span>
+                @if($kitchenCooking)
+                    <span class="opacity-70 ml-1">— Pembatalan tidak tersedia</span>
+                @endif
+            </div>
+        @endif
+
+        @if($canEdit || $canCancel)
+        <div class="flex gap-3 mt-3 {{ $canEdit ? 'justify-between' : 'justify-end' }}">
+            @if($canEdit)
+            <a href="{{ route('cashier.orders.edit', $order) }}"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
+               style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
+               onmouseover="this.style.backgroundColor='#1e3d8f';"
+               onmouseout="this.style.backgroundColor='#2D54BF';">
+                Edit Pesanan
+            </a>
+            @endif
+
+            @if($canCancel)
+            <button type="button"
+                    onclick="document.getElementById('cancel-modal').style.display='flex'; document.body.style.overflow='hidden';"
+                    class="btn-danger">
+                Batalkan
+            </button>
+            @endif
+        </div>
+        @endif
     </div>
 
     <div class="flex justify-start">
-    <a href="{{ route('cashier.orders.index') }}"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-                        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
-                        onmouseover="this.style.backgroundColor='#f3f4f6';"
-                        onmouseout="this.style.backgroundColor='white';">
-                        Kembali
-</a>
+        <a href="{{ route('cashier.orders.index') }}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+           style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+           onmouseover="this.style.backgroundColor='#f3f4f6';"
+           onmouseout="this.style.backgroundColor='white';">
+           Kembali
+        </a>
     </div>
 </div>
 
@@ -309,40 +355,27 @@
      onclick="if(event.target===this){this.style.display='none'; document.body.style.overflow='';}">
     <div style="background:#fff; border-radius:16px; padding:24px; width:100%; max-width:420px; margin:16px; box-shadow:0 20px 60px rgba(0,0,0,0.2);"
          onclick="event.stopPropagation()">
-
-        {{-- Header Modal --}}
         <div class="flex items-center justify-between mb-5">
-            <h3 class="font-bold text-gray-900 text-base flex items-center gap-2">
-                Kirim Struk
-            </h3>
+            <h3 class="font-bold text-gray-900 text-base">Kirim Struk</h3>
             <button type="button"
                     onclick="document.getElementById('send-receipt-modal').style.display='none'; document.body.style.overflow='';"
                     class="text-gray-400 hover:text-gray-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-
-        {{-- Email --}}
         <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                Email
-            </label>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Email</label>
             <form method="POST"
                   action="{{ $lastPayment ? route('cashier.receipts.send-email', $lastPayment) : '#' }}"
                   id="send-email-form"
                   onsubmit="handleSendEmail(event)">
                 @csrf
                 <div class="flex gap-2">
-                    <input type="email"
-                           name="email"
-                           id="receipt-email-input"
+                    <input type="email" name="email" id="receipt-email-input"
                            value="{{ $order->customer_email ?? '' }}"
-                           placeholder="email@contoh.com"
-                           required
+                           placeholder="email@contoh.com" required
                            class="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200">
-                    <button type="submit"
-                            id="send-email-btn"
+                    <button type="submit" id="send-email-btn"
                             class="px-4 py-2 text-sm font-medium text-white rounded-lg flex-shrink-0 transition-colors"
                             style="background-color:#6366f1;"
                             onmouseover="this.style.backgroundColor='#4f46e5';"
@@ -352,11 +385,8 @@
                 </div>
                 <p class="text-xs text-gray-400 mt-1.5">Struk akan dikirim dalam format HTML ke email yang dituju.</p>
             </form>
-
-            {{-- Feedback --}}
             <div id="email-feedback" style="display:none;" class="mt-3 text-sm rounded-lg px-3 py-2"></div>
         </div>
-
     </div>
 </div>
 
@@ -371,7 +401,22 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-        <p class="text-sm text-gray-500 mb-4">Pesanan <strong class="text-gray-900">#{{ $order->order_number }}</strong> akan dibatalkan.</p>
+        <div class="mb-4">
+            <p class="text-sm text-gray-500">
+                Pesanan <strong class="text-gray-900">#{{ $order->order_number }}</strong> akan dibatalkan.
+            </p>
+            @if($order->isFullyPaid())
+            <div class="mt-2 flex items-start gap-2 px-3 py-2 rounded-lg text-xs"
+                 style="background:#fff7ed; border:1px solid #fdba74; color:#9a3412;">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span>Pesanan ini sudah <strong>lunas</strong>. Pembayaran sebesar <strong>Rp {{ number_format($order->totalPaid(), 0, ',', '.') }}</strong> akan otomatis direfund saat pesanan dibatalkan.</span>
+            </div>
+            @endif
+        </div>
         <form method="POST" action="{{ route('cashier.orders.cancel', $order) }}">
             @csrf
             <div class="mb-3">
@@ -387,19 +432,17 @@
                 </button>
                 @endforeach
             </div>
-
             <div class="flex gap-3 justify-end">
-                <button type="button" onclick="document.getElementById('cancel-modal').style.display='none'; document.body.style.overflow='';" 
-                class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
-        onmouseover="this.style.backgroundColor='#f3f4f6';"
-        onmouseout="this.style.backgroundColor='white';"
-        onmousedown="this.style.transform='scale(0.98)';"
-        onmouseup="this.style.transform='scale(1)';">
-        Tidak
-        </button>
+                <button type="button"
+                        onclick="document.getElementById('cancel-modal').style.display='none'; document.body.style.overflow='';"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
+                        onmouseover="this.style.backgroundColor='#f3f4f6';"
+                        onmouseout="this.style.backgroundColor='white';">
+                    Tidak
+                </button>
                 <button type="submit" class="btn-danger text-sm inline-flex items-center gap-1.5">
-                    Ya
+                    Ya, Batalkan
                 </button>
             </div>
         </form>
@@ -416,7 +459,6 @@
     const allBadgeClasses = ['badge-pending','badge-cooking','badge-ready','badge-completed','badge-cancelled'];
     const statusText = { pending:'Menunggu', cooking:'Dimasak', ready:'Siap Disajikan', completed:'Selesai', cancelled:'Dibatalkan' };
 
-    // FIX: simpan status SEBELUM update, baru bandingkan
     let lastStatus = '{{ $order->status }}';
     let lastIsPaid = {{ $order->isFullyPaid() ? 'true' : 'false' }};
 
@@ -451,12 +493,10 @@
 
             if (!statusChanged && !paidChanged) return;
 
-            // FIX: simpan nilai lama SEBELUM update, baru lakukan perbandingan untuk reload
             const prevStatus = lastStatus;
             lastStatus = data.status;
             lastIsPaid = data.is_paid;
 
-            // Update badge
             const badge = document.getElementById('order-status-badge');
             if (badge) {
                 badge.classList.remove(...allBadgeClasses);
@@ -464,11 +504,8 @@
                 badge.textContent = statusText[data.status] || data.status;
             }
 
-            // Update tracker angka progres (tidak butuh reload)
             updateTracker(getStep(data.status, data.is_paid));
 
-            // FIX: reload jika status berubah agar tombol aksi (Meja Kosong, Selesai, dll)
-            // ikut terupdate — bandingkan prevStatus dengan data.status yang baru
             if (statusChanged) {
                 window.location.reload();
             }
@@ -524,6 +561,5 @@ function handleSendEmail(e) {
         btn.style.backgroundColor = '#6366f1';
     });
 }
-
 </script>
 @endpush
