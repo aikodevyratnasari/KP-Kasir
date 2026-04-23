@@ -3,3 +3,4 @@
 /storage/*.key
 /storage/logs/*
 docker-data/
+backend/.env
