@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Services\ActivityLogService;
 use App\Services\PaymentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,22 +20,98 @@ class PaymentController extends Controller
 
     public function create(Order $order): View
     {
+        abort_if($order->isCancelled(), 403, 'Pesanan ini sudah dibatalkan.');
+        abort_if($order->remainingBalance() <= 0, 403, 'Pesanan ini sudah lunas.');
+
         $order->load('items', 'payments', 'table');
         return view('cashier.payments.create', compact('order'));
     }
 
     public function store(ProcessPaymentRequest $request, Order $order): RedirectResponse
     {
+        $method = $request->payment_method;
+
+        if (in_array($method, ['qris', 'ewallet', 'bank_transfer'])) {
+            return $this->redirectToGateway($request, $order);
+        }
+
         $payment = $this->paymentService->process($order, $request->validated());
+
         ActivityLogService::logCreated($payment, [
             'method' => $payment->payment_method,
             'amount' => $payment->amount,
         ]);
 
-        // Setelah bayar → kembali ke detail pesanan (tampil status Lunas + tombol Cetak Struk)
         return redirect()
             ->route('cashier.orders.show', $order)
             ->with('success', 'Pembayaran berhasil diproses.');
+    }
+
+    /**
+     * Inisiasi pembayaran gateway (QRIS / E-Wallet / Transfer Bank).
+     *
+     * Untuk bank_transfer, `ewallet_type` diisi nama bank (bca/bni/bri/mandiri/permata).
+     */
+    public function initiate(Request $request, Order $order): JsonResponse
+    {
+        $request->validate([
+            'method'       => ['required', 'in:qris,ewallet,bank_transfer'],
+            'ewallet_type' => ['nullable', 'string'],
+        ]);
+
+        // Validasi spesifik per metode
+        if ($request->method === 'ewallet') {
+            $request->validate([
+                'ewallet_type' => ['required', 'in:GoPay,OVO,Dana,ShopeePay'],
+            ]);
+        }
+
+        if ($request->method === 'bank_transfer') {
+            $request->validate([
+                'ewallet_type' => ['required', 'in:bca,bni,bri,mandiri,permata'],
+            ]);
+        }
+
+        abort_if($order->remainingBalance() <= 0, 422, 'Pesanan sudah lunas.');
+        abort_if($order->isCancelled(), 422, 'Pesanan sudah dibatalkan.');
+
+        try {
+            $payment = $this->paymentService->initiate(
+                $order,
+                $request->method,
+                $request->ewallet_type,
+            );
+
+            return response()->json([
+                'success'     => true,
+                'payment_id'  => $payment->id,
+                'snap_token'  => $payment->snap_token,
+                'payment_url' => $payment->payment_url,
+                'qr_string'   => $payment->qr_string,
+                'va_number'   => $payment->va_number,
+                'bank'        => $payment->bank,
+                'method'      => $payment->payment_method,
+                'amount'      => $payment->amount,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghubungi payment gateway. ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function pollStatus(Payment $payment): JsonResponse
+    {
+        $confirmed = $this->paymentService->pollGatewayStatus($payment);
+        $payment   = $payment->fresh();
+
+        return response()->json([
+            'status'    => $payment->status,
+            'is_paid'   => $payment->isPaid(),
+            'confirmed' => $confirmed,
+        ]);
     }
 
     public function history(Request $request): View
@@ -57,16 +134,32 @@ class PaymentController extends Controller
     public function refund(RefundPaymentRequest $request, Payment $payment): RedirectResponse
     {
         $this->authorize('refund', $payment);
+
         $payment = $this->paymentService->refund(
             $payment,
-            $request->refund_amount,
-            $request->refund_reason
+            (float) $request->refund_amount,
+            $request->refund_reason,
         );
+
         ActivityLogService::log(
             'payment_refunded',
             $payment,
-            description: "Refund Rp{$request->refund_amount} for payment #{$payment->id}"
+            description: sprintf(
+                "Refund Rp%s untuk payment #%d (%s)%s",
+                number_format($request->refund_amount, 0, ',', '.'),
+                $payment->id,
+                $payment->methodLabelShort(),
+                $payment->isGateway() ? ' via Midtrans' : ' (manual)',
+            )
         );
+
         return back()->with('success', 'Pengembalian dana berhasil diproses.');
+    }
+
+    private function redirectToGateway(Request $request, Order $order): RedirectResponse
+    {
+        return redirect()
+            ->route('cashier.orders.show', $order)
+            ->with('info', 'Silakan pilih metode dari halaman detail pesanan.');
     }
 }

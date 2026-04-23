@@ -18,11 +18,11 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Metode</label>
-                <select name="method" class="form-input w-36">
+                <select name="method" class="form-input w-40">
                     <option value="">Semua</option>
-                    <option value="cash"    {{ request('method') === 'cash'    ? 'selected' : '' }}>Tunai</option>
-                    <option value="card"    {{ request('method') === 'card'    ? 'selected' : '' }}>Kartu</option>
-                    <option value="ewallet" {{ request('method') === 'ewallet' ? 'selected' : '' }}>E-Wallet</option>
+                    @foreach(\App\Models\Payment::methodOptions() as $val => $label)
+                    <option value="{{ $val }}" {{ request('method') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
                 </select>
             </div>
             <div>
@@ -81,7 +81,7 @@
             <p class="text-xs text-gray-400 mt-1">{{ $refundedStat->count ?? 0 }} transaksi</p>
         </div>
 
-        {{-- Belum Bayar (orders tanpa payment) --}}
+        {{-- Belum Bayar --}}
         <div class="card" style="{{ $unpaidOrders->count() > 0 ? 'border-left:3px solid #f97316;' : '' }}">
             <div class="flex items-center gap-2 mb-2">
                 <div style="width:32px;height:32px;border-radius:8px;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
@@ -95,7 +95,7 @@
             <p class="text-xs text-gray-400 mt-1">Rp {{ number_format($unpaidOrders->sum('total_amount'), 0, ',', '.') }}</p>
         </div>
 
-        {{-- Pending Payment Record --}}
+        {{-- Pending --}}
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
                 <div style="width:32px;height:32px;border-radius:8px;background:#fefce8;display:flex;align-items:center;justify-content:center;">
@@ -107,6 +107,35 @@
             <p class="text-xs text-gray-400 mt-1">Rp {{ number_format($pendingPayStat->total ?? 0, 0, ',', '.') }}</p>
         </div>
     </div>
+
+    {{-- Breakdown per metode --}}
+    @if(isset($byMethodSummary) && $byMethodSummary->count() > 0)
+    <div class="card">
+        <div class="flex items-center gap-2 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <h2 class="font-semibold text-gray-800 text-sm">Ringkasan per Metode Pembayaran</h2>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            @php
+            $methodConfig = [
+                'cash'          => ['label' => 'Tunai',         'bg' => '#f0fdf4', 'border' => '#86efac', 'text' => '#166534'],
+                'card'          => ['label' => 'Kartu',         'bg' => '#eff6ff', 'border' => '#93c5fd', 'text' => '#1d4ed8'],
+                'qris'          => ['label' => 'QRIS',          'bg' => '#eef2ff', 'border' => '#a5b4fc', 'text' => '#4338ca'],
+                'ewallet'       => ['label' => 'E-Wallet',      'bg' => '#fdf4ff', 'border' => '#e879f9', 'text' => '#86198f'],
+                'bank_transfer' => ['label' => 'Transfer Bank', 'bg' => '#fff7ed', 'border' => '#fdba74', 'text' => '#9a3412'],
+            ];
+            @endphp
+            @foreach($byMethodSummary as $m)
+            @php $cfg = $methodConfig[$m->payment_method] ?? ['label' => ucfirst($m->payment_method), 'bg' => '#f9fafb', 'border' => '#e5e7eb', 'text' => '#374151']; @endphp
+            <div style="background:{{ $cfg['bg'] }};border:1px solid {{ $cfg['border'] }};color:{{ $cfg['text'] }};border-radius:10px;padding:14px;">
+                <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">{{ $cfg['label'] }}</p>
+                <p style="font-size:20px;font-weight:700;line-height:1;">Rp {{ number_format($m->total, 0, ',', '.') }}</p>
+                <p style="font-size:11px;margin-top:4px;opacity:0.7;">{{ $m->count }} transaksi</p>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 
     {{-- Banner pesanan belum bayar --}}
     @if($unpaidOrders->count() > 0 && (! request('status') || request('status') === 'pending'))
@@ -120,7 +149,7 @@
                     {{ $unpaidOrders->count() }} Pesanan Aktif Belum Selesai
                 </h3>
                 <p class="text-xs text-gray-500 mb-3">
-                    Pesanan berikut masih dalam status aktif (Pending / Dimasak / Siap) dan belum ada pembayaran yang diproses.
+                    Pesanan berikut masih dalam status aktif dan belum ada pembayaran yang diproses.
                     Total nilai: <strong>Rp {{ number_format($unpaidOrders->sum('total_amount'), 0, ',', '.') }}</strong>
                 </p>
                 <div class="overflow-x-auto">
@@ -138,29 +167,15 @@
                         <tbody>
                         @foreach($unpaidOrders as $o)
                             @php
-                                $stClass = match($o->status) {
-                                    'cooking' => 'bg-yellow-100 text-yellow-700',
-                                    'ready'   => 'bg-blue-100 text-blue-700',
-                                    default   => 'bg-orange-100 text-orange-700',
-                                };
-                                $stLabel = match($o->status) {
-                                    'cooking' => 'Dimasak',
-                                    'ready'   => 'Siap',
-                                    default   => 'Pending',
-                                };
+                                $stClass = match($o->status) { 'cooking' => 'bg-yellow-100 text-yellow-700', 'ready' => 'bg-blue-100 text-blue-700', default => 'bg-orange-100 text-orange-700' };
+                                $stLabel = match($o->status) { 'cooking' => 'Dimasak', 'ready' => 'Siap', default => 'Pending' };
                             @endphp
                             <tr style="border-bottom:1px solid #ffedd5;">
-                                <td class="py-1.5">
-                                    <a href="{{ route('cashier.orders.show', $o) }}" class="font-medium text-indigo-600 hover:underline">
-                                        {{ $o->order_number }}
-                                    </a>
-                                </td>
+                                <td class="py-1.5"><a href="{{ route('cashier.orders.show', $o) }}" class="font-medium text-indigo-600 hover:underline">{{ $o->order_number }}</a></td>
                                 <td class="py-1.5 text-gray-700">{{ $o->customer_name ?? '—' }}</td>
                                 <td class="py-1.5 text-gray-600">{{ $o->cashier?->name ?? '-' }}</td>
                                 <td class="py-1.5 text-right font-semibold">Rp {{ number_format($o->total_amount, 0, ',', '.') }}</td>
-                                <td class="py-1.5 text-center">
-                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $stClass }}">{{ $stLabel }}</span>
-                                </td>
+                                <td class="py-1.5 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $stClass }}">{{ $stLabel }}</span></td>
                                 <td class="py-1.5 text-center text-xs text-gray-500">{{ $o->created_at->format('d M, H:i') }}</td>
                             </tr>
                         @endforeach
@@ -172,22 +187,23 @@
     </div>
     @endif
 
-    {{-- Tabel Transaksi Pembayaran --}}
+    {{-- Tabel Transaksi --}}
     <div class="card p-0 overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <div>
                 <h2 class="font-semibold text-gray-800 text-sm">Daftar Transaksi Pembayaran</h2>
-                <p class="text-xs text-gray-400 mt-0.5">Hanya menampilkan transaksi yang sudah diproses (Lunas / Refund / Pending Payment)</p>
+                <p class="text-xs text-gray-400 mt-0.5">Transaksi yang sudah diproses (Lunas / Refund / Pending Gateway)</p>
             </div>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-sm" style="min-width: 720px;">
+            <table class="w-full text-sm" style="min-width: 780px;">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                         <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">No. Pesanan</th>
                         <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Pelanggan</th>
                         <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Kasir</th>
                         <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Metode</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Detail</th>
                         <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Jumlah</th>
                         <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Status</th>
                         <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Waktu</th>
@@ -203,7 +219,38 @@
                         </td>
                         <td class="py-3 px-4 text-gray-700 whitespace-nowrap">{{ $p->order?->customer_name ?? '—' }}</td>
                         <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ $p->cashier?->name ?? '-' }}</td>
-                        <td class="py-3 px-4 text-gray-700 whitespace-nowrap">{{ $p->methodLabel() }}</td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            @php
+                            $methodColors = [
+                                'cash'          => 'bg-green-50 text-green-700',
+                                'card'          => 'bg-blue-50 text-blue-700',
+                                'qris'          => 'bg-indigo-50 text-indigo-700',
+                                'ewallet'       => 'bg-purple-50 text-purple-700',
+                                'bank_transfer' => 'bg-orange-50 text-orange-700',
+                            ];
+                            $mc = $methodColors[$p->payment_method] ?? 'bg-gray-100 text-gray-700';
+                            @endphp
+                            <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $mc }}">
+                                {{ \App\Models\Payment::methodOptions()[$p->payment_method] ?? ucfirst($p->payment_method) }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">
+                            @if($p->payment_method === 'card' && $p->card_last_four)
+                                {{ $p->card_type }} (...{{ $p->card_last_four }})
+                            @elseif($p->payment_method === 'ewallet' && $p->ewallet_type)
+                                {{ $p->ewalletLabel() }}
+                            @elseif($p->payment_method === 'bank_transfer')
+                                @php $bankMap = ['bca'=>'BCA','bni'=>'BNI','bri'=>'BRI','mandiri'=>'Mandiri','permata'=>'Permata']; @endphp
+                                {{ $bankMap[strtolower($p->bank ?? '')] ?? strtoupper($p->bank ?? '') }}
+                                @if($p->va_number)
+                                    · VA: {{ $p->va_number }}
+                                @endif
+                            @elseif($p->payment_method === 'qris' && $p->gateway_trx_id)
+                                ID: {{ Str::limit($p->gateway_trx_id, 12) }}
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td class="py-3 px-4 text-right font-semibold whitespace-nowrap">
                             Rp {{ number_format($p->amount, 0, ',', '.') }}
                         </td>
@@ -229,7 +276,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="py-10 text-center text-gray-400">
+                        <td colspan="8" class="py-10 text-center text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" class="mx-auto mb-2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                             Tidak ada data pembayaran untuk periode ini
                         </td>

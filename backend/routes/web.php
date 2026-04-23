@@ -160,6 +160,8 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::get('orders/{order}/payment',  [PaymentController::class, 'create'])->name('payments.create');
             Route::post('orders/{order}/payment', [PaymentController::class, 'store'])->name('payments.store');
             // Route::get('payments/history',        [PaymentController::class, 'history'])->name('payments.history');
+            Route::post('orders/{order}/payment/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
+            Route::get('payments/{payment}/poll',           [PaymentController::class, 'pollStatus'])->name('payments.poll');
 
             Route::get('receipts/{payment}',       [ReceiptController::class, 'show'])->name('receipts.show');
             Route::get('receipts/{payment}/print', [ReceiptController::class, 'print'])->name('receipts.print');

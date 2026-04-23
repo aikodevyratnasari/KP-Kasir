@@ -42,7 +42,7 @@
                         <th class="py-2.5 px-4 text-left text-xs font-semibold text-gray-500">Nomor Meja</th>
                         <th class="py-2.5 px-4 text-center text-xs font-semibold text-gray-500">Kapasitas</th>
                         <th class="py-2.5 px-4 text-center text-xs font-semibold text-gray-500">Status</th>
-                        <th class="py-2.5 px-4 text-xs font-semibold text-gray-500" style="text-align: right; padding-right: 70px;">Aksi</th>
+                        <th class="py-2.5 px-4 text-center text-xs font-semibold text-gray-500">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -66,33 +66,47 @@
                                     @endswitch
                                 </span>
                             </td>
-                            <td class="py-2.5 px-4 text-right">
-                                <div class="flex justify-end gap-3">
+                            <td class="py-2.5 px-4 text-center">
+    <div class="flex justify-center items-center gap-2">
                                     <button onclick="openEdit({{ $table->id }}, '{{ $table->number }}', {{ $table->capacity }}, '{{ $table->section }}', '{{ $table->status }}')"
-                                            class="text-xs font-medium px-3 py-1 rounded-lg transition-solors"
-                                            style="color: #EF8F00; background-color: #fff8ec; border: 1px solid #EF8F00;"
-                                            onmouseover="this.style.backgroundColor='#ffefd0'"
-                                            onmouseout="this.style.backgroundColor='#fff8ec'">
-                                            Edit
+                                            class="inline-flex items-center justify-center transition-all p-1"
+                                            style="color: #EF8F00;"
+                                            onmouseover="this.style.color='#cc7a00';"
+                                            onmouseout="this.style.color='#EF8F00';"
+                                            title="Edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
                                     </button>
                                     @if($table->status === 'available')
                                         <form method="POST" action="{{ route('manager.tables.destroy', $table) }}"
                                               onsubmit="return confirm('Hapus meja {{ $table->number }}?')">
                                             @csrf @method('DELETE')
-                                            <button type="submit" 
-                                                    class="text-xs font-medium px-3 py-1 rounded-lg transition-colors"
-                                                    style="color: #ef4444; background-color: #fff1f2; border: 1px solid #ef4444;"
-                                                    onmouseover="this.style.backgroundColor='#fee2e2';"
-                                                    onmouseout="this.style.backgroundColor='#fff1f2';"
-                                                    onmousedown="this.style.transform='scale(0.98)';"
-                                                    onmouseup="this.style.transform='scale(1)';">
-                                                Hapus
+                                            <button type="submit"
+                                                    class="inline-flex items-center justify-center transition-all p-1"
+                                                    style="color: #dc2626; background: none; border: none;"
+                                                    onmouseover="this.style.color='#b91c1c';"
+                                                    onmouseout="this.style.color='#dc2626';"
+                                                    title="Hapus">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"/>
+                                                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                                                    <path d="M10 11v6M14 11v6"/>
+                                                    <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                                                </svg>
                                             </button>
                                         </form>
                                     @else
-                                        <span class="text-xs font-medium px-3 py-1 rounded-lg cursor-not-allowed"
-                                        style="color: #d1d5db; background-color: #f9fafb; border: 1px solid #e5e7eb;">
-                                            Hapus
+                                        <span class="inline-flex items-center justify-center p-1 cursor-not-allowed"
+                                              style="color: #d1d5db;"
+                                              title="Tidak bisa dihapus">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"/>
+                                                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                                                <path d="M10 11v6M14 11v6"/>
+                                                <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                                            </svg>
                                         </span>
                                     @endif
                                 </div>

@@ -128,9 +128,7 @@
                 @if($order->notes)
                 <div class="flex justify-between items-start gap-4">
                     <dt class="text-gray-500 flex-shrink-0">Catatan</dt>
-                    <dd class="text-right break-words leading-relaxed text-justify" style="max-width:65%;">
-                        {{ $order->notes }}
-                    </dd>
+                    <dd class="text-right break-words leading-relaxed text-justify" style="max-width:65%;">{{ $order->notes }}</dd>
                 </div>
                 @endif
                 @if($order->sent_to_kitchen_at)
@@ -168,11 +166,33 @@
                 </div>
             </dl>
 
-            @if($order->payments->count() > 0)
+            @php
+                // Aturan tampil:
+                // - 'cancelled' → selalu sembunyi (pending lama yang diganti metode)
+                // - 'pending'   → sembunyi jika order sudah punya payment paid/refunded
+                // - 'paid' / 'refunded' → selalu tampil
+                $hasPaidPayment = $order->payments->whereIn('status', ['paid', 'refunded'])->isNotEmpty();
+                $visiblePayments = $order->payments->filter(function ($p) use ($hasPaidPayment) {
+                    if ($p->status === 'cancelled') {
+                        return false;
+                    }
+                    if ($hasPaidPayment && $p->status === 'pending') {
+                        return false;
+                    }
+                    return true;
+                });
+            @endphp
+
+            @if($visiblePayments->count() > 0)
             <div class="mt-3 pt-3 border-t border-gray-100 space-y-1">
-                @foreach($order->payments as $p)
+                @foreach($visiblePayments as $p)
                 <div class="flex justify-between text-xs">
-                    <span class="text-gray-500">{{ $p->methodLabel() }} — {{ $p->created_at->format('H:i') }}</span>
+                    <span class="text-gray-500">
+                        {{ $p->methodLabel() }} — {{ $p->created_at->format('H:i') }}
+                        @if($p->status === 'pending')
+                            <span class="ml-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-700">Menunggu</span>
+                        @endif
+                    </span>
                     <span class="flex items-center gap-1.5">
                         <span>Rp {{ number_format($p->amount, 0, ',', '.') }}</span>
                         @if($p->status === 'refunded')
@@ -197,7 +217,6 @@
                     </a>
 
                 @elseif($order->isFullyPaid() && $lastPayment)
-                    {{-- Cetak Struk --}}
                     <a href="{{ route('cashier.receipts.print', $lastPayment) }}"
                        target="_blank" rel="noopener noreferrer"
                        class="w-full justify-center mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
@@ -207,8 +226,6 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                         Cetak Struk
                     </a>
-
-                    {{-- Kirim Struk --}}
                     <button type="button"
                             onclick="document.getElementById('send-receipt-modal').style.display='flex'; document.body.style.overflow='hidden';"
                             class="w-full justify-center mt-2 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
@@ -277,12 +294,6 @@
             </tbody>
         </table>
 
-        {{--
-            Logika tombol aksi:
-            - Edit: hanya jika pending DAN belum lunas
-            - Batalkan: bisa selama dapur belum memasak (status kitchen bukan cooking/ready)
-                        bahkan jika sudah lunas → akan otomatis direfund
-        --}}
         @php
             $kitchenOrder   = $order->kitchenOrder;
             $kitchenCooking = $kitchenOrder && in_array($kitchenOrder->status, ['cooking', 'ready']);
@@ -290,7 +301,6 @@
             $canEdit        = $order->isPending() && ! $order->isFullyPaid();
         @endphp
 
-        {{-- Info status dapur --}}
         @if($kitchenOrder && ! $order->isCancelled() && ! $order->isCompleted())
             @php
                 $kitchenStatusConfig = [
@@ -326,7 +336,6 @@
                 Edit Pesanan
             </a>
             @endif
-
             @if($canCancel)
             <button type="button"
                     onclick="document.getElementById('cancel-modal').style.display='flex'; document.body.style.overflow='hidden';"
@@ -493,7 +502,6 @@
 
             if (!statusChanged && !paidChanged) return;
 
-            const prevStatus = lastStatus;
             lastStatus = data.status;
             lastIsPaid = data.is_paid;
 
@@ -509,7 +517,6 @@
             if (statusChanged) {
                 window.location.reload();
             }
-
         } catch(e) { /* diam */ }
     }
 
@@ -540,15 +547,15 @@ function handleSendEmail(e) {
     .then(data => {
         feedback.style.display = 'block';
         if (data.success) {
-            feedback.className    = 'mt-3 text-sm rounded-lg px-3 py-2 bg-green-50 text-green-700 border border-green-200';
-            feedback.textContent  = '✓ Struk berhasil dikirim ke ' + email;
-            btn.textContent       = 'Terkirim ✓';
+            feedback.className   = 'mt-3 text-sm rounded-lg px-3 py-2 bg-green-50 text-green-700 border border-green-200';
+            feedback.textContent = '✓ Struk berhasil dikirim ke ' + email;
+            btn.textContent      = 'Terkirim ✓';
             btn.style.backgroundColor = '#22c55e';
         } else {
-            feedback.className    = 'mt-3 text-sm rounded-lg px-3 py-2 bg-red-50 text-red-700 border border-red-200';
-            feedback.textContent  = data.message || 'Gagal mengirim email.';
-            btn.disabled          = false;
-            btn.textContent       = 'Kirim';
+            feedback.className   = 'mt-3 text-sm rounded-lg px-3 py-2 bg-red-50 text-red-700 border border-red-200';
+            feedback.textContent = data.message || 'Gagal mengirim email.';
+            btn.disabled         = false;
+            btn.textContent      = 'Kirim';
             btn.style.backgroundColor = '#6366f1';
         }
     })

@@ -1,0 +1,26 @@
+// Cara lebih mudah — update langsung via PaymentService::pollGatewayStatus
+// tapi karena status Midtrans masih 'pending', tidak akan berhasil
+
+// Cara paling simpel untuk test: update manual via tinker
+$p = App\Models\Payment::where('payment_method', 'qris')
+    ->where('status', 'pending')
+    ->latest()
+    ->first();
+
+// Simulasi: update status ke paid langsung
+DB::transaction(function () use ($p) {
+    $p->update([
+        'status'         => 'paid',
+        'gateway_status' => 'settlement',
+        'settled_at'     => now(),
+    ]);
+
+    // Aktifkan dapur
+    $order = $p->order->fresh();
+    if ($order->isFullyPaid()) {
+        $order->update(['sent_to_kitchen_at' => now()]);
+        $order->kitchenOrder?->update(['status' => 'queued', 'queued_at' => now()]);
+    }
+});
+
+echo "Payment status: " . $p->fresh()->status;

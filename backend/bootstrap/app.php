@@ -22,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
 
+        // ── CSRF exceptions ────────────────────────────────────────────
+        // Webhook Midtrans tidak membawa CSRF token — wajib dikecualikan
+        $middleware->validateCsrfTokens(except: [
+            'api/webhook/*',
+        ]);
+
         // ── Global middleware ──────────────────────────────────────────
         // ActivityLogger mencatat semua mutasi (POST/PUT/PATCH/DELETE)
         $middleware->append(ActivityLogger::class);

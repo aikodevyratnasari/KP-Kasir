@@ -116,47 +116,67 @@ class ReportController extends Controller
     {
         [$from, $to] = $this->parseDates($request);
         $storeId = $request->get('_store_id');
-
+    
+        $filterConfirmedPending = function ($q) {
+            $q->where('status', '!=', 'pending')
+            ->orWhereHas('order', function ($oq) {
+                $oq->whereDoesntHave('payments', fn($pq) => $pq->whereIn('status', ['paid', 'refunded']));
+            });
+        };
+    
+        // ── Daftar transaksi ──────────────────────────────────────────────
         $payments = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
             ->with(['order', 'cashier'])
             ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->where($filterConfirmedPending)
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->latest()
             ->paginate(50)
             ->withQueryString();
-
-        // Summary hanya paid
+    
+        // ── Summary hanya paid ────────────────────────────────────────────
         $summary = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
             ->where('status', 'paid')
             ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->selectRaw('SUM(amount) as total, COUNT(*) as count')
             ->first();
-
-        // Summary per status payment (paid, refunded, pending)
+    
+        // ── Summary per status ────────────────────────────────────────────
         $summaryByStatus = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
             ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
+            ->where($filterConfirmedPending)
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->selectRaw('status, SUM(amount) as total, COUNT(*) as count')
             ->groupBy('status')
             ->get()
             ->keyBy('status');
-
-        // Pesanan belum bayar (pending/cooking/ready) dalam periode
+    
+        // ── Breakdown per metode (hanya paid) — BARU ─────────────────────
+        // Digunakan untuk card ringkasan per metode di view laporan.
+        $byMethodSummary = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+            ->where('status', 'paid')
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->selectRaw('payment_method, SUM(amount) as total, COUNT(*) as count')
+            ->groupBy('payment_method')
+            ->orderByRaw("CASE payment_method WHEN 'cash' THEN 1 WHEN 'card' THEN 2 WHEN 'qris' THEN 3 WHEN 'ewallet' THEN 4 WHEN 'bank_transfer' THEN 5 ELSE 6 END")
+            ->get();
+    
+        // ── Pesanan belum bayar ───────────────────────────────────────────
         $unpaidOrders = \App\Models\Order::forStore($storeId)
             ->whereIn('status', ['pending', 'cooking', 'ready'])
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->with(['cashier', 'table'])
             ->get();
-
-        // Jika filter status diset ke paid/refunded, kosongkan unpaid
+    
         if ($request->status && $request->status !== 'pending') {
             $unpaidOrders = collect();
         }
-
+    
         return view('manager.reports.payments', compact(
-            'payments', 'from', 'to', 'summary', 'summaryByStatus', 'unpaidOrders'
+            'payments', 'from', 'to', 'summary', 'summaryByStatus',
+            'unpaidOrders', 'byMethodSummary'  // ← byMethodSummary ditambahkan
         ));
     }
 

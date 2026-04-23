@@ -81,7 +81,7 @@
                     <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase">Store</th>
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Email</th>
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
-                    <th class="py-2.5 px-4 text-xs font-semibold text-gray-500" style="text-align: padding-right: 90px;">AKSI</th>
+                    <th class="py-2.5 px-4 text-center text-xs font-semibold text-gray-500 uppercase">AKSI</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -146,47 +146,44 @@
                         </span>
                     </td>
 
-                    <td class="py-3 px-4 text-right">
-                        <div class="flex justify-end items-center gap-3">
+                    <td class="py-3 px-4 text-center">
+    <div class="flex justify-center items-center gap-3">
                             <a href="{{ route('admin.users.edit', $user) }}"
-                            class="inline-flex items-center justify-center gap-1.5 text-xs font-medium transition-all px-3 py-1 rounded-full"
-                            style="color: #EF8F00; background-color: #fff8ec; border: 1px solid #fcd99a; width:90px;"
-                            onmouseover="this.style.backgroundColor='#ffefd0';"
-                            onmouseout="this.style.backgroundColor='#fff8ec';">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            class="inline-flex items-center justify-center transition-all p-1"
+                            style="color: #EF8F00;"
+                            onmouseover="this.style.color='#cc7a00';"
+                            onmouseout="this.style.color='#EF8F00';"
+                            title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                 </svg>
-                                Edit
                             </a>
                             @if($user->id !== auth()->id())
                             <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
                                   onsubmit="return confirm('{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }} user {{ addslashes($user->name) }}?')">
                                 @csrf @method('PATCH')
                                 <button type="submit"
-                                        class="inline-flex items-center justify-center gap-1.5 text-xs font-medium transition-all px-3 py-1 rounded-full"
-                                        style="width:110px; {{ $user->status === 'active'
-                                            ? 'color:#dc2626; background-color:#fff1f2; border:1px solid #fca5a5;'
-                                            : 'color:#16a34a; background-color:#f0fdf4; border:1px solid #86efac;' }}"
-                                        onmouseover="this.style.backgroundColor='{{ $user->status === 'active' ? '#fee2e2' : '#dcfce7' }}';"
-                                        onmouseout="this.style.backgroundColor='{{ $user->status === 'active' ? '#fff1f2' : '#f0fdf4' }}';">
+                                        class="inline-flex items-center justify-center transition-all p-1"
+                                        style="{{ $user->status === 'active' ? 'color:#dc2626;' : 'color:#16a34a;' }} background:none; border:none;"
+                                        onmouseover="this.style.color='{{ $user->status === 'active' ? '#b91c1c' : '#15803d' }}';"
+                                        onmouseout="this.style.color='{{ $user->status === 'active' ? '#dc2626' : '#16a34a' }}';"
+                                        title="{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}">
                                     @if($user->status === 'active')
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <circle cx="12" cy="12" r="10"/>
                                             <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                                         </svg>
-                                        Nonaktifkan
                                     @else
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                                             <polyline points="22 4 12 14.01 9 11.01"/>
                                         </svg>
-                                        Aktifkan
                                     @endif
                                 </button>
                             </form>
                             @else
-                            <span style="width:110px; display:inline-block;"></span>
+                            <span style="width:32px; display:inline-block;"></span>
                             @endif
                         </div>
 </td>
