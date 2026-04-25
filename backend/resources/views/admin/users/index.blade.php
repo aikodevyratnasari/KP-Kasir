@@ -54,7 +54,7 @@
                 Reset
             </a>
             <div class="ml-auto flex items-center gap-2">
-                <a href= "{{ route('admin.users.create') }}" 
+                <a href="{{ route('admin.users.create') }}"
                     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
                     style="background-color: #2D54BF; border: 1px solid #2D54BF;"
                     onmouseover="this.style.backgroundColor='#1e3d8f'"
@@ -125,7 +125,6 @@
                         @else
                             <div class="flex flex-col items-center gap-1">
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
-                                    {{-- hourglass --}}
                                     Menunggu
                                 </span>
                                 <form method="POST" action="{{ route('admin.users.resend-verification', $user) }}">
@@ -147,52 +146,79 @@
                     </td>
 
                     <td class="py-3 px-4 text-center">
-    <div class="flex justify-center items-center gap-3">
+                        <div class="flex justify-center items-center gap-2">
+
+                            {{-- Edit --}}
                             <a href="{{ route('admin.users.edit', $user) }}"
-                            class="inline-flex items-center justify-center transition-all p-1"
-                            style="color: #EF8F00;"
-                            onmouseover="this.style.color='#cc7a00';"
-                            onmouseout="this.style.color='#EF8F00';"
-                            title="Edit">
+                               class="inline-flex items-center justify-center transition-all p-1"
+                               style="color: #EF8F00;"
+                               onmouseover="this.style.color='#cc7a00';"
+                               onmouseout="this.style.color='#EF8F00';"
+                               title="Edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                 </svg>
                             </a>
+
                             @if($user->id !== auth()->id())
-                            <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
-                                  onsubmit="return confirm('{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }} user {{ addslashes($user->name) }}?')">
-                                @csrf @method('PATCH')
-                                <button type="submit"
-                                        class="inline-flex items-center justify-center transition-all p-1"
-                                        style="{{ $user->status === 'active' ? 'color:#dc2626;' : 'color:#16a34a;' }} background:none; border:none;"
-                                        onmouseover="this.style.color='{{ $user->status === 'active' ? '#b91c1c' : '#15803d' }}';"
-                                        onmouseout="this.style.color='{{ $user->status === 'active' ? '#dc2626' : '#16a34a' }}';"
-                                        title="{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}">
-                                    @if($user->status === 'active')
+
+                                {{-- Toggle status --}}
+                                <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
+                                      onsubmit="return confirm('{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }} user {{ addslashes($user->name) }}?')">
+                                    @csrf @method('PATCH')
+                                    <button type="submit"
+                                            class="inline-flex items-center justify-center transition-all p-1"
+                                            style="{{ $user->status === 'active' ? 'color:#dc2626;' : 'color:#16a34a;' }} background:none; border:none;"
+                                            onmouseover="this.style.color='{{ $user->status === 'active' ? '#b91c1c' : '#15803d' }}';"
+                                            onmouseout="this.style.color='{{ $user->status === 'active' ? '#dc2626' : '#16a34a' }}';"
+                                            title="{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                        @if($user->status === 'active')
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="10"/>
+                                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                                            </svg>
+                                        @else
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                                <polyline points="22 4 12 14.01 9 11.01"/>
+                                            </svg>
+                                        @endif
+                                    </button>
+                                </form>
+
+                                {{-- Hapus --}}
+                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}"
+                                      onsubmit="return confirm('Hapus user {{ addslashes($user->name) }}?\n({{ addslashes($user->email) }})\n\nTindakan ini tidak dapat dibatalkan.')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                            class="inline-flex items-center justify-center transition-all p-1"
+                                            style="color:#9ca3af; background:none; border:none;"
+                                            onmouseover="this.style.color='#dc2626';"
+                                            onmouseout="this.style.color='#9ca3af';"
+                                            title="Hapus">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"/>
-                                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                            <path d="M10 11v6"/>
+                                            <path d="M14 11v6"/>
+                                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                                         </svg>
-                                    @else
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                                            <polyline points="22 4 12 14.01 9 11.01"/>
-                                        </svg>
-                                    @endif
-                                </button>
-                            </form>
+                                    </button>
+                                </form>
+
                             @else
-                            <span style="width:32px; display:inline-block;"></span>
+                                {{-- Spacer agar alignment tetap rapi untuk baris admin sendiri --}}
+                                <span style="width: 52px; display: inline-block;"></span>
                             @endif
+
                         </div>
-</td>
+                    </td>
                 </tr>
             @empty
                 <tr>
                     <td colspan="6" class="py-12 text-center text-gray-400">
                         <div class="flex justify-center mb-2">
-                            {{-- users --}}
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                             </svg>
@@ -207,7 +233,8 @@
             {{ $users->links() }}
         </div>
     </div>
-<div class="flex items-center justify-between">
+
+    <div class="flex items-center justify-between">
         <p class="text-sm text-gray-500">{{ $users->total() }} user terdaftar</p>
     </div>
 </div>

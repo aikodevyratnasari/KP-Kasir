@@ -125,6 +125,7 @@
                                 'Minuman'        => ['bg' => '#f3e5f5', 'text' => '#7b1fa2', 'border' => '#ce93d8'],
                                 'Minuman Panas'  => ['bg' => '#fce4ec', 'text' => '#c62828', 'border' => '#ef9a9a'],
                                 'Paket Hemat'    => ['bg' => '#e8f5e9', 'text' => '#1b5e20', 'border' => '#80cbc4'],
+                                'Makanan Penutup'   => ['bg' => '#fff3e0', 'text' => '#ef6c00', 'border' => '#ffb74d'],
                             ];
                             $catName = $product->category?->name ?? '—';
                             $color = $categoryColors[$catName] ?? ['bg' => '#f5f5f5', 'text' => '#616161', 'border' => '#e0e0e0'];
@@ -156,15 +157,10 @@
                         @endif
                     </td>
                     <td class="py-3 px-4 text-center">
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold
-                            {{ $product->is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
                             @if($product->is_available)
-                                Ya
+                                <span class="text-xs font-semibold text-green-600">Ya</span>
                             @else
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                                Tidak
+                                <span class="text-xs font-semibold text-gray-400">Tidak</span>
                             @endif
                         </span>
                     </td>

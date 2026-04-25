@@ -15,13 +15,6 @@ class MidtransGateway implements GatewayInterface
         \Midtrans\Config::$is3ds        = true;
     }
 
-    /**
-     * Buat transaksi Midtrans.
-     *
-     * QRIS     → Core API charge → qr_string di-render QRCode.js
-     * E-Wallet → Snap token      → popup Snap di browser kasir
-     * Transfer → Core API charge → virtual account number per bank
-     */
     public function createTransaction(Order $order, string $method, ?string $ewalletType = null): array
     {
         $midtransOrderId = $order->order_number . '-' . time();
@@ -46,9 +39,6 @@ class MidtransGateway implements GatewayInterface
         return $this->createSnapTransaction($transactionDetails, $customerDetails, $ewalletType);
     }
 
-    /**
-     * QRIS: Core API /charge — menghasilkan qr_string (raw QRIS string 00020101...).
-     */
     private function createQrisTransaction(array $transactionDetails, array $customerDetails): array
     {
         $payload = [
@@ -79,15 +69,6 @@ class MidtransGateway implements GatewayInterface
         }
     }
 
-    /**
-     * Transfer Bank: Core API /charge → virtual account number.
-     *
-     * Bank yang didukung Midtrans sandbox:
-     *   bca, bni, bri, mandiri (echannel), permata
-     *
-     * Catatan Mandiri: menggunakan payment_type 'echannel', bukan 'bank_transfer'.
-     * VA Mandiri memerlukan `bill_info1` dan `bill_info2`.
-     */
     private function createBankTransferTransaction(array $transactionDetails, array $customerDetails, ?string $bank): array
     {
         $bank = strtolower($bank ?? 'bca');
@@ -114,7 +95,6 @@ class MidtransGateway implements GatewayInterface
 
             $response = \Midtrans\CoreApi::charge($payload);
 
-            // Ekstrak nomor VA — struktur berbeda per bank
             $vaNumber = null;
             if ($bank === 'mandiri') {
                 $vaNumber = ($response->biller_code ?? '') . $response->bill_key ?? null;
@@ -126,16 +106,13 @@ class MidtransGateway implements GatewayInterface
 
             return [
                 'snap_token'     => null,
-                'payment_url'    => null,
+                'payment_url'    => $bank === 'mandiri'
+                    ? "mandiri:{$response->biller_code}:{$response->bill_key}"
+                    : null,
                 'qr_string'      => null,
                 'gateway_trx_id' => $response->transaction_id ?? null,
                 'va_number'      => $vaNumber,
                 'bank'           => $bank,
-                // Simpan biller_code Mandiri ke payment_url sementara agar
-                // tidak perlu kolom baru — format: "mandiri:{biller_code}:{bill_key}"
-                'payment_url'    => $bank === 'mandiri'
-                    ? "mandiri:{$response->biller_code}:{$response->bill_key}"
-                    : null,
             ];
 
         } catch (\Exception $e) {
@@ -149,7 +126,14 @@ class MidtransGateway implements GatewayInterface
     }
 
     /**
-     * E-Wallet: Snap token — popup Midtrans dengan pilihan ewallet.
+     * E-Wallet via Snap.
+     *
+     * FIX: Tambahkan callbacks.finish agar Midtrans redirect kembali ke app,
+     * bukan ke example.com (default Midtrans jika tidak di-set).
+     *
+     * Alur setelah kasir klik "Selesai" di popup Snap:
+     *   Midtrans → GET /cashier/snap/finish?order_id=ORD-xxx-timestamp
+     *   → route 'cashier.snap.finish' → redirect ke detail pesanan
      */
     private function createSnapTransaction(array $transactionDetails, array $customerDetails, ?string $ewalletType): array
     {
@@ -161,6 +145,10 @@ class MidtransGateway implements GatewayInterface
             'transaction_details' => $transactionDetails,
             'customer_details'    => $customerDetails,
             'enabled_payments'    => $enabledPayments,
+            // ── FIX: set finish URL agar tidak redirect ke example.com ──
+            'callbacks'           => [
+                'finish' => url('/cashier/snap/finish'),
+            ],
         ];
 
         try {
@@ -184,16 +172,6 @@ class MidtransGateway implements GatewayInterface
         }
     }
 
-    /**
-     * E-wallet yang benar-benar berfungsi di Midtrans sandbox:
-     *   - gopay     ✓ (simulator tersedia)
-     *   - shopeepay ✓ (simulator tersedia)
-     *   - ovo       ✗ (perlu nomor HP terdaftar, tidak bisa sandbox penuh)
-     *   - dana      ✗ (sama seperti OVO)
-     *
-     * Untuk OVO/Dana di sandbox, gunakan Snap dengan enabled_payments = ['ovo','dana']
-     * lalu di popup Snap klik "Simulate Payment" di browser.
-     */
     private function mapEwalletType(string $type): string
     {
         return match (strtolower($type)) {

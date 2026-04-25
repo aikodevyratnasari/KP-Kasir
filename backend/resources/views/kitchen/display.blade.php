@@ -124,10 +124,7 @@
     font-size: 13px;
     font-weight: 700;
     color: var(--color-text-primary, #111);
-    background: var(--color-background-secondary, #f5f5f5);
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -222,21 +219,17 @@
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             {{-- Antri --}}
-            <div style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; background:#fffbeb; border:1px solid #fde68a; border-radius:20px;">
-                <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;color:#b45309;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
-                </svg>
-                <span style="font-size:13px; font-weight:600; color:#b45309;">Antri</span>
-                <span style="font-size:18px; font-weight:700; color:#78350f; line-height:1;">{{ $queued->count() }}</span>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            {{-- Antri --}}
+            <div style="display:inline-flex; align-items:center; padding:4px 4px 4px 16px; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.4); border-radius:20px; gap:10px;">
+                <span style="font-size:13px; font-weight:700; color:#b45309;">Antri</span>
+                <span style="font-size:13px; font-weight:700; color:white; background:#fbbf24; border-radius:50%; width:30px; height:30px; min-width:30px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">{{ $queued->count() }}</span>
             </div>
-            {{-- Dimasak --}}
-            <div style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; background:#fff7ed; border:1px solid #fed7aa; border-radius:20px;">
-                <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;color:#c2410c;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
-                </svg>
-                <span style="font-size:13px; font-weight:600; color:#c2410c;">Dimasak</span>
-                <span style="font-size:18px; font-weight:700; color:#9a3412; line-height:1;">{{ $cooking->count() }}</span>
+            <div style="display:inline-flex; align-items:center; padding:4px 4px 4px 16px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:20px; gap:10px;">
+                <span style="font-size:13px; font-weight:700; color:#dc2626;">Dimasak</span>
+                <span style="font-size:13px; font-weight:700; color:white; background:#ef4444; border-radius:50%; width:30px; height:30px; min-width:30px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">{{ $cooking->count() }}</span>
             </div>
+        </div>
         </div>
         <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--color-text-secondary,#888);">
             <span class="live-dot"></span>
@@ -248,10 +241,7 @@
     @if($queued->count() > 0)
     <div>
         <div class="section-label section-label-queue">
-            <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
-            </svg>
-            Antri &mdash; belum dimasak
+            Antri
         </div>
 
         <div class="kitchen-grid">
@@ -303,7 +293,7 @@
                     </div>
                     <span class="timer-badge timer-{{ $urgency }}">
                         <svg xmlns="http://www.w3.org/2000/svg" style="width:11px;height:11px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        {{ $waitMins }}m
+                        {{ $waitMins }}
                     </span>
                 </div>
 
@@ -316,13 +306,11 @@
                             <div class="item-name">{{ $item->product_name }}</div>
                             @if($item->variant_name)
                                 <div class="item-variant">
-                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:10px;height:10px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                    {{ $item->variant_name }}
-                                </div>
+    {{ $item->variant_name }}
+</div>
                             @endif
                             @if($item->special_notes)
                                 <div class="item-special">
-                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:10px;height:10px;flex-shrink:0;margin-top:1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                     {{ $item->special_notes }}
                                 </div>
                             @endif
@@ -336,7 +324,6 @@
                     <form method="POST" action="{{ route('kitchen.orders.start', $ko) }}">
                         @csrf
                         <button type="submit" class="btn-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                             Mulai Masak
                         </button>
                     </form>
@@ -351,9 +338,6 @@
     @if($cooking->count() > 0)
     <div>
         <div class="section-label section-label-cooking">
-            <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
-            </svg>
             Sedang dimasak
         </div>
 
@@ -403,16 +387,16 @@
                             @endif
                         </div>
                         @if($order->notes)
-                            <div class="order-notes">
-                                <svg xmlns="http://www.w3.org/2000/svg" style="width:11px;height:11px;flex-shrink:0;margin-top:1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                {{ $order->notes }}
-                            </div>
+                           <div class="order-notes">
+    {{ $order->notes }}
+</div>
                         @endif
                     </div>
-                    <span class="timer-badge timer-{{ $urgency }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" style="width:11px;height:11px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        {{ $waitMins }}m
-                    </span>
+                    <span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;border:1px solid;flex-shrink:0;
+    {{ $urgency === 'red' ? 'background:#fee2e2;color:#b91c1c;border-color:#fca5a5;' : ($urgency === 'yellow' ? 'background:#fef9c3;color:#a16207;border-color:#fde68a;' : 'background:#dcfce7;color:#15803d;border-color:#bbf7d0;') }}">
+    <svg xmlns="http://www.w3.org/2000/svg" style="width:9px;height:9px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    {{ $waitMins }}m
+</span>
                 </div>
 
                 <div class="item-divider"></div>
@@ -423,14 +407,12 @@
                         <div style="flex:1;min-width:0;">
                             <div class="item-name">{{ $item->product_name }}</div>
                             @if($item->variant_name)
-                                <div class="item-variant">
-                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:10px;height:10px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                    {{ $item->variant_name }}
-                                </div>
-                            @endif
+    <div class="item-variant">
+        {{ $item->variant_name }}
+    </div>
+@endif
                             @if($item->special_notes)
                                 <div class="item-special">
-                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:10px;height:10px;flex-shrink:0;margin-top:1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                     {{ $item->special_notes }}
                                 </div>
                             @endif
@@ -444,8 +426,7 @@
                     <form method="POST" action="{{ route('kitchen.orders.ready', $ko) }}">
                         @csrf
                         <button type="submit" class="btn-done">
-                            <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            Selesai &mdash; Siap Saji
+                            Selesai
                         </button>
                     </form>
                 </div>

@@ -47,17 +47,19 @@ class LoginThrottle
     public static function recordFailure(int $userId): void
     {
         if (! Schema::hasTable('users')) return;
+
         $user = DB::table('users')->where('id', $userId)->first();
         if (! $user) return;
 
-        $attempts = $user->failed_login_attempts + 1;
-        $update   = ['failed_login_attempts' => $attempts, 'updated_at' => now()];
+        // Gunakan increment atomic agar aman dari race condition
+        $newAttempts = $user->failed_login_attempts + 1;
 
-        if ($attempts >= self::MAX_ATTEMPTS) {
-            $update['locked_until'] = now()->addMinutes(self::LOCKOUT_MINUTES);
-        }
-
-        DB::table('users')->where('id', $userId)->update($update);
+        DB::table('users')->where('id', $userId)->increment('failed_login_attempts', 1, [
+            'locked_until' => $newAttempts >= self::MAX_ATTEMPTS
+                ? now()->addMinutes(self::LOCKOUT_MINUTES)
+                : $user->locked_until,
+            'updated_at' => now(),
+        ]);
     }
 
     public static function clearFailures(int $userId): void

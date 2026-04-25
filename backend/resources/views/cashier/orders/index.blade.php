@@ -84,7 +84,7 @@
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
                     <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase">Bayar</th>
                     <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase whitespace-nowrap pr-8">Total</th>
-                    <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase whitespace-nowrap pr-8">Aksi</th>
+                   <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -146,15 +146,20 @@
                     <td class="py-3 px-4 text-right font-semibold whitespace-nowrap align-middle">
                         Rp {{ number_format($order->total_amount, 0, ',', '.') }}
                     </td>
-                    <td class="py-3 px-4 text-right align-middle">
+                    <td class="py-3 px-4 text-center align-middle">
                         <a href="{{ route('cashier.orders.show', $order) }}"
-                           class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
-                           style="color: white; background-color: #16a34a; border: 1px solid #16a34a;"
-                           onmouseover="this.style.backgroundColor='#15803d'; this.style.borderColor='#15803d';"
-                           onmouseout="this.style.backgroundColor='#16a34a'; this.style.borderColor='#16a34a';"
-                           onmousedown="this.style.backgroundColor='#166534'; this.style.transform='scale(0.98)';"
-                           onmouseup="this.style.backgroundColor='#15803d'; this.style.transform='scale(1)';">
-                            Detail
+                        class="inline-flex items-center justify-center w-8 h-8 rounded-full transition-all"
+                        style="color: #6b7280; background-color: #f3f4f6; border: 1px solid #e5e7eb;"
+                        onmouseover="this.style.backgroundColor='#e5e7eb'; this.style.color='#111827';"
+                        onmouseout="this.style.backgroundColor='#f3f4f6'; this.style.color='#6b7280';"
+                        onmousedown="this.style.transform='scale(0.95)';"
+                        onmouseup="this.style.transform='scale(1)';"
+                        title="Detail">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="5" cy="12" r="2"/>
+                                <circle cx="12" cy="12" r="2"/>
+                                <circle cx="19" cy="12" r="2"/>
+                            </svg>
                         </a>
                     </td>
                 </tr>
@@ -173,9 +178,12 @@
             </tbody>
         </table>
     </div>
+    <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
+    <div class="pagination-custom">
+        {{ $orders->links() }}
     </div>
-
-    {{ $orders->links() }}
+</div>
+    </div>
 
 </div>
 @endsection

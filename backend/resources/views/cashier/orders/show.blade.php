@@ -167,15 +167,8 @@
             </dl>
 
             @php
-                // Aturan tampil:
-                // - 'cancelled' → selalu sembunyi (pending lama yang diganti metode)
-                // - 'pending'   → sembunyi jika order sudah punya payment paid/refunded
-                // - 'paid' / 'refunded' → selalu tampil
                 $hasPaidPayment = $order->payments->whereIn('status', ['paid', 'refunded'])->isNotEmpty();
                 $visiblePayments = $order->payments->filter(function ($p) use ($hasPaidPayment) {
-                    if ($p->status === 'cancelled') {
-                        return false;
-                    }
                     if ($hasPaidPayment && $p->status === 'pending') {
                         return false;
                     }
@@ -184,19 +177,35 @@
             @endphp
 
             @if($visiblePayments->count() > 0)
-            <div class="mt-3 pt-3 border-t border-gray-100 space-y-1">
+            <div class="mt-3 pt-3 border-t border-gray-100 space-y-1.5" id="payment-list">
                 @foreach($visiblePayments as $p)
-                <div class="flex justify-between text-xs">
-                    <span class="text-gray-500">
-                        {{ $p->methodLabel() }} — {{ $p->created_at->format('H:i') }}
+                <div class="flex justify-between text-xs items-center gap-2" id="payment-row-{{ $p->id }}">
+                    <span class="text-gray-500 flex items-center gap-1.5 flex-1 min-w-0">
+                        <span class="truncate">{{ $p->methodLabel() }} — {{ $p->created_at->format('H:i') }}</span>
                         @if($p->status === 'pending')
-                            <span class="ml-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-700">Menunggu</span>
+                            <span class="flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-700">Menunggu</span>
                         @endif
                     </span>
-                    <span class="flex items-center gap-1.5">
+                    <span class="flex items-center gap-2 flex-shrink-0">
                         <span>Rp {{ number_format($p->amount, 0, ',', '.') }}</span>
                         @if($p->status === 'refunded')
                             <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-700">Refund</span>
+                        @endif
+                        @if($p->status === 'pending')
+                            <button type="button"
+                                    onclick="cancelPendingPayment({{ $p->id }})"
+                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors flex-shrink-0"
+                                    style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;"
+                                    onmouseover="this.style.background='#fecaca'; this.style.borderColor='#f87171';"
+                                    onmouseout="this.style.background='#fee2e2'; this.style.borderColor='#fca5a5';">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2.5"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                                Batalkan
+                            </button>
                         @endif
                     </span>
                 </div>
@@ -522,6 +531,34 @@
 
     setInterval(poll, INTERVAL);
 })();
+
+async function cancelPendingPayment(paymentId) {
+    if (!confirm('Batalkan pembayaran ini?')) return;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    try {
+        const res = await fetch(`/cashier/payments/${paymentId}/cancel-pending`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN':      csrfToken,
+                'Accept':            'application/json',
+                'X-Requested-With':  'XMLHttpRequest',
+            },
+        });
+        const data = await res.json();
+        if (data.success) {
+            const row = document.getElementById('payment-row-' + paymentId);
+            if (row) {
+                row.style.transition = 'opacity 0.3s';
+                row.style.opacity    = '0';
+                setTimeout(() => row.remove(), 300);
+            }
+        } else {
+            alert(data.message || 'Gagal membatalkan pembayaran.');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
 
 function handleSendEmail(e) {
     e.preventDefault();

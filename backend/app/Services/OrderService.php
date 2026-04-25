@@ -1,4 +1,17 @@
 <?php
+// ============================================================
+// FILE: app/Services/OrderService.php
+// PERUBAHAN:
+//   FIX tax rate: gunakan fresh() load store dengan select tax_rate
+//   Sebelumnya: auth()->user()->store->tax_rate ?? 10
+//   Masalah: jika relasi 'store' sudah di-cache/eager-loaded dengan
+//   nilai lama, tax_rate bisa stale. Selain itu fallback 10 terlalu
+//   agresif — jika store ada tapi tax_rate = 0 (bebas pajak), tetap
+//   kena 10%.
+//
+//   FIX: Ambil store langsung dari DB dengan fresh query + null-safe
+//   Fallback 0 (bukan 10) agar tidak memaksa pajak jika tidak dikonfigurasi
+// ============================================================
 
 namespace App\Services;
 
@@ -10,6 +23,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Reservation;
+use App\Models\Store;
 use App\Models\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,14 +36,18 @@ class OrderService
     {
         return DB::transaction(function () use ($data, $storeId) {
 
-            $taxRate = auth()->user()->store->tax_rate ?? 10;
+            // FIX: Ambil tax_rate langsung dari DB store, jangan andalkan
+            // relasi yang mungkin sudah di-cache. Fallback 0 (bukan 10) agar
+            // store yang mengatur pajak 0% tidak dipaksa kena 10%.
+            $store   = Store::select('id', 'tax_rate')->find($storeId);
+            $taxRate = $store ? (float) $store->tax_rate : 0;
+
             $items   = $this->resolveItems($data['items']);
 
             $subtotal  = collect($items)->sum(fn($i) => $i['unit_price'] * $i['quantity']);
             $taxAmount = round($subtotal * $taxRate / 100, 2);
             $total     = $subtotal + $taxAmount;
 
-            // customer_name: dari input form, atau fallback dari reservasi aktif di meja
             $customerName = ! empty($data['customer_name']) ? trim($data['customer_name']) : null;
             if (
                 empty($customerName) &&
@@ -110,7 +128,13 @@ class OrderService
             $this->stock->restoreForOrder($order);
             $order->items()->delete();
 
-            $taxRate = $order->tax_rate;
+            // Ambil ulang tax_rate dari store saat ini (bukan dari order lama)
+            // Ini memastikan jika manager mengubah tax_rate, order edit berikutnya
+            // akan menggunakan tax_rate terbaru. Namun gunakan order->tax_rate jika
+            // store tidak ditemukan (fallback aman).
+            $store   = Store::select('id', 'tax_rate')->find($order->store_id);
+            $taxRate = $store ? (float) $store->tax_rate : (float) $order->tax_rate;
+
             $items   = $this->resolveItems($data['items']);
 
             $subtotal  = collect($items)->sum(fn($i) => $i['unit_price'] * $i['quantity']);
@@ -119,6 +143,7 @@ class OrderService
 
             $order->update([
                 'subtotal'     => $subtotal,
+                'tax_rate'     => $taxRate,
                 'tax_amount'   => $taxAmount,
                 'total_amount' => $total,
                 'notes'        => $data['notes'] ?? $order->notes,
@@ -150,24 +175,11 @@ class OrderService
         });
     }
 
-    /**
-     * Batalkan pesanan.
-     *
-     * Aturan pembatalan:
-     * - Pesanan yang sudah selesai (completed) tidak dapat dibatalkan.
-     * - Pesanan yang sudah dibatalkan tidak dapat dibatalkan lagi.
-     * - Pesanan yang sudah dalam status COOKING di dapur tidak dapat dibatalkan
-     *   (karena makanan sudah mulai dimasak).
-     * - Pesanan yang sudah lunas (isFullyPaid) TETAP BISA dibatalkan selama
-     *   dapur belum mulai memasak (kitchen status: waiting_payment atau queued).
-     *   Pembatalan ini akan men-trigger refund otomatis pada payment yang ada.
-     */
     public function cancel(Order $order, string $reason, int $cancelledBy): Order
     {
         abort_if($order->isCompleted(), 422, 'Pesanan yang sudah selesai tidak dapat dibatalkan.');
         abort_if($order->isCancelled(), 422, 'Pesanan sudah dibatalkan.');
 
-        // Cek apakah dapur sudah mulai memasak
         $kitchenOrder = $order->kitchenOrder;
         if ($kitchenOrder && in_array($kitchenOrder->status, ['cooking', 'ready'])) {
             abort(422, 'Pesanan tidak dapat dibatalkan karena dapur sudah mulai memasak.');
@@ -183,17 +195,14 @@ class OrderService
                 'cancelled_at'  => now(),
             ]);
 
-            // Bebaskan meja jika dine-in
             if ($order->table_id) {
                 Table::where('id', $order->table_id)->update(['status' => 'available']);
             }
 
-            // Update kitchen order jika ada
             if ($order->kitchenOrder) {
                 $order->kitchenOrder->update(['status' => 'cancelled']);
             }
 
-            // Jika pesanan sudah ada pembayaran lunas, otomatis refund semua payment
             $paidPayments = $order->payments()->where('status', 'paid')->get();
             foreach ($paidPayments as $payment) {
                 $payment->update([
@@ -326,7 +335,6 @@ class OrderService
         $date   = now()->format('Ymd');
         $prefix = "ORD-{$date}-";
 
-        // Gunakan advisory lock PostgreSQL agar tidak race condition
         $lockKey = crc32("order_number_{$storeId}_{$date}");
         \DB::statement("SELECT pg_advisory_xact_lock({$lockKey})");
 
@@ -340,10 +348,6 @@ class OrderService
         return $prefix . str_pad($seq, 3, '0', STR_PAD_LEFT);
     }
 
-    /**
-     * Cek apakah pesanan masih bisa dibatalkan.
-     * Digunakan di view untuk menampilkan/menyembunyikan tombol Batalkan.
-     */
     public static function canCancel(Order $order): bool
     {
         if ($order->isCompleted() || $order->isCancelled()) {

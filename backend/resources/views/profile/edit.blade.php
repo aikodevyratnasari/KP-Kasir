@@ -7,14 +7,7 @@
 
     {{-- Informasi Profil --}}
     <div class="card">
-        <h2 class="text-base font-semibold text-gray-800 mb-1">Informasi Profil</h2>
-        <p class="text-sm text-gray-500 mb-5">Perbarui nama dan nomor telepon. Email tidak dapat diubah.</p>
-
-        @if(session('status') === 'profile-updated')
-            <div class="mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">
-                ✅ Profil berhasil diperbarui.
-            </div>
-        @endif
+        <h2 class="text-base font-semibold text-gray-800 pb-3 mb-4 border-b border-gray-200">Informasi Profil</h2>
 
         <form method="POST" action="{{ route('profile.update') }}">
             @csrf @method('PATCH')
@@ -36,7 +29,7 @@
                                class="form-input flex-1 bg-gray-50 text-gray-400 cursor-not-allowed">
                         @if($user->hasVerifiedEmail())
                             <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700 whitespace-nowrap">
-                                ✓ Terverifikasi
+                                Terverifikasi
                             </span>
                         @else
                             <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-yellow-100 text-yellow-700 whitespace-nowrap">
@@ -67,7 +60,7 @@
                 </div>
             </div>
 
-            <div class="mt-6 pt-5 border-t border-gray-100">
+            <div class="mt-4 text-right">
                 <button type="submit" class="btn-primary">Simpan Perubahan</button>
             </div>
         </form>
@@ -75,8 +68,8 @@
 
     {{-- Ganti Password --}}
     <div class="card">
-        <h2 class="text-base font-semibold text-gray-800 mb-1">Ganti Password</h2>
-        <p class="text-sm text-gray-500 mb-5">Gunakan password yang kuat dan unik untuk keamanan akun Anda.</p>
+        <h2 class="text-base font-semibold text-gray-800">Ganti Password</h2>
+        <p class="text-sm text-gray-500 mb-5 pb-3 mb-4 border-b border-gray-200">Gunakan password yang kuat dan unik untuk keamanan akun Anda</p>
 
         @if(session('status') === 'password-updated')
             <div class="mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">
@@ -114,7 +107,7 @@
                 </div>
             </div>
 
-            <div class="mt-6 pt-5 border-t border-gray-100">
+            <div class="mt-4 text-right">
                 <button type="submit" class="btn-primary">Ganti Password</button>
             </div>
         </form>

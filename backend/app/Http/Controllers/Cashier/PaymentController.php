@@ -47,11 +47,6 @@ class PaymentController extends Controller
             ->with('success', 'Pembayaran berhasil diproses.');
     }
 
-    /**
-     * Inisiasi pembayaran gateway (QRIS / E-Wallet / Transfer Bank).
-     *
-     * Untuk bank_transfer, `ewallet_type` diisi nama bank (bca/bni/bri/mandiri/permata).
-     */
     public function initiate(Request $request, Order $order): JsonResponse
     {
         $request->validate([
@@ -59,7 +54,6 @@ class PaymentController extends Controller
             'ewallet_type' => ['nullable', 'string'],
         ]);
 
-        // Validasi spesifik per metode
         if ($request->method === 'ewallet') {
             $request->validate([
                 'ewallet_type' => ['required', 'in:GoPay,OVO,Dana,ShopeePay'],
@@ -154,6 +148,27 @@ class PaymentController extends Controller
         );
 
         return back()->with('success', 'Pengembalian dana berhasil diproses.');
+    }
+
+    /**
+     * Cancel satu payment pending secara manual (kasir ganti metode / batalkan QR).
+     *
+     * - Status menjadi 'cancelled' — tidak tercatat sebagai transaksi nyata.
+     * - Tidak ada uang yang dikembalikan (pembayaran belum terjadi).
+     * - Hanya boleh dilakukan untuk payment milik store kasir yang login.
+     * - Baris payment yang di-cancel tidak muncul di laporan dan detail pesanan.
+     */
+    public function cancelPending(Payment $payment): JsonResponse
+    {
+        abort_if(
+            $payment->order->store_id !== auth()->user()->store_id,
+            403,
+            'Akses ditolak.'
+        );
+
+        $this->paymentService->cancelPendingPayment($payment);
+
+        return response()->json(['success' => true]);
     }
 
     private function redirectToGateway(Request $request, Order $order): RedirectResponse

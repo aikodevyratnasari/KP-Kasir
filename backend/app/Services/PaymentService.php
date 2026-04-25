@@ -1,4 +1,15 @@
 <?php
+// ============================================================
+// FILE: app/Services/PaymentService.php
+// PERUBAHAN:
+//   1. pollGatewayStatus() — perbaiki urutan pengecekan DB vs API
+//      Untuk QRIS: gunakan gateway_trx_id → query Midtrans API,
+//      tapi jika gagal fallback ke DB (webhook mungkin sudah masuk).
+//      Untuk Snap ewallet: karena gateway_trx_id null saat initiate,
+//      tambahkan pengecekan DB berdasarkan order_id + method.
+//   2. handleWebhook() — pastikan snap_token ewallet bisa dicocokkan
+//      via fallback order_number + method filter
+// ============================================================
 
 namespace App\Services;
 
@@ -7,7 +18,6 @@ use App\Models\KitchenOrder;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Table;
-use App\Services\Gateway\GatewayInterface;
 use App\Services\Gateway\MidtransGateway;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,34 +26,7 @@ use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
-    /**
-     * ────────────────────────────────────────────────────────────────────
-     * ALUR PER METODE PEMBAYARAN
-     * ────────────────────────────────────────────────────────────────────
-     *
-     * CASH (Tunai)
-     *   Kasir input jumlah → process() → Payment status='paid' langsung.
-     *
-     * KARTU (via EDC fisik)
-     *   Kasir konfirmasi setelah EDC approve → process() → paid langsung.
-     *
-     * QRIS
-     *   initiate() → Core API → qr_string → render QRCode.js
-     *   → pelanggan scan → webhook → handleWebhook() → paid
-     *
-     * E-WALLET (GoPay, OVO, Dana, ShopeePay)
-     *   initiate() → Snap token → popup Snap
-     *   → pelanggan bayar → webhook → handleWebhook() → paid
-     *
-     * TRANSFER BANK (BCA, BNI, BRI, Mandiri, Permata)
-     *   initiate() → Core API → virtual account number ditampilkan kasir
-     *   → pelanggan transfer → webhook → handleWebhook() → paid
-     *   Catatan sandbox: gunakan Midtrans Simulator untuk simulasi payment
-     *   https://simulator.sandbox.midtrans.com
-     * ────────────────────────────────────────────────────────────────────
-     */
-
-    // ── CASH & KARTU (Manual/Offline) ────────────────────────────────────
+    // ── CASH & KARTU ─────────────────────────────────────────────────────
 
     public function process(Order $order, array $data): Payment
     {
@@ -51,8 +34,7 @@ class PaymentService
 
         if (in_array($method, ['qris', 'ewallet', 'bank_transfer'])) {
             throw new \InvalidArgumentException(
-                "Gunakan initiate() untuk pembayaran {$method}. " .
-                "process() hanya untuk cash dan card."
+                "Gunakan initiate() untuk pembayaran {$method}. process() hanya untuk cash dan card."
             );
         }
 
@@ -74,46 +56,33 @@ class PaymentService
                 'order_id'         => $order->id,
                 'cashier_id'       => Auth::id(),
                 'payment_method'   => $method,
-                'card_type'        => $data['card_type']      ?? null,
-                'card_last_four'   => $data['card_last_four'] ?? null,
-                'approval_code'    => $data['approval_code']  ?? null,
+                'card_type'        => $data['card_type']        ?? null,
+                'card_last_four'   => $data['card_last_four']   ?? null,
+                'approval_code'    => $data['approval_code']    ?? null,
                 'reference_number' => $data['reference_number'] ?? null,
                 'amount'           => $amount,
-                'amount_received'  => $data['amount_received'] ?? null,
+                'amount_received'  => $data['amount_received']  ?? null,
                 'change_amount'    => $change,
                 'status'           => 'paid',
                 'settled_at'       => now(),
             ]);
 
             $this->confirmPaymentAndActivateKitchen($order->fresh());
-
             event(new PaymentProcessed($payment));
 
             return $payment;
         });
     }
 
-    // ── QRIS, E-WALLET & TRANSFER BANK (via Midtrans) ────────────────────
+    // ── GATEWAY (QRIS / E-Wallet / Transfer Bank) ─────────────────────────
 
-    /**
-     * Inisiasi pembayaran gateway.
-     *
-     * Metode yang didukung: qris, ewallet, bank_transfer
-     *
-     * Untuk bank_transfer, $ewalletType diisi dengan nama bank:
-     *   'bca', 'bni', 'bri', 'mandiri', 'permata'
-     *
-     * Return: Payment dengan snap_token / qr_string / va_number terisi.
-     */
     public function initiate(Order $order, string $method, ?string $ewalletType = null): Payment
     {
         if (! in_array($method, ['qris', 'ewallet', 'bank_transfer'])) {
-            throw new \InvalidArgumentException(
-                "initiate() hanya untuk qris, ewallet, dan bank_transfer."
-            );
+            throw new \InvalidArgumentException("initiate() hanya untuk qris, ewallet, dan bank_transfer.");
         }
- 
-        // Cek reuse: hanya jika method DAN ewallet_type sama persis
+
+        // Cek reuse pending yang masih segar
         $existingPending = Payment::where('order_id', $order->id)
             ->where('payment_method', $method)
             ->where('status', 'pending')
@@ -122,25 +91,21 @@ class PaymentService
             ->where('created_at', '>=', now()->subMinutes(13))
             ->latest()
             ->first();
- 
+
         if ($existingPending && ($existingPending->snap_token || $existingPending->qr_string || $existingPending->va_number)) {
-            return $existingPending; // reuse yang lama, tidak buat baru
+            return $existingPending;
         }
- 
-        // ── FIX: Cancel semua pending lama untuk method ini ──────────────
-        // Kasir bisa mencoba ShopeePay lalu ganti GoPay — pending lama
-        // harus di-cancel agar tidak menumpuk di halaman detail pesanan.
-        // Status 'cancelled' berbeda dari 'refunded' — tidak ada uang yang
-        // perlu dikembalikan karena pembayaran belum terjadi.
+
+        // Cancel pending lama untuk method ini
         Payment::where('order_id', $order->id)
             ->where('payment_method', $method)
             ->where('status', 'pending')
             ->where('gateway', 'midtrans')
             ->update(['status' => 'cancelled']);
- 
+
         $gateway = app(MidtransGateway::class);
         $result  = $gateway->createTransaction($order, $method, $ewalletType);
- 
+
         return DB::transaction(function () use ($order, $method, $ewalletType, $result) {
             return Payment::create([
                 'order_id'        => $order->id,
@@ -161,7 +126,13 @@ class PaymentService
     }
 
     /**
-     * Poll status dari Midtrans API (fallback jika webhook belum diterima).
+     * Poll status pembayaran dari gateway atau DB.
+     *
+     * FIX UTAMA:
+     * - Cek DB dulu (webhook mungkin sudah mengupdate) — untuk SEMUA method
+     * - Untuk QRIS & bank_transfer (punya gateway_trx_id): query Midtrans API jika DB belum paid
+     * - Untuk Snap ewallet (gateway_trx_id null): hanya cek DB, tidak bisa query API
+     * - Jika order sudah fully paid dari payment lain: kembalikan true
      */
     public function pollGatewayStatus(Payment $payment): bool
     {
@@ -169,32 +140,89 @@ class PaymentService
             return false;
         }
 
-        if (! $payment->gateway_trx_id) {
-            return false;
+        // ── Step 1: Cek DB terlebih dahulu ───────────────────────────────
+        // Webhook mungkin sudah masuk dan mengubah status payment ini
+        $freshPayment = Payment::find($payment->id);
+        if ($freshPayment && $freshPayment->status === 'paid') {
+            $this->confirmPaymentAndActivateKitchen($freshPayment->order->fresh());
+            return true;
         }
 
-        $gateway = app(MidtransGateway::class);
-        $status  = $gateway->getTransactionStatus($payment->gateway_trx_id);
-
-        if (empty($status)) {
-            return false;
+        // ── Step 2: Cek apakah order sudah fully paid dari payment lain ──
+        // (misalnya ada 2 payment pending, salah satunya diproses webhook)
+        $order = $payment->order->fresh(['payments']);
+        if ($order && $order->isFullyPaid()) {
+            $this->confirmPaymentAndActivateKitchen($order);
+            return true;
         }
 
-        $newStatus = MidtransGateway::parseWebhookStatus($status);
+        // ── Step 3: Cek paid payment lain di order yang sama ─────────────
+        // Bisa terjadi jika user initiate baru, lalu payment lama juga di-confirm
+        $hasPaidSibling = Payment::where('order_id', $payment->order_id)
+            ->where('status', 'paid')
+            ->exists();
+        if ($hasPaidSibling) {
+            $this->confirmPaymentAndActivateKitchen($order);
+            return true;
+        }
 
-        if ($newStatus === 'paid' && $payment->status !== 'paid') {
-            DB::transaction(function () use ($payment, $status) {
-                $payment->update([
-                    'status'           => 'paid',
-                    'gateway_status'   => $status['transaction_status'] ?? null,
-                    'gateway_response' => $status,
-                    'settled_at'       => now(),
+        // ── Step 4: Untuk QRIS & bank_transfer — query Midtrans API ──────
+        // Snap ewallet tidak punya gateway_trx_id saat initiate, jadi skip
+        if ($payment->gateway_trx_id) {
+            try {
+                $gateway = app(MidtransGateway::class);
+                $status  = $gateway->getTransactionStatus($payment->gateway_trx_id);
+
+                if (empty($status)) {
+                    return false;
+                }
+
+                $newStatus = MidtransGateway::parseWebhookStatus($status);
+
+                if ($newStatus === 'paid') {
+                    DB::transaction(function () use ($payment, $status) {
+                        $payment->update([
+                            'status'           => 'paid',
+                            'gateway_status'   => $status['transaction_status'] ?? null,
+                            'gateway_response' => $status,
+                            'settled_at'       => now(),
+                        ]);
+
+                        Payment::where('order_id', $payment->order_id)
+                            ->where('id', '!=', $payment->id)
+                            ->where('status', 'pending')
+                            ->update(['status' => 'cancelled']);
+
+                        $this->confirmPaymentAndActivateKitchen($payment->order->fresh());
+                        event(new PaymentProcessed($payment->fresh()));
+                    });
+
+                    return true;
+                }
+
+            } catch (\Exception $e) {
+                Log::warning('pollGatewayStatus: Midtrans API error, fallback ke DB saja', [
+                    'payment_id'     => $payment->id,
+                    'gateway_trx_id' => $payment->gateway_trx_id,
+                    'error'          => $e->getMessage(),
                 ]);
+            }
 
-                $this->confirmPaymentAndActivateKitchen($payment->order->fresh());
-                event(new PaymentProcessed($payment->fresh()));
-            });
+            return false;
+        }
 
+        // ── Step 5: Snap ewallet tanpa gateway_trx_id ────────────────────
+        // Hanya mengandalkan webhook. DB sudah dicek di atas.
+        // Tambahan: coba cari payment ewallet lain di order ini yang sudah paid
+        // (bisa terjadi jika user buka Snap 2x dan salah satunya berhasil)
+        $paidEwallet = Payment::where('order_id', $payment->order_id)
+            ->where('payment_method', $payment->payment_method)
+            ->where('status', 'paid')
+            ->where('gateway', 'midtrans')
+            ->exists();
+
+        if ($paidEwallet) {
+            $this->confirmPaymentAndActivateKitchen($payment->order->fresh());
             return true;
         }
 
@@ -203,52 +231,113 @@ class PaymentService
 
     // ── WEBHOOK HANDLER ───────────────────────────────────────────────────
 
+    /**
+     * Handle Midtrans webhook notification.
+     *
+     * FIX tambahan untuk Snap ewallet:
+     * - Saat query fallback, filter berdasarkan payment_type dari payload
+     *   agar tidak salah cocok jika ada pending QRIS dan ewallet sekaligus
+     */
     public function handleWebhook(array $payload): void
     {
-        $payment = Payment::where('gateway_trx_id', $payload['transaction_id'] ?? '')
-            ->orWhere(function ($q) use ($payload) {
-                $midtransOrderId = $payload['order_id'] ?? '';
-                $orderNumber = preg_replace('/-\d+$/', '', $midtransOrderId);
-                $q->whereHas('order', fn($oq) => $oq->where('order_number', $orderNumber))
-                  ->where('gateway', 'midtrans')
-                  ->whereIn('status', ['pending']);
-            })
-            ->first();
+        $transactionId   = $payload['transaction_id'] ?? '';
+        $midtransOrderId = $payload['order_id']       ?? '';
+        $paymentType     = $payload['payment_type']   ?? '';
+
+        Log::info('Midtrans webhook received', [
+            'transaction_id'    => $transactionId,
+            'midtrans_order_id' => $midtransOrderId,
+            'transaction_status'=> $payload['transaction_status'] ?? null,
+            'payment_type'      => $paymentType,
+        ]);
+
+        // ── Query 1: by gateway_trx_id (QRIS, bank_transfer) ─────────────
+        $payment = null;
+
+        if ($transactionId) {
+            $payment = Payment::where('gateway_trx_id', $transactionId)
+                ->where('gateway', 'midtrans')
+                ->first();
+        }
+
+        // ── Query 2: fallback by order_number + method (Snap ewallet) ────
+        if (! $payment && $midtransOrderId) {
+            $orderNumber = preg_replace('/-\d+$/', '', $midtransOrderId);
+
+            Log::info('Midtrans webhook: fallback by order_number', [
+                'order_number' => $orderNumber,
+                'payment_type' => $paymentType,
+            ]);
+
+            // Map Midtrans payment_type ke payment_method kita
+            $methodMap = [
+                'qris'          => 'qris',
+                'bank_transfer' => 'bank_transfer',
+                'echannel'      => 'bank_transfer',
+                'gopay'         => 'ewallet',
+                'shopeepay'     => 'ewallet',
+                'ovo'           => 'ewallet',
+                'dana'          => 'ewallet',
+            ];
+            $ourMethod = $methodMap[strtolower($paymentType)] ?? null;
+
+            $query = Payment::whereHas('order', fn($q) => $q->where('order_number', $orderNumber))
+                ->where('gateway', 'midtrans')
+                ->where('status', 'pending');
+
+            // Filter by method jika bisa dipetakan
+            if ($ourMethod) {
+                $query->where('payment_method', $ourMethod);
+            }
+
+            $payment = $query->latest('created_at')->first();
+        }
+
+        // ── Query 3: mungkin sudah paid (webhook dikirim 2x) ─────────────
+        if (! $payment && $transactionId) {
+            $payment = Payment::where('gateway_trx_id', $transactionId)->first();
+        }
 
         if (! $payment) {
-            Log::warning('Midtrans webhook: payment tidak ditemukan', [
-                'transaction_id' => $payload['transaction_id'] ?? null,
-                'order_id'       => $payload['order_id']       ?? null,
+            Log::warning('Midtrans webhook: payment tidak ditemukan sama sekali', [
+                'transaction_id'    => $transactionId,
+                'midtrans_order_id' => $midtransOrderId,
             ]);
             return;
         }
 
+        // Idempoten: jika sudah paid, tidak perlu proses lagi
         if ($payment->status === 'paid') {
-            Log::info('Midtrans webhook: payment sudah paid, skip', ['payment_id' => $payment->id]);
+            Log::info('Midtrans webhook: sudah paid (idempoten)', ['payment_id' => $payment->id]);
             return;
         }
 
         $newStatus     = MidtransGateway::parseWebhookStatus($payload);
         $gatewayStatus = $payload['transaction_status'] ?? null;
 
-        DB::transaction(function () use ($payment, $payload, $newStatus, $gatewayStatus) {
+        DB::transaction(function () use ($payment, $payload, $newStatus, $gatewayStatus, $transactionId) {
             $payment->update([
                 'status'           => $newStatus,
-                'gateway_trx_id'   => $payload['transaction_id'] ?? $payment->gateway_trx_id,
+                'gateway_trx_id'   => $transactionId ?: $payment->gateway_trx_id,
                 'gateway_status'   => $gatewayStatus,
                 'gateway_response' => $payload,
                 'settled_at'       => $newStatus === 'paid' ? now() : null,
             ]);
 
             if ($newStatus === 'paid') {
+                Payment::where('order_id', $payment->order_id)
+                    ->where('id', '!=', $payment->id)
+                    ->where('status', 'pending')
+                    ->update(['status' => 'cancelled']);
+
                 $this->confirmPaymentAndActivateKitchen($payment->order->fresh());
                 event(new PaymentProcessed($payment->fresh()));
 
-                Log::info('Midtrans webhook: payment confirmed', [
-                    'payment_id'     => $payment->id,
-                    'order_number'   => $payment->order->order_number,
-                    'gateway_status' => $gatewayStatus,
-                    'method'         => $payment->payment_method,
+                Log::info('Midtrans webhook: payment confirmed paid', [
+                    'payment_id'   => $payment->id,
+                    'order_number' => $payment->order->order_number,
+                    'method'       => $payment->payment_method,
+                    'trx_id'       => $transactionId,
                 ]);
             }
         });
@@ -272,15 +361,11 @@ class PaymentService
         );
 
         return DB::transaction(function () use ($payment, $amount, $reason) {
-
             if ($payment->isGateway() && $payment->gateway_trx_id) {
                 $gateway = app(MidtransGateway::class);
                 $success = $gateway->refund($payment->gateway_trx_id, $amount, $reason);
-
                 if (! $success) {
-                    throw new \RuntimeException(
-                        'Refund via Midtrans gagal. Coba lagi atau hubungi support.'
-                    );
+                    throw new \RuntimeException('Refund via Midtrans gagal. Coba lagi atau hubungi support.');
                 }
             }
 
@@ -318,11 +403,29 @@ class PaymentService
         });
     }
 
+    // ── CANCEL PENDING ────────────────────────────────────────────────────
+
+    public function cancelPendingPayment(Payment $payment): void
+    {
+        abort_if(
+            $payment->status !== 'pending',
+            422,
+            'Hanya pembayaran berstatus Menunggu yang dapat dibatalkan.'
+        );
+
+        $payment->update(['status' => 'cancelled']);
+    }
+
     // ── PRIVATE HELPERS ───────────────────────────────────────────────────
 
     private function confirmPaymentAndActivateKitchen(Order $order): void
     {
         if (! $order->isFullyPaid()) {
+            return;
+        }
+
+        // Jika sudah pernah dikirim ke dapur, jangan kirim lagi
+        if ($order->sent_to_kitchen_at) {
             return;
         }
 

@@ -12,7 +12,9 @@ use App\Notifications\VerifyEmailNotification;
 use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -60,12 +62,68 @@ class UserController extends Controller
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        $old = $user->toArray();
-        $user->update($request->validated());
+        $old          = $user->toArray();
+        $emailBefore  = $user->email;
+        $data         = $request->validated();
+        $emailNew     = $data['email'];
+        $emailChanged = $emailBefore !== $emailNew;
+
+        // Log untuk debug — hapus setelah masalah terselesaikan
+        Log::info('UserController@update', [
+            'user_id'       => $user->id,
+            'email_before'  => $emailBefore,
+            'email_new'     => $emailNew,
+            'email_changed' => $emailChanged,
+            'validated'     => $data,
+            'deleted_at_before' => $user->deleted_at,
+        ]);
+
+        if ($emailChanged) {
+            $data['email_verified_at'] = null;
+        }
+
+        // Update langsung via DB::table untuk menghindari event pipeline Eloquent
+        DB::table('users')
+            ->where('id', $user->id)
+            ->update(array_merge($data, ['updated_at' => now()]));
+
+        // Cek state setelah update
+        $afterUpdate = DB::table('users')->where('id', $user->id)->first();
+
+        Log::info('UserController@update after', [
+            'user_id'    => $user->id,
+            'deleted_at' => $afterUpdate?->deleted_at,
+            'email'      => $afterUpdate?->email,
+        ]);
+
+        // Refresh model dari DB
+        $user->refresh();
+
         ActivityLogService::logUpdated($user, $old, $user->toArray());
+
+        if ($emailChanged) {
+            $user->notify(new VerifyEmailNotification());
+
+            return redirect()->route('admin.users.index')
+                ->with('success', "User {$user->name} berhasil diperbarui. Email verifikasi dikirim ke {$user->email}.");
+        }
 
         return redirect()->route('admin.users.index')
             ->with('success', "User {$user->name} berhasil diperbarui.");
+    }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        abort_if($user->id === auth()->id(), 403, 'Tidak dapat menghapus akun sendiri.');
+
+        $name  = $user->name;
+        $email = $user->email;
+
+        ActivityLogService::log('delete_user', $user, description: "User {$email} dihapus oleh admin.");
+        $user->delete();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "User {$name} ({$email}) berhasil dihapus.");
     }
 
     public function toggleStatus(User $user): RedirectResponse
@@ -86,17 +144,11 @@ class UserController extends Controller
         return back()->with('success', "Email verifikasi telah dikirim ulang ke {$user->email}.");
     }
 
-    /**
-     * Tampilkan form reset password (admin)
-     */
     public function showResetPassword(User $user): View
     {
         return view('auth.admin-reset-password', compact('user'));
     }
 
-    /**
-     * Proses reset password oleh admin — tanpa perlu email
-     */
     public function resetPassword(Request $request, User $user): RedirectResponse
     {
         $request->validate([

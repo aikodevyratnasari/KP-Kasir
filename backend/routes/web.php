@@ -15,6 +15,7 @@ use App\Http\Controllers\Kitchen\KitchenDisplayController;
 use App\Http\Controllers\Manager\CategoryController;
 use App\Http\Controllers\Manager\ProductController;
 use App\Http\Controllers\Manager\ReportController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,7 +27,6 @@ Route::middleware('guest')->group(function () {
     Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post')->middleware('login.throttle');
 
-    // Forgot & Reset Password
     Route::get('/forgot-password',        [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('/forgot-password',       [PasswordResetLinkController::class, 'store'])->name('password.email');
     Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
@@ -40,10 +40,25 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 |  EMAIL VERIFICATION ROUTES
 |───────────────────────────────────────────────────────────────────────────────
 */
+
+// Verifikasi email: TANPA middleware auth — user tidak perlu login dulu.
+// Klik link dari email → langsung diverifikasi → redirect ke halaman login.
+Route::get('/email/verify/{id}/{hash}',
+    [EmailVerificationController::class, 'verify'])
+    ->middleware('signed')
+    ->name('verification.verify');
+
+// Route yang butuh auth (user sudah login tapi belum verifikasi)
 Route::middleware(['auth', 'account.status'])->group(function () {
-    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
-    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])->middleware('signed')->name('verification.verify');
-    Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send');
+    Route::get('/email/verify',
+        [EmailVerificationController::class, 'notice'])
+        ->name('verification.notice');
+
+    Route::post('/email/verification-notification',
+        [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+
     Route::get('/profile',          [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile',        [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/profile/password', [ProfileController::class, 'editPassword'])->name('profile.password');
@@ -77,7 +92,7 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::get('/dashboard',        [ReportController::class, 'dashboard'])->name('dashboard');
             Route::get('/dashboard/filter', [ReportController::class, 'dashboardFilter'])->name('dashboard.filter');
 
-            Route::resource('users', UserController::class)->except(['destroy']);
+            Route::resource('users', UserController::class);
             Route::patch('users/{user}/toggle-status',      [UserController::class, 'toggleStatus'])->name('users.toggle-status');
             Route::post('users/{user}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
             Route::get('users/{user}/reset-password',       [UserController::class, 'showResetPassword'])->name('users.reset-password');
@@ -120,13 +135,13 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::post('tables/bulk', [\App\Http\Controllers\Manager\TableManagerController::class, 'storeBulk'])->name('tables.bulk');
             Route::resource('tables', \App\Http\Controllers\Manager\TableManagerController::class)->except(['show']);
 
-            // Store Settings (termasuk pajak)
+            // Store Settings
             Route::get('settings',   [\App\Http\Controllers\Manager\StoreSettingsController::class, 'index'])->name('settings.index');
             Route::patch('settings', [\App\Http\Controllers\Manager\StoreSettingsController::class, 'update'])->name('settings.update');
 
             // Reports
             Route::prefix('reports')->name('reports.')->group(function () {
-                Route::get('/',         [ReportController::class, 'index'])->name('index');  // ← tambah ini
+                Route::get('/',         [ReportController::class, 'index'])->name('index');
                 Route::get('/sales',    [ReportController::class, 'sales'])->name('sales');
                 Route::get('/products', [ReportController::class, 'products'])->name('products');
                 Route::get('/revenue',  [ReportController::class, 'revenue'])->name('revenue');
@@ -136,8 +151,7 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
                 Route::post('/{type}/send-email', [ReportController::class, 'sendReportEmail'])->name('send-email');
             });
 
-            // Payments
-            // Route::get('payments/history',          [PaymentController::class, 'history'])->name('payments.history');
+            // Payment refund (manager)
             Route::post('payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
 
             // Order management (manager override)
@@ -152,22 +166,40 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
         ->prefix('cashier')
         ->name('cashier.')
         ->group(function () {
+
+            // ── Snap finish redirect (HARUS sebelum resource routes) ──────
+            Route::get('snap/finish', function (Request $request) {
+                $midtransOrderId = $request->get('order_id', '');
+                $orderNumber = preg_replace('/-\d+$/', '', $midtransOrderId);
+                $order = \App\Models\Order::where('order_number', $orderNumber)->first();
+                if ($order) {
+                    return redirect()->route('cashier.orders.show', $order)
+                        ->with('info', 'Pembayaran sedang diproses. Halaman akan diperbarui otomatis.');
+                }
+                return redirect()->route('cashier.orders.index');
+            })->name('snap.finish');
+
+            // ── Orders ────────────────────────────────────────────────────
             Route::resource('orders', OrderController::class)->except(['destroy']);
             Route::post('orders/{order}/cancel',   [OrderController::class, 'cancel'])->name('orders.cancel');
             Route::post('orders/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
             Route::patch('orders/{order}/status',  [OrderController::class, 'updateStatus'])->name('orders.status');
 
-            Route::get('orders/{order}/payment',  [PaymentController::class, 'create'])->name('payments.create');
-            Route::post('orders/{order}/payment', [PaymentController::class, 'store'])->name('payments.store');
-            // Route::get('payments/history',        [PaymentController::class, 'history'])->name('payments.history');
+            // ── Payments ──────────────────────────────────────────────────
+            Route::get('orders/{order}/payment',           [PaymentController::class, 'create'])->name('payments.create');
+            Route::post('orders/{order}/payment',          [PaymentController::class, 'store'])->name('payments.store');
             Route::post('orders/{order}/payment/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
-            Route::get('payments/{payment}/poll',           [PaymentController::class, 'pollStatus'])->name('payments.poll');
+            Route::get('payments/{payment}/poll',          [PaymentController::class, 'pollStatus'])->name('payments.poll');
 
-            Route::get('receipts/{payment}',       [ReceiptController::class, 'show'])->name('receipts.show');
-            Route::get('receipts/{payment}/print', [ReceiptController::class, 'print'])->name('receipts.print');
+            Route::delete('payments/{payment}/cancel-pending', [PaymentController::class, 'cancelPending'])
+                ->name('payments.cancel-pending');
+
+            // ── Receipts ──────────────────────────────────────────────────
+            Route::get('receipts/{payment}',        [ReceiptController::class, 'show'])->name('receipts.show');
+            Route::get('receipts/{payment}/print',  [ReceiptController::class, 'print'])->name('receipts.print');
             Route::post('receipts/{payment}/email', [ReceiptController::class, 'sendEmail'])->name('receipts.send-email');
-            // Route::post('receipts/{payment}/send-whatsapp', [ReceiptController::class, 'sendWhatsApp'])->name('receipts.send-whatsapp');
-            
+
+            // ── Tables & Reservations ─────────────────────────────────────
             Route::get('tables', [TableController::class, 'index'])->name('tables.index');
 
             Route::get('reservations/create',           [TableController::class, 'createReservation'])->name('reservations.create');
