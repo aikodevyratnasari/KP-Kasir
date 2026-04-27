@@ -322,7 +322,7 @@
                         </button>
                         <button type="button" onclick="copyMandiriCode('billkey')" id="copy-billkey-btn"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
-                                style="display:none; background:#818cf8;color:white;">
+                                style="display:none; background:#6366f1;color:white;">
                             Salin Bill Key
                         </button>
                         <button type="button" onclick="cancelActivePayment()" id="va-cancel-btn"

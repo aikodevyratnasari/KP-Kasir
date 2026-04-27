@@ -2,13 +2,10 @@
 // ============================================================
 // FILE: app/Services/PaymentService.php
 // PERUBAHAN:
-//   1. pollGatewayStatus() — perbaiki urutan pengecekan DB vs API
-//      Untuk QRIS: gunakan gateway_trx_id → query Midtrans API,
-//      tapi jika gagal fallback ke DB (webhook mungkin sudah masuk).
-//      Untuk Snap ewallet: karena gateway_trx_id null saat initiate,
-//      tambahkan pengecekan DB berdasarkan order_id + method.
-//   2. handleWebhook() — pastikan snap_token ewallet bisa dicocokkan
-//      via fallback order_number + method filter
+//   1. process() — saat payment cash/card berhasil (paid), cancel semua
+//      payment 'pending' milik order yang sama.
+//      Sebelumnya hanya gateway (webhook/poll) yang membersihkan pending.
+//      Sekarang: bayar tunai/kartu pun langsung membersihkan pending lama.
 // ============================================================
 
 namespace App\Services;
@@ -66,6 +63,16 @@ class PaymentService
                 'status'           => 'paid',
                 'settled_at'       => now(),
             ]);
+
+            // ── Cancel semua payment pending milik order ini ──────────────
+            // Berlaku untuk: gateway QRIS/ewallet/bank_transfer yang belum
+            // settlement, tapi kasir memilih bayar tunai/kartu secara manual.
+            // Pembayaran gateway ini belum benar-benar terjadi (belum settlement),
+            // jadi cukup ditandai 'cancelled' tanpa perlu hit Midtrans refund API.
+            Payment::where('order_id', $order->id)
+                ->where('id', '!=', $payment->id)
+                ->where('status', 'pending')
+                ->update(['status' => 'cancelled']);
 
             $this->confirmPaymentAndActivateKitchen($order->fresh());
             event(new PaymentProcessed($payment));
@@ -141,7 +148,6 @@ class PaymentService
         }
 
         // ── Step 1: Cek DB terlebih dahulu ───────────────────────────────
-        // Webhook mungkin sudah masuk dan mengubah status payment ini
         $freshPayment = Payment::find($payment->id);
         if ($freshPayment && $freshPayment->status === 'paid') {
             $this->confirmPaymentAndActivateKitchen($freshPayment->order->fresh());
@@ -149,7 +155,6 @@ class PaymentService
         }
 
         // ── Step 2: Cek apakah order sudah fully paid dari payment lain ──
-        // (misalnya ada 2 payment pending, salah satunya diproses webhook)
         $order = $payment->order->fresh(['payments']);
         if ($order && $order->isFullyPaid()) {
             $this->confirmPaymentAndActivateKitchen($order);
@@ -157,7 +162,6 @@ class PaymentService
         }
 
         // ── Step 3: Cek paid payment lain di order yang sama ─────────────
-        // Bisa terjadi jika user initiate baru, lalu payment lama juga di-confirm
         $hasPaidSibling = Payment::where('order_id', $payment->order_id)
             ->where('status', 'paid')
             ->exists();
@@ -167,7 +171,6 @@ class PaymentService
         }
 
         // ── Step 4: Untuk QRIS & bank_transfer — query Midtrans API ──────
-        // Snap ewallet tidak punya gateway_trx_id saat initiate, jadi skip
         if ($payment->gateway_trx_id) {
             try {
                 $gateway = app(MidtransGateway::class);
@@ -212,14 +215,11 @@ class PaymentService
         }
 
         // ── Step 5: Snap ewallet tanpa gateway_trx_id ────────────────────
-        // Hanya mengandalkan webhook. DB sudah dicek di atas.
-        // Tambahan: coba cari payment ewallet lain di order ini yang sudah paid
-        // (bisa terjadi jika user buka Snap 2x dan salah satunya berhasil)
         $paidEwallet = Payment::where('order_id', $payment->order_id)
             ->where('payment_method', $payment->payment_method)
             ->where('status', 'paid')
             ->where('gateway', 'midtrans')
-            ->where('id', '!=', $payment->id) // ← jangan hitung diri sendiri
+            ->where('id', '!=', $payment->id)
             ->exists();
 
         if ($paidEwallet) {
@@ -232,13 +232,6 @@ class PaymentService
 
     // ── WEBHOOK HANDLER ───────────────────────────────────────────────────
 
-    /**
-     * Handle Midtrans webhook notification.
-     *
-     * FIX tambahan untuk Snap ewallet:
-     * - Saat query fallback, filter berdasarkan payment_type dari payload
-     *   agar tidak salah cocok jika ada pending QRIS dan ewallet sekaligus
-     */
     public function handleWebhook(array $payload): void
     {
         $transactionId   = $payload['transaction_id'] ?? '';
@@ -252,7 +245,7 @@ class PaymentService
             'payment_type'      => $paymentType,
         ]);
 
-        // ── Query 1: by gateway_trx_id (QRIS, bank_transfer) ─────────────
+        // ── Query 1: by gateway_trx_id ────────────────────────────────────
         $payment = null;
 
         if ($transactionId) {
@@ -261,8 +254,7 @@ class PaymentService
                 ->first();
         }
 
-        // ── Query 2: fallback by order_number + method (Snap ewallet) ────
-        // Di handleWebhook(), Query 2 — tambahkan fallback tanpa filter method
+        // ── Query 2: fallback by order_number + method ────────────────────
         if (! $payment && $midtransOrderId) {
             $orderNumber = preg_replace('/-\d+$/', '', $midtransOrderId);
 
@@ -277,14 +269,12 @@ class PaymentService
             ];
             $ourMethod = $methodMap[strtolower($paymentType)] ?? null;
 
-            // Coba dengan filter method dulu
             $query = Payment::whereHas('order', fn($q) => $q->where('order_number', $orderNumber))
                 ->where('gateway', 'midtrans')
                 ->whereIn('status', ['pending', 'cancelled', 'paid']);
 
             if ($ourMethod) {
                 $withMethod = (clone $query)->where('payment_method', $ourMethod)->latest('created_at')->first();
-                // Jika tidak ketemu, coba tanpa filter method (QRIS bisa datang untuk payment ewallet)
                 $payment = $withMethod ?? $query->latest('created_at')->first();
             } else {
                 $payment = $query->latest('created_at')->first();
@@ -304,7 +294,7 @@ class PaymentService
             return;
         }
 
-        // FIX: Simpan gateway_trx_id dari webhook pending agar webhook settlement bisa match
+        // Simpan gateway_trx_id dari webhook pending agar webhook settlement bisa match
         if (! $payment->gateway_trx_id && $transactionId) {
             $payment->update(['gateway_trx_id' => $transactionId]);
         }
@@ -332,7 +322,6 @@ class PaymentService
                     ->where('status', 'pending')
                     ->update(['status' => 'cancelled']);
 
-                // FIX: Load fresh order dengan payments baru, hindari cached relation
                 $freshOrder = \App\Models\Order::with('payments')->find($payment->order_id);
                 $this->confirmPaymentAndActivateKitchen($freshOrder);
                 event(new PaymentProcessed($payment->fresh()));
@@ -400,6 +389,9 @@ class PaymentService
                     $order->kitchenOrder->update(['status' => 'cancelled']);
                 }
 
+                // Cancel juga payment pending yang mungkin masih ada
+                $order->payments()->where('status', 'pending')->update(['status' => 'cancelled']);
+
                 app(StockService::class)->restoreForOrder($order->load('items.product'));
             }
 
@@ -424,7 +416,6 @@ class PaymentService
 
     private function confirmPaymentAndActivateKitchen(Order $order): void
     {
-        // FIX: Pastikan payments ter-load dari DB, bukan dari cache
         if (! $order->relationLoaded('payments')) {
             $order->load('payments');
         }

@@ -2,15 +2,10 @@
 // ============================================================
 // FILE: app/Services/OrderService.php
 // PERUBAHAN:
-//   FIX tax rate: gunakan fresh() load store dengan select tax_rate
-//   Sebelumnya: auth()->user()->store->tax_rate ?? 10
-//   Masalah: jika relasi 'store' sudah di-cache/eager-loaded dengan
-//   nilai lama, tax_rate bisa stale. Selain itu fallback 10 terlalu
-//   agresif — jika store ada tapi tax_rate = 0 (bebas pajak), tetap
-//   kena 10%.
-//
-//   FIX: Ambil store langsung dari DB dengan fresh query + null-safe
-//   Fallback 0 (bukan 10) agar tidak memaksa pajak jika tidak dikonfigurasi
+//   1. cancel() — tambahkan pembatalan payment 'pending' saat order dibatalkan.
+//      Sebelumnya hanya payment 'paid' yang di-refund, payment 'pending'
+//      (gateway yang belum settlement) dibiarkan menggantung.
+//      Sekarang: pending → cancelled, paid → refunded.
 // ============================================================
 
 namespace App\Services;
@@ -36,9 +31,6 @@ class OrderService
     {
         return DB::transaction(function () use ($data, $storeId) {
 
-            // FIX: Ambil tax_rate langsung dari DB store, jangan andalkan
-            // relasi yang mungkin sudah di-cache. Fallback 0 (bukan 10) agar
-            // store yang mengatur pajak 0% tidak dipaksa kena 10%.
             $store   = Store::select('id', 'tax_rate')->find($storeId);
             $taxRate = $store ? (float) $store->tax_rate : 0;
 
@@ -128,10 +120,6 @@ class OrderService
             $this->stock->restoreForOrder($order);
             $order->items()->delete();
 
-            // Ambil ulang tax_rate dari store saat ini (bukan dari order lama)
-            // Ini memastikan jika manager mengubah tax_rate, order edit berikutnya
-            // akan menggunakan tax_rate terbaru. Namun gunakan order->tax_rate jika
-            // store tidak ditemukan (fallback aman).
             $store   = Store::select('id', 'tax_rate')->find($order->store_id);
             $taxRate = $store ? (float) $store->tax_rate : (float) $order->tax_rate;
 
@@ -203,6 +191,14 @@ class OrderService
                 $order->kitchenOrder->update(['status' => 'cancelled']);
             }
 
+            // ── Tangani semua payment saat order dibatalkan ───────────────
+            //
+            // 1. Payment 'paid'    → refund (uang sudah masuk, harus dikembalikan)
+            // 2. Payment 'pending' → cancel (belum ada transaksi nyata, cukup ditandai cancelled)
+            //
+            // Payment 'cancelled' dan 'refunded' sudah final — lewati.
+
+            // Refund payment yang sudah paid
             $paidPayments = $order->payments()->where('status', 'paid')->get();
             foreach ($paidPayments as $payment) {
                 $payment->update([
@@ -213,6 +209,13 @@ class OrderService
                     'refunded_by'   => $cancelledBy,
                 ]);
             }
+
+            // Cancel payment yang masih pending (gateway belum settlement)
+            // Tidak perlu hit Midtrans API karena pembayaran belum benar-benar terjadi.
+            // Status 'cancelled' di sini berarti "percobaan pembayaran dibatalkan oleh sistem".
+            $order->payments()->where('status', 'pending')->update([
+                'status' => 'cancelled',
+            ]);
 
             $this->stock->restoreForOrder($order->load('items.product'));
             event(new OrderStatusChanged($order, $old, 'cancelled'));
