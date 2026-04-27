@@ -219,6 +219,7 @@ class PaymentService
             ->where('payment_method', $payment->payment_method)
             ->where('status', 'paid')
             ->where('gateway', 'midtrans')
+            ->where('id', '!=', $payment->id) // ← jangan hitung diri sendiri
             ->exists();
 
         if ($paidEwallet) {
@@ -261,15 +262,10 @@ class PaymentService
         }
 
         // ── Query 2: fallback by order_number + method (Snap ewallet) ────
+        // Di handleWebhook(), Query 2 — tambahkan fallback tanpa filter method
         if (! $payment && $midtransOrderId) {
             $orderNumber = preg_replace('/-\d+$/', '', $midtransOrderId);
 
-            Log::info('Midtrans webhook: fallback by order_number', [
-                'order_number' => $orderNumber,
-                'payment_type' => $paymentType,
-            ]);
-
-            // Map Midtrans payment_type ke payment_method kita
             $methodMap = [
                 'qris'          => 'qris',
                 'bank_transfer' => 'bank_transfer',
@@ -281,16 +277,18 @@ class PaymentService
             ];
             $ourMethod = $methodMap[strtolower($paymentType)] ?? null;
 
+            // Coba dengan filter method dulu
             $query = Payment::whereHas('order', fn($q) => $q->where('order_number', $orderNumber))
                 ->where('gateway', 'midtrans')
-                ->where('status', 'pending');
+                ->whereIn('status', ['pending', 'cancelled', 'paid']);
 
-            // Filter by method jika bisa dipetakan
             if ($ourMethod) {
-                $query->where('payment_method', $ourMethod);
+                $withMethod = (clone $query)->where('payment_method', $ourMethod)->latest('created_at')->first();
+                // Jika tidak ketemu, coba tanpa filter method (QRIS bisa datang untuk payment ewallet)
+                $payment = $withMethod ?? $query->latest('created_at')->first();
+            } else {
+                $payment = $query->latest('created_at')->first();
             }
-
-            $payment = $query->latest('created_at')->first();
         }
 
         // ── Query 3: mungkin sudah paid (webhook dikirim 2x) ─────────────
@@ -306,9 +304,13 @@ class PaymentService
             return;
         }
 
-        // Idempoten: jika sudah paid, tidak perlu proses lagi
+        // FIX: Simpan gateway_trx_id dari webhook pending agar webhook settlement bisa match
+        if (! $payment->gateway_trx_id && $transactionId) {
+            $payment->update(['gateway_trx_id' => $transactionId]);
+        }
+
+        // Idempoten
         if ($payment->status === 'paid') {
-            Log::info('Midtrans webhook: sudah paid (idempoten)', ['payment_id' => $payment->id]);
             return;
         }
 
@@ -330,12 +332,14 @@ class PaymentService
                     ->where('status', 'pending')
                     ->update(['status' => 'cancelled']);
 
-                $this->confirmPaymentAndActivateKitchen($payment->order->fresh());
+                // FIX: Load fresh order dengan payments baru, hindari cached relation
+                $freshOrder = \App\Models\Order::with('payments')->find($payment->order_id);
+                $this->confirmPaymentAndActivateKitchen($freshOrder);
                 event(new PaymentProcessed($payment->fresh()));
 
                 Log::info('Midtrans webhook: payment confirmed paid', [
                     'payment_id'   => $payment->id,
-                    'order_number' => $payment->order->order_number,
+                    'order_number' => $freshOrder->order_number,
                     'method'       => $payment->payment_method,
                     'trx_id'       => $transactionId,
                 ]);
@@ -420,11 +424,15 @@ class PaymentService
 
     private function confirmPaymentAndActivateKitchen(Order $order): void
     {
+        // FIX: Pastikan payments ter-load dari DB, bukan dari cache
+        if (! $order->relationLoaded('payments')) {
+            $order->load('payments');
+        }
+
         if (! $order->isFullyPaid()) {
             return;
         }
 
-        // Jika sudah pernah dikirim ke dapur, jangan kirim lagi
         if ($order->sent_to_kitchen_at) {
             return;
         }

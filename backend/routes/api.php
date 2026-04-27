@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\Route;
 // ── Webhook Midtrans — PUBLIC, tidak perlu auth ───────────────────────────────
 // Signature verification dilakukan di dalam controller (MidtransGateway::verifySignature)
 // CSRF dikecualikan via bootstrap/app.php → validateCsrfTokens(except: ['api/webhook/*'])
-Route::post('/webhook/midtrans', [MidtransWebhookController::class, 'handle']);
+Route::post('/webhook/midtrans', [MidtransWebhookController::class, 'handle'])
+    ->withoutMiddleware(['throttle:api']);
 
 // ── Authenticated routes ──────────────────────────────────────────────────────
 Route::middleware(['auth', 'account.status', 'store.scope', 'force.json'])->group(function () {

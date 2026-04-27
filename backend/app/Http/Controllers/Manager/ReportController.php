@@ -116,7 +116,7 @@ class ReportController extends Controller
     {
         [$from, $to] = $this->parseDates($request);
         $storeId = $request->get('_store_id');
- 
+
         // ── Filter utama ──────────────────────────────────────────────────
         // Tampilkan: paid, refunded, dan pending (yang ordernya belum lunas).
         // JANGAN tampilkan: cancelled (ganti metode oleh kasir — bukan transaksi nyata).
@@ -130,20 +130,8 @@ class ReportController extends Controller
         //
         // Catatan: setelah fix PaymentService, kondisi kedua seharusnya tidak
         // muncul lagi. Filter ini sebagai safety net untuk data lama.
-        $visiblePaymentFilter = function ($q) {
-            $q->where(function ($inner) {
-                // Selalu tampilkan paid dan refunded
-                $inner->whereIn('status', ['paid', 'refunded'])
-                    // Tampilkan pending HANYA jika ordernya belum punya payment paid
-                    ->orWhere(function ($pending) {
-                        $pending->where('status', 'pending')
-                            ->whereDoesntHave('order.payments', function ($pq) {
-                                $pq->where('status', 'paid');
-                            });
-                    });
-            });
-        };
- 
+        $visiblePaymentFilter = $this->buildVisiblePaymentFilter();
+
         // ── Daftar transaksi ──────────────────────────────────────────────
         $payments = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
             ->with(['order', 'cashier'])
@@ -154,7 +142,7 @@ class ReportController extends Controller
             ->latest()
             ->paginate(50)
             ->withQueryString();
- 
+
         // ── Summary hanya paid ────────────────────────────────────────────
         $summary = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
             ->where('status', 'paid')
@@ -162,7 +150,7 @@ class ReportController extends Controller
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->selectRaw('SUM(amount) as total, COUNT(*) as count')
             ->first();
- 
+
         // ── Summary per status (paid, refunded, pending valid) ────────────
         $summaryByStatus = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
             ->tap($visiblePaymentFilter)
@@ -172,7 +160,7 @@ class ReportController extends Controller
             ->groupBy('status')
             ->get()
             ->keyBy('status');
- 
+
         // ── Breakdown per metode (hanya paid) ────────────────────────────
         $byMethodSummary = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
             ->where('status', 'paid')
@@ -187,7 +175,7 @@ class ReportController extends Controller
                 WHEN 'bank_transfer' THEN 5
                 ELSE 6 END")
             ->get();
- 
+
         // ── Pesanan aktif belum ada pembayaran lunas sama sekali ──────────
         // Ini berbeda dari "pending gateway": pesanan ini benar-benar belum bayar.
         $unpaidOrders = \App\Models\Order::forStore($storeId)
@@ -196,12 +184,12 @@ class ReportController extends Controller
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->with(['cashier', 'table'])
             ->get();
- 
+
         // Jika filter status aktif dan bukan 'pending', sembunyikan unpaid orders
         if ($request->status && $request->status !== 'pending') {
             $unpaidOrders = collect();
         }
- 
+
         return view('manager.reports.payments', compact(
             'payments', 'from', 'to', 'summary', 'summaryByStatus',
             'unpaidOrders', 'byMethodSummary'
@@ -316,19 +304,39 @@ class ReportController extends Controller
                 );
             })(),
 
-            'payments' => new \App\Exports\PaymentReportExport(
-                payments: \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+            // ── PAYMENTS: gunakan visiblePaymentFilter yang SAMA dengan halaman web ──
+            'payments' => (function () use ($storeId, $fromDate, $toDate, $from, $to, $request) {
+                $visiblePaymentFilter = $this->buildVisiblePaymentFilter();
+
+                $payments = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
                     ->with(['order', 'cashier'])
+                    ->tap($visiblePaymentFilter)
                     ->when($request?->method, fn($q, $m) => $q->where('payment_method', $m))
                     ->when($request?->status, fn($q, $s) => $q->where('status', $s))
                     ->whereBetween('created_at', [$fromDate, $toDate])
-                    ->latest()->get(),
-                unpaidOrders: \App\Models\Order::forStore($storeId)
+                    ->latest()
+                    ->get();
+
+                // Unpaid orders: pesanan aktif yang belum punya payment paid
+                $unpaidOrders = \App\Models\Order::forStore($storeId)
                     ->whereIn('status', ['pending', 'cooking', 'ready'])
+                    ->whereDoesntHave('payments', fn($pq) => $pq->where('status', 'paid'))
                     ->whereBetween('created_at', [$fromDate, $toDate])
-                    ->with('cashier')->get(),
-                from: $from, to: $to,
-            ),
+                    ->with('cashier')
+                    ->get();
+
+                // Jika filter status aktif dan bukan 'pending', kosongkan unpaid orders
+                if ($request?->status && $request->status !== 'pending') {
+                    $unpaidOrders = collect();
+                }
+
+                return new \App\Exports\PaymentReportExport(
+                    payments:     $payments,
+                    unpaidOrders: $unpaidOrders,
+                    from:         $from,
+                    to:           $to,
+                );
+            })(),
 
             default => abort(404),
         };
@@ -376,20 +384,65 @@ class ReportController extends Controller
                 return ['data' => $raw, 'cancelledPerCashier' => $raw['cancelled_per_cashier'] ?? collect()];
             })()),
 
-            'payments' => array_merge($base, [
-                'payments' => \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+            // ── PAYMENTS: gunakan visiblePaymentFilter yang SAMA dengan halaman web ──
+            'payments' => array_merge($base, (function () use ($storeId, $fromDate, $toDate, $request) {
+                $visiblePaymentFilter = $this->buildVisiblePaymentFilter();
+
+                $payments = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
                     ->with(['order', 'cashier'])
+                    ->tap($visiblePaymentFilter)
                     ->when($request?->method, fn($q, $m) => $q->where('payment_method', $m))
                     ->when($request?->status, fn($q, $s) => $q->where('status', $s))
                     ->whereBetween('created_at', [$fromDate, $toDate])
-                    ->latest()->get(),
-                'unpaidOrders' => \App\Models\Order::forStore($storeId)
+                    ->latest()
+                    ->get();
+
+                // Unpaid orders: pesanan aktif yang belum punya payment paid
+                $unpaidOrders = \App\Models\Order::forStore($storeId)
                     ->whereIn('status', ['pending', 'cooking', 'ready'])
+                    ->whereDoesntHave('payments', fn($pq) => $pq->where('status', 'paid'))
                     ->whereBetween('created_at', [$fromDate, $toDate])
-                    ->with('cashier')->get(),
-            ]),
+                    ->with('cashier')
+                    ->get();
+
+                // Jika filter status aktif dan bukan 'pending', kosongkan unpaid orders
+                if ($request?->status && $request->status !== 'pending') {
+                    $unpaidOrders = collect();
+                }
+
+                return compact('payments', 'unpaidOrders');
+            })()),
 
             default => abort(404),
+        };
+    }
+
+    // ── Visible Payment Filter ─────────────────────────────────────────────
+    /**
+     * Filter payment yang ditampilkan di halaman web DAN export (xlsx/csv/pdf).
+     *
+     * Aturan:
+     * - Selalu tampilkan: paid, refunded
+     * - Tampilkan pending HANYA jika ordernya belum punya payment paid
+     *   (artinya pesanan ini benar-benar belum terbayar melalui jalur mana pun)
+     * - JANGAN tampilkan: cancelled (ganti metode oleh kasir — bukan transaksi nyata)
+     *
+     * Dipisah menjadi method agar konsisten di payments(), buildExport(), buildPdfData().
+     */
+    private function buildVisiblePaymentFilter(): \Closure
+    {
+        return function ($q) {
+            $q->where(function ($inner) {
+                // Selalu tampilkan paid dan refunded
+                $inner->whereIn('status', ['paid', 'refunded'])
+                    // Tampilkan pending HANYA jika ordernya belum punya payment paid
+                    ->orWhere(function ($pending) {
+                        $pending->where('status', 'pending')
+                            ->whereDoesntHave('order.payments', function ($pq) {
+                                $pq->where('status', 'paid');
+                            });
+                    });
+            });
         };
     }
 

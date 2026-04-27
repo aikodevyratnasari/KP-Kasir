@@ -76,17 +76,20 @@ class PaymentController extends Controller
                 $request->ewallet_type,
             );
 
-            return response()->json([
-                'success'     => true,
-                'payment_id'  => $payment->id,
-                'snap_token'  => $payment->snap_token,
-                'payment_url' => $payment->payment_url,
-                'qr_string'   => $payment->qr_string,
-                'va_number'   => $payment->va_number,
-                'bank'        => $payment->bank,
-                'method'      => $payment->payment_method,
-                'amount'      => $payment->amount,
-            ]);
+        return response()->json([
+            'success'      => true,
+            'payment_id'   => $payment->id,
+            'snap_token'   => $payment->snap_token,
+            'payment_url'  => $payment->payment_url,
+            'qr_string'    => $payment->qr_string,
+            'va_number'    => $payment->va_number,
+            'bank'         => $payment->bank,
+            'method'       => $payment->payment_method,
+            'amount'       => $payment->amount,
+            // Mandiri: kirim biller_code dan bill_key terpisah
+            'biller_code'  => $payment->mandiriBillerCode(),
+            'bill_key'     => $payment->mandiriBillKey(),
+        ]);
 
         } catch (\Exception $e) {
             return response()->json([

@@ -187,7 +187,7 @@
             <span class="sum-amount">Rp {{ number_format($payment->order->subtotal, 0, ',', '.') }}</span>
         </div>
         <div class="sum-row">
-            <span class="sum-label">Pajak ({{ number_format($payment->order->tax_rate, 0) }}%)</span>
+            <span class="sum-label">Pajak ({{ rtrim(rtrim(number_format($payment->order->tax_rate, 2), '0'), '.') }}%)</span>
             <span class="sum-amount">Rp {{ number_format($payment->order->tax_amount, 0, ',', '.') }}</span>
         </div>
 

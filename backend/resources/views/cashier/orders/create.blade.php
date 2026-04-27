@@ -3,7 +3,9 @@
 @section('page-title', 'Buat Pesanan')
 
 @section('content')
-@php $taxRate = auth()->user()->store->tax_rate ?? 10; @endphp
+@php 
+$taxRate = \App\Models\Store::select('tax_rate')->find(auth()->user()->store_id)?->tax_rate ?? 0;
+@endphp
 <div style="display:flex; gap:0; height:calc(100vh - 64px); overflow:hidden;"
      x-data="orderForm({{ $taxRate }})" x-init="mounted()">
 

@@ -188,7 +188,7 @@
                 <span>Rp {{ number_format($payment->order->subtotal,0,',','.') }}</span>
             </div>
             <div class="flex justify-between">
-                <span>Pajak ({{ number_format($payment->order->tax_rate,0) }}%)</span>
+                <span>Pajak ({{ rtrim(rtrim(number_format($payment->order->tax_rate, 2), '0'), '.') }}%)</span>
                 <span>Rp {{ number_format($payment->order->tax_amount,0,',','.') }}</span>
             </div>
             <div class="flex justify-between font-bold text-sm mt-1">

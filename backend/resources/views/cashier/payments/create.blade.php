@@ -291,14 +291,39 @@
                 <div id="va-container" style="display:none; padding:16px; border:2px solid #c7d2fe; border-radius:12px; background:#eef2ff; text-align:center;">
                     <p class="text-xs text-gray-500 mb-1">Nomor Virtual Account</p>
                     <p id="va-bank-label" class="text-sm font-semibold text-indigo-700 mb-1"></p>
-                    <p id="va-number-display" class="text-2xl font-bold tracking-wider" style="color:#4338ca; letter-spacing:0.1em;"></p>
-                    <p class="text-xs text-gray-400 mt-2">Salin dan berikan ke pelanggan untuk transfer via ATM / mobile banking</p>
-                    <div class="flex items-center justify-center gap-2 mt-3">
+                    <div id="va-number-display" class="text-2xl font-bold tracking-wider" style="color:#4338ca; letter-spacing:0.1em;"></div>
+
+                    <div id="mandiri-detail" style="display:none; margin-top:8px; text-align:left; background:white; border-radius:8px; padding:10px 14px; border:1px solid #c7d2fe;">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-500">Biller Code</span>
+                            <span id="mandiri-biller" class="font-semibold text-indigo-700"></span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-500">Bill Key</span>
+                            <span id="mandiri-billkey" class="font-semibold text-indigo-700"></span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">Masukkan Biller Code dan Bill Key di ATM/simulator Mandiri</p>
+                    </div>
+                    <p id="va-desc" class="text-xs text-gray-400 mt-2">Salin dan berikan ke pelanggan untuk transfer via ATM / mobile banking</p>
+                    
+                    <div class="flex items-center justify-center gap-2 mt-3" id="copy-btn-container">
+                        {{-- Tombol normal untuk non-Mandiri --}}
                         <button type="button" onclick="copyVaNumber()" id="copy-va-btn"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
                                 style="background:#6366f1;color:white;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                             Salin No. VA
+                        </button>
+                        {{-- Tombol Mandiri (tersembunyi default) --}}
+                        <button type="button" onclick="copyMandiriCode('biller')" id="copy-biller-btn"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
+                                style="display:none; background:#6366f1;color:white;">
+                            Salin Biller Code
+                        </button>
+                        <button type="button" onclick="copyMandiriCode('billkey')" id="copy-billkey-btn"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
+                                style="display:none; background:#818cf8;color:white;">
+                            Salin Bill Key
                         </button>
                         <button type="button" onclick="cancelActivePayment()" id="va-cancel-btn"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
@@ -307,6 +332,7 @@
                             Batalkan VA
                         </button>
                     </div>
+                    
                     <div id="va-status" class="mt-2 text-xs font-semibold" style="color:#6366f1;min-height:18px;"></div>
                     <div id="va-spinner" style="display:none; margin:6px auto 0; width:20px; height:20px; border:2px solid #e0e7ff; border-top-color:#6366f1; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
                 </div>
@@ -370,6 +396,8 @@ const BANK_LABELS  = { bca:'BCA', bni:'BNI', bri:'BRI', mandiri:'Mandiri', perma
 let activePaymentId = null;
 let pollInterval    = null;
 let currentVaNumber = null;
+let currentMandiriBiller = null;
+let currentMandiriBillKey = null;
 let snapSuccessFlag = false; // flag jika snap sudah success tapi redirect belum terjadi
 
 // ── Tangkap postMessage dari Snap iframe ──────────────────────────────────────
@@ -454,6 +482,14 @@ async function cancelActivePayment() {
             if (ewalletSpinner) ewalletSpinner.style.display = 'none';
             const ewalletCancel = document.getElementById('ewallet-cancel-container');
             if (ewalletCancel) ewalletCancel.style.display = 'none';
+            currentMandiriBiller  = null;
+            currentMandiriBillKey = null;
+            const copyVaBtn      = document.getElementById('copy-va-btn');
+            const copyBillerBtn  = document.getElementById('copy-biller-btn');
+            const copyBillKeyBtn = document.getElementById('copy-billkey-btn');
+            if (copyVaBtn)      copyVaBtn.style.display      = 'inline-flex';
+            if (copyBillerBtn)  copyBillerBtn.style.display  = 'none';
+            if (copyBillKeyBtn) copyBillKeyBtn.style.display = 'none';
             ['qris-initiate-btn','ewallet-initiate-btn','bank-transfer-initiate-btn'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) { btn.disabled = false; }
@@ -509,23 +545,29 @@ async function initiateGateway(method) {
         if (method === 'qris' && data.qr_string) {
             const canvas = document.getElementById('qris-canvas');
             canvas.innerHTML = '';
-            new QRCode(canvas, {
-                text: data.qr_string, width: 220, height: 220,
-                colorDark: '#111827', colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M,
-            });
-            setTimeout(() => {
-                const cvs = canvas.querySelector('canvas');
-                const img = canvas.querySelector('img');
-                if (cvs) cvs.style.display = 'none';
-                if (img) { img.style.display = 'block'; img.style.borderRadius = '8px'; img.style.margin = '0 auto'; }
-            }, 100);
+            if (data.payment_url) {
+                // Gunakan URL gambar langsung dari Midtrans (lebih andal, bisa di-zoom/share)
+                canvas.innerHTML = `<img src="${data.payment_url}" style="width:220px;height:220px;border-radius:8px;display:block;margin:0 auto;" alt="QR Code QRIS">`;
+            } else {
+                // Fallback: render qr_string via QRCode.js
+                new QRCode(canvas, {
+                    text: data.qr_string, width: 220, height: 220,
+                    colorDark: '#111827', colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M,
+                });
+                setTimeout(() => {
+                    const cvs = canvas.querySelector('canvas');
+                    const img = canvas.querySelector('img');
+                    if (cvs) cvs.style.display = 'none';
+                    if (img) { img.style.display = 'block'; img.style.borderRadius = '8px'; img.style.margin = '0 auto'; }
+                }, 100);
+            }
             document.getElementById('qris-container').style.display       = 'block';
             document.getElementById('qris-btn-container').style.display   = 'none';
             document.getElementById('qris-cancel-container').style.display = 'block';
             document.getElementById('qris-spinner').style.display          = 'block';
             startPolling('qris');
-
+    
         } else if ((method === 'qris' && data.snap_token) || (method === 'ewallet' && data.snap_token)) {
             openSnap(data.snap_token, method, btn);
 
@@ -536,6 +578,38 @@ async function initiateGateway(method) {
             const vaDisplay = document.getElementById('va-number-display');
             vaDisplay.textContent = currentVaNumber;
             vaDisplay.dataset.va  = currentVaNumber;
+
+            // Tampilkan detail Mandiri jika bank mandiri
+            const mandiriDetail = document.getElementById('mandiri-detail');
+            const vaDesc = document.getElementById('va-desc');
+            
+            const copyVaBtn      = document.getElementById('copy-va-btn');
+            const copyBillerBtn  = document.getElementById('copy-biller-btn');
+            const copyBillKeyBtn = document.getElementById('copy-billkey-btn');
+
+            if (data.bank === 'mandiri' && data.biller_code && data.bill_key) {
+                document.getElementById('mandiri-biller').textContent = data.biller_code;
+                document.getElementById('mandiri-billkey').textContent = data.bill_key;
+                mandiriDetail.style.display = 'block';
+                vaDisplay.textContent = data.bill_key;
+                vaDisplay.dataset.va  = data.bill_key;
+                currentVaNumber       = data.bill_key;
+                currentMandiriBiller  = data.biller_code;
+                currentMandiriBillKey = data.bill_key;
+                if (vaDesc) vaDesc.style.display = 'none';
+                if (copyVaBtn)      copyVaBtn.style.display      = 'none';
+                if (copyBillerBtn)  copyBillerBtn.style.display  = 'inline-flex';
+                if (copyBillKeyBtn) copyBillKeyBtn.style.display = 'inline-flex';
+            } else {
+                currentMandiriBiller  = null;
+                currentMandiriBillKey = null;
+                if (mandiriDetail) mandiriDetail.style.display = 'none';
+                if (vaDesc) vaDesc.style.display = 'block';
+                if (copyVaBtn)      copyVaBtn.style.display      = 'inline-flex';
+                if (copyBillerBtn)  copyBillerBtn.style.display  = 'none';
+                if (copyBillKeyBtn) copyBillKeyBtn.style.display = 'none';
+            }
+
             if (btn) { btn.disabled = false; btn.textContent = getBtnText(method); }
             document.getElementById('va-container').style.display = 'block';
             document.getElementById('va-spinner').style.display   = 'block';
@@ -628,6 +702,31 @@ function copyVaNumber() {
         navigator.clipboard.writeText(vaNumber).then(doSuccess).catch(() => fallbackCopy(vaNumber, doSuccess));
     } else {
         fallbackCopy(vaNumber, doSuccess);
+    }
+}
+
+function copyMandiriCode(type) {
+    const text = type === 'biller' ? currentMandiriBiller : currentMandiriBillKey;
+    if (!text) { alert('Data tidak ditemukan.'); return; }
+
+    const btnId = type === 'biller' ? 'copy-biller-btn' : 'copy-billkey-btn';
+    const btn   = document.getElementById(btnId);
+    const orig  = btn ? btn.textContent : '';
+
+    const doSuccess = () => {
+        if (!btn) return;
+        btn.textContent = '✓ Tersalin!';
+        btn.style.background = '#22c55e';
+        setTimeout(() => {
+            btn.textContent = orig;
+            btn.style.background = type === 'biller' ? '#6366f1' : '#818cf8';
+        }, 2500);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(doSuccess).catch(() => fallbackCopy(text, doSuccess));
+    } else {
+        fallbackCopy(text, doSuccess);
     }
 }
 

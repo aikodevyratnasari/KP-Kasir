@@ -92,7 +92,7 @@
 
     {{-- Breakdown Harga --}}
     <div class="row"><span>Subtotal</span><span>Rp {{ number_format($payment->order->subtotal, 0, ',', '.') }}</span></div>
-    <div class="row"><span>Pajak ({{ number_format($payment->order->tax_rate, 0) }}%)</span><span>Rp {{ number_format($payment->order->tax_amount, 0, ',', '.') }}</span></div>
+    <div class="row"><span>Pajak ({{ rtrim(rtrim(number_format($payment->order->tax_rate, 2), '0'), '.') }}%)</span><span>Rp {{ number_format($payment->order->tax_amount, 0, ',', '.') }}</span></div>
 
     <div class="row total-row">
         <span>TOTAL</span>

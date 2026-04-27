@@ -155,7 +155,7 @@ class Payment extends Model
             'bca'     => 'BCA',
             'bni'     => 'BNI',
             'bri'     => 'BRI',
-            'mandiri' => 'Mandiri',
+            // 'mandiri' => 'Mandiri', // Mandiri punya format unik dengan biller code & bill key di payment_url, jadi diproses terpisah di bawah
             'permata' => 'Permata',
         ];
 
@@ -163,6 +163,20 @@ class Payment extends Model
         $label      = $map[$normalized] ?? strtoupper($bankName);
 
         return "Transfer {$label}" . ($this->va_number ? " (VA: {$this->va_number})" : '');
+    }
+
+    public function mandiriBillerCode(): ?string
+    {
+        if ($this->bank !== 'mandiri' || ! $this->payment_url) return null;
+        $parts = explode(':', $this->payment_url);
+        return $parts[1] ?? null;
+    }
+
+    public function mandiriBillKey(): ?string
+    {
+        if ($this->bank !== 'mandiri' || ! $this->payment_url) return null;
+        $parts = explode(':', $this->payment_url);
+        return $parts[2] ?? null;
     }
 
     // ── Scopes ───────────────────────────────────────────────────────────

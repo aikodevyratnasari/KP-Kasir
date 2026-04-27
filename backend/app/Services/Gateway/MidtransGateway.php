@@ -35,7 +35,7 @@ class MidtransGateway implements GatewayInterface
         if ($method === 'bank_transfer') {
             return $this->createBankTransferTransaction($transactionDetails, $customerDetails, $ewalletType);
         }
-
+        
         return $this->createSnapTransaction($transactionDetails, $customerDetails, $ewalletType);
     }
 
@@ -51,17 +51,71 @@ class MidtransGateway implements GatewayInterface
         try {
             $response = \Midtrans\CoreApi::charge($payload);
 
+        // Ambil URL gambar QR dari actions jika tersedia
+        $qrImageUrl = null;
+        if (!empty($response->actions)) {
+            foreach ($response->actions as $action) {
+                if (($action->name ?? '') === 'generate-qr-code') {
+                    $qrImageUrl = $action->url ?? null;
+                    break;
+                }
+            }
+        }
+
+        return [
+            'snap_token'     => null,
+            'payment_url'    => $qrImageUrl, // URL gambar QR dari Midtrans
+            'qr_string'      => $response->qr_string      ?? null,
+            'gateway_trx_id' => $response->transaction_id ?? null,
+            'va_number'      => null,
+            'bank'           => null,
+        ];
+
+        } catch (\Exception $e) {
+            Log::error('Midtrans QRIS charge failed', [
+                'order_id' => $transactionDetails['order_id'],
+                'error'    => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    private function createGopayTransaction(array $transactionDetails, array $customerDetails): array
+    {
+        $payload = [
+            'payment_type'        => 'gopay',
+            'transaction_details' => $transactionDetails,
+            'customer_details'    => $customerDetails,
+            'gopay'               => ['enable_callback' => false],
+        ];
+
+        try {
+            $response = \Midtrans\CoreApi::charge($payload);
+
+            $qrString = null;
+            $deeplink  = null;
+            if (! empty($response->actions)) {
+                foreach ($response->actions as $action) {
+                    if (($action->name ?? '') === 'generate-qr-code') {
+                        $qrString = $action->url ?? null;
+                    }
+                    if (($action->name ?? '') === 'deeplink-redirect') {
+                        $deeplink = $action->url ?? null;
+                    }
+                }
+            }
+
             return [
                 'snap_token'     => null,
-                'payment_url'    => null,
-                'qr_string'      => $response->qr_string      ?? null,
+                'payment_url'    => $deeplink,
+                'qr_string'      => $qrString,
                 'gateway_trx_id' => $response->transaction_id ?? null,
                 'va_number'      => null,
                 'bank'           => null,
             ];
 
         } catch (\Exception $e) {
-            Log::error('Midtrans QRIS charge failed', [
+            Log::error('Midtrans GoPay charge failed', [
                 'order_id' => $transactionDetails['order_id'],
                 'error'    => $e->getMessage(),
             ]);

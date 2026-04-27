@@ -146,7 +146,7 @@
                     <dd>Rp {{ number_format($order->subtotal, 0, ',', '.') }}</dd>
                 </div>
                 <div class="flex justify-between">
-                    <dt class="text-gray-500">Pajak ({{ number_format($order->tax_rate, 0) }}%)</dt>
+                    <dt class="text-gray-500">Pajak ({{ rtrim(rtrim(number_format($order->tax_rate, 2), '0'), '.') }}%)</dt>
                     <dd>Rp {{ number_format($order->tax_amount, 0, ',', '.') }}</dd>
                 </div>
                 <div class="flex justify-between pt-1.5 border-t border-gray-100 mt-1.5">
@@ -293,7 +293,7 @@
                     <td class="py-1.5 text-right text-xs text-gray-500">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</td>
                 </tr>
                 <tr>
-                    <td colspan="3" class="py-1 text-right text-xs text-gray-400">Pajak ({{ number_format($order->tax_rate, 0) }}%)</td>
+                    <td colspan="3" class="py-1 text-right text-xs text-gray-400">Pajak ({{ rtrim(rtrim(number_format($order->tax_rate, 2), '0'), '.') }}%)</td>
                     <td class="py-1 text-right text-xs text-gray-400">Rp {{ number_format($order->tax_amount, 0, ',', '.') }}</td>
                 </tr>
                 <tr class="border-t-2 border-gray-200">
