@@ -1,4 +1,11 @@
 <?php
+// ============================================================
+// PERUBAHAN pada ProductController:
+//   1. index() — tambahkan $bundles agar tampil di tabel produk
+//   2. storeBundle() / updateBundle() / destroyBundle() — redirect
+//      ke manager.products.index (bukan manager.bundles.index)
+//   3. bundles() — tetap ada tapi tidak dipakai di nav utama
+// ============================================================
 
 namespace App\Http\Controllers\Manager;
 
@@ -7,7 +14,6 @@ use App\Http\Requests\Product\AdjustStockRequest;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Models\BundlePackage;
-use App\Models\BundlePackageItem;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductDiscount;
@@ -24,6 +30,8 @@ class ProductController extends Controller
 {
     public function __construct(private StockService $stock) {}
 
+    // ── PRODUCTS ──────────────────────────────────────────────────────────────
+
     public function index(Request $request): View
     {
         $storeId  = $request->get('_store_id');
@@ -37,8 +45,16 @@ class ProductController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $categories = Category::where('store_id', $storeId)->get();
-        return view('manager.products.index', compact('products', 'categories'));
+        $categories  = Category::where('store_id', $storeId)->get();
+        $bundleCount = BundlePackage::where('store_id', $storeId)->count();
+
+        // Ambil semua bundle untuk ditampilkan di bawah tabel produk (dengan sekat)
+        $bundles = BundlePackage::forStore($storeId)
+            ->with('items.product', 'items.variant')
+            ->latest()
+            ->get();
+
+        return view('manager.products.index', compact('products', 'categories', 'bundleCount', 'bundles'));
     }
 
     public function create(Request $request): View
@@ -58,7 +74,7 @@ class ProductController extends Controller
 
         return redirect()
             ->route('manager.products.edit', $product)
-            ->with('success', "Produk {$product->name} berhasil ditambahkan. Sekarang tambahkan variasi jika diperlukan.")
+            ->with('success', "Produk {$product->name} berhasil ditambahkan.")
             ->with('tab', 'variants');
     }
 
@@ -113,7 +129,7 @@ class ProductController extends Controller
         return view('manager.products.trashed', compact('products'));
     }
 
-    // ── VARIANTS ─────────────────────────────────────────────────────────────
+    // ── VARIANTS ──────────────────────────────────────────────────────────────
 
     public function storeVariant(Request $request, Product $product): RedirectResponse
     {
@@ -130,8 +146,6 @@ class ProductController extends Controller
         DB::transaction(function () use ($product, $data) {
             $variants     = $data['variants'] ?? [];
             $submittedIds = collect($variants)->pluck('id')->filter()->values();
-
-            // Hapus semua varian yang tidak di-submit (termasuk hapus semua jika array kosong)
             $product->variants()->whereNotIn('id', $submittedIds)->delete();
 
             foreach ($variants as $i => $v) {
@@ -203,10 +217,34 @@ class ProductController extends Controller
 
     public function bundles(Request $request): View
     {
+        $storeId = $request->get('_store_id');
+        $bundles = BundlePackage::forStore($storeId)
+            ->with('items.product', 'items.variant')
+            ->latest()
+            ->paginate(12);
+
+        return view('manager.bundles.index', compact('bundles'));
+    }
+
+    public function createBundle(Request $request): View
+    {
         $storeId  = $request->get('_store_id');
-        $bundles  = BundlePackage::forStore($storeId)->with('items.product', 'items.variant')->latest()->paginate(20);
-        $products = Product::forStore($storeId)->with('variants')->get();
-        return view('manager.bundles.index', compact('bundles', 'products'));
+        $products = Product::forStore($storeId)
+            ->where('is_available', true)
+            ->with('variants')
+            ->get()
+            ->map(fn($p) => [
+                'id'       => $p->id,
+                'name'     => $p->name,
+                'price'    => (float) $p->price,
+                'variants' => $p->variants->map(fn($v) => [
+                    'id'               => $v->id,
+                    'name'             => $v->name,
+                    'price_adjustment' => (float) $v->price_adjustment,
+                ])->values()->toArray(),
+            ]);
+
+        return view('manager.bundles.form', compact('products'));
     }
 
     public function storeBundle(Request $request): RedirectResponse
@@ -218,7 +256,7 @@ class ProductController extends Controller
             'starts_at'    => ['nullable', 'date'],
             'ends_at'      => ['nullable', 'date', 'after_or_equal:starts_at'],
             'is_active'    => ['nullable', 'boolean'],
-            'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'items'        => ['required', 'array', 'min:1'],
             'items.*.product_id'         => ['required', 'exists:products,id'],
             'items.*.product_variant_id' => ['nullable', 'exists:product_variants,id'],
@@ -236,18 +274,43 @@ class ProductController extends Controller
             unset($data['items']);
             $bundle = BundlePackage::create($data);
             foreach ($items as $item) {
+                if (empty($item['product_variant_id'])) {
+                    $item['product_variant_id'] = null;
+                }
                 $bundle->items()->create($item);
             }
         });
 
-        return redirect()->route('manager.bundles.index')->with('success', 'Paket bundling berhasil dibuat.');
+        // Redirect ke products.index (bukan bundles.index)
+        return redirect()->route('manager.products.index')->with('success', 'Paket bundling berhasil dibuat.');
     }
 
-    public function editBundle(BundlePackage $bundle): View
+    public function editBundle(Request $request, BundlePackage $bundle): View
     {
         $bundle->load('items.product', 'items.variant');
-        $products = Product::forStore($bundle->store_id)->with('variants')->get();
-        return view('manager.bundles.edit', compact('bundle', 'products'));
+        $storeId  = $request->get('_store_id');
+        $products = Product::forStore($storeId)
+            ->where('is_available', true)
+            ->with('variants')
+            ->get()
+            ->map(fn($p) => [
+                'id'       => $p->id,
+                'name'     => $p->name,
+                'price'    => (float) $p->price,
+                'variants' => $p->variants->map(fn($v) => [
+                    'id'               => $v->id,
+                    'name'             => $v->name,
+                    'price_adjustment' => (float) $v->price_adjustment,
+                ])->values()->toArray(),
+            ]);
+
+        $existingItems = $bundle->items->map(fn($i) => [
+            'product_id'         => $i->product_id,
+            'product_variant_id' => $i->product_variant_id,
+            'quantity'           => $i->quantity,
+        ]);
+
+        return view('manager.bundles.form', compact('bundle', 'products', 'existingItems'));
     }
 
     public function updateBundle(Request $request, BundlePackage $bundle): RedirectResponse
@@ -259,7 +322,7 @@ class ProductController extends Controller
             'starts_at'    => ['nullable', 'date'],
             'ends_at'      => ['nullable', 'date', 'after_or_equal:starts_at'],
             'is_active'    => ['nullable', 'boolean'],
-            'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'items'        => ['required', 'array', 'min:1'],
             'items.*.product_id'         => ['required', 'exists:products,id'],
             'items.*.product_variant_id' => ['nullable', 'exists:product_variants,id'],
@@ -277,17 +340,22 @@ class ProductController extends Controller
             $bundle->update($data);
             $bundle->items()->delete();
             foreach ($items as $item) {
+                if (empty($item['product_variant_id'])) {
+                    $item['product_variant_id'] = null;
+                }
                 $bundle->items()->create($item);
             }
         });
 
-        return redirect()->route('manager.bundles.index')->with('success', 'Paket bundling diperbarui.');
+        // Redirect ke products.index (bukan bundles.index)
+        return redirect()->route('manager.products.index')->with('success', 'Paket bundling diperbarui.');
     }
 
     public function destroyBundle(BundlePackage $bundle): RedirectResponse
     {
         if ($bundle->image) Storage::disk('public')->delete($bundle->image);
         $bundle->delete();
-        return redirect()->route('manager.bundles.index')->with('success', 'Paket bundling dihapus.');
+        // Redirect ke products.index
+        return redirect()->route('manager.products.index')->with('success', 'Paket bundling dihapus.');
     }
 }

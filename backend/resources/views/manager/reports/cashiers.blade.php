@@ -16,8 +16,27 @@
                 <label class="block text-xs font-medium text-gray-600 mb-1">Sampai</label>
                 <input type="date" name="to" value="{{ $to->format('Y-m-d') }}" class="form-input w-auto">
             </div>
-            <button type="submit" class="btn-primary">Filter</button>
-            <a href="{{ route('manager.reports.cashiers') }}" class="btn-secondary">Reset</a>
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                onmouseout="this.style.backgroundColor='#2D54BF'">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="6" x2="20" y2="6"/>
+                    <circle cx="16" cy="6" r="2"/>
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <circle cx="8" cy="12" r="2"/>
+                    <line x1="4" y1="18" x2="20" y2="18"/>
+                    <circle cx="14" cy="18" r="2"/>
+                </svg>
+                Filter
+            </button>
+            <a href="{{ route('manager.reports.cashiers') }}" class="btn-secondary text-sm inline-flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74"/>
+                    <path d="M3 3v6h6"/>
+                </svg>
+                Reset
+            </a>
             <div class="ml-auto">
                 <x-manager.reports.actions type="cashiers" :from="$from->format('Y-m-d')" :to="$to->format('Y-m-d')" />
             </div>
@@ -38,7 +57,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Total Penjualan</p>
@@ -48,16 +67,16 @@
         </div>
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Kasir Aktif</p>
             </div>
             <p class="text-2xl font-bold text-indigo-600">{{ $cashiers->count() }}</p>
         </div>
-        <div class="card" style="{{ $totalCancelled > 0 ? 'border-left:3px solid #f87171;' : '' }}">
+        <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#fef2f2;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Total Dibatalkan</p>
@@ -67,7 +86,7 @@
         </div>
         <div class="card" style="{{ $totalPending > 0 ? 'border-left:3px solid #fb923c;' : '' }}">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Total Pending</p>
@@ -79,11 +98,8 @@
 
     {{-- Kasir Terbaik --}}
     @if($best)
-    <div class="card" style="border-left:3px solid #6366f1;">
+    <div class="card">
         <div class="flex items-center gap-3">
-            <div style="width:40px;height:40px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            </div>
             <div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-0.5">Kasir Terbaik Periode Ini</p>
                 <p class="text-lg font-bold text-gray-900">{{ $best->cashier }}</p>
@@ -117,8 +133,8 @@
                         <th class="py-2.5 px-3 text-right text-xs font-semibold text-gray-500 uppercase">Total Penjualan</th>
                         <th class="py-2.5 px-3 text-right text-xs font-semibold text-gray-500 uppercase">Rata-rata</th>
                         <th class="py-2.5 px-3 text-right text-xs font-semibold text-gray-500 uppercase">Avg Proses</th>
-                        <th class="py-2.5 px-3 text-right text-xs font-semibold uppercase" style="color:#ef4444;">Dibatalkan</th>
-                        <th class="py-2.5 px-3 text-right text-xs font-semibold uppercase" style="color:#f97316;">Pending</th>
+                        <th class="py-2.5 px-3 text-right text-xs font-semibold uppercase text-gray-500">Dibatalkan</th>
+                        <th class="py-2.5 px-3 text-right text-xs font-semibold uppercase text-gray-500">Pending</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -173,5 +189,12 @@
             </table>
         </div>
     </div>
+    <a href="{{ route('manager.reports.index') }}"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+        onmouseout="this.style.backgroundColor='white';">
+        Kembali
+    </a>
 </div>
 @endsection

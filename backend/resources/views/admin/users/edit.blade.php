@@ -76,51 +76,51 @@
             {{-- Tombol aksi — TIDAK ada <form> lain di sini --}}
             <div class="flex items-center justify-between mt-6 gap-3">
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('admin.users.index') }}"
+                    <a href="{{ route('admin.users.reset-password', $user) }}"
+                       onclick="return confirm('Reset password {{ addslashes($user->name) }}?\nAnda akan diarahkan ke halaman reset password.')"
                        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
                        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
                        onmouseover="this.style.backgroundColor='#f3f4f6';"
                        onmouseout="this.style.backgroundColor='white';">
-                        Kembali
-                    </a>
-
-                    <a href="{{ route('admin.users.reset-password', $user) }}"
-                       onclick="return confirm('Reset password {{ addslashes($user->name) }}?\nAnda akan diarahkan ke halaman reset password.')"
-                       class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-                       style="border: 1.5px solid #d97706; background-color: white; color: #d97706;"
-                       onmouseover="this.style.backgroundColor='#fffbeb';"
-                       onmouseout="this.style.backgroundColor='white';">
                         Ubah Password
                     </a>
+                </div>
 
+                <div class="flex items-center gap-2">
                     @if($user->id !== auth()->id())
-                    {{-- Tombol hapus: trigger form delete yang ada DI LUAR form utama --}}
                     <button type="button"
                             onclick="confirmDelete()"
                             class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-                            style="border: 1.5px solid #dc2626; background-color: white; color: #dc2626;"
-                            onmouseover="this.style.backgroundColor='#fef2f2';"
-                            onmouseout="this.style.backgroundColor='white';">
+                            style="border: 1.5px solid #dc2626; background-color: #dc2626; color: white;"
+                            onmouseover="this.style.backgroundColor='#b91c1c';"
+                            onmouseout="this.style.backgroundColor='#dc2626';">
                         Hapus User
                     </button>
                     @endif
                 </div>
-
-                <button type="submit"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-                        style="background-color: #2D54BF;"
-                        onmouseover="this.style.backgroundColor='#1e3d8f'"
-                        onmouseout="this.style.backgroundColor='#2D54BF'"
-                        onmousedown="this.style.transform='scale(0.98)';"
-                        onmouseup="this.style.transform='scale(1)';">
-                    Simpan Perubahan
-                </button>
             </div>
         </form>
-        {{-- ↑ Form utama ditutup di sini — tidak ada form lain di dalamnya --}}
+    </div>
+
+    <div class="flex items-center justify-between">
+        <a href="{{ route('admin.users.index') }}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+           style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+           onmouseover="this.style.backgroundColor='#f3f4f6';"
+           onmouseout="this.style.backgroundColor='white';">
+            Kembali
+        </a>
+        <button type="submit" form="form-edit-user"
+                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                onmouseout="this.style.backgroundColor='#2D54BF'"
+                onmousedown="this.style.transform='scale(0.98)';"
+                onmouseup="this.style.transform='scale(1)';">
+            Simpan Perubahan
+        </button>
     </div>
 </div>
-
 {{-- Form hapus: SEPENUHNYA di luar form utama, tidak nested --}}
 @if($user->id !== auth()->id())
 <form id="form-delete-user"

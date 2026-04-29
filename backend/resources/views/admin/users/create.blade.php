@@ -63,8 +63,9 @@
                     <input type="text" name="phone" value="{{ old('phone') }}" class="form-input">
                 </div>
             </div>
-
-            {{-- Tombol di dalam form --}}
+        </form>
+    </div>
+    {{-- Tombol di dalam form --}}
             <div class="flex justify-between mt-6">
                 <a href="{{ route('admin.users.index') }}"
                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
@@ -84,8 +85,6 @@
                     Simpan User
                 </button>
             </div>
-        </form>
-    </div>
 </div>
 
 @push('scripts')

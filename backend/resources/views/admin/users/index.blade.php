@@ -71,6 +71,9 @@
         </form>
     </div>
 
+    <div class="flex items-center justify-between">
+        <p class="text-sm text-gray-500">{{ $users->total() }} user terdaftar</p>
+    </div>
     {{-- Tabel --}}
     <div class="card overflow-x-auto">
         <table class="w-full text-sm">
@@ -232,10 +235,6 @@
         <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
             {{ $users->links() }}
         </div>
-    </div>
-
-    <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ $users->total() }} user terdaftar</p>
     </div>
 </div>
 @endsection

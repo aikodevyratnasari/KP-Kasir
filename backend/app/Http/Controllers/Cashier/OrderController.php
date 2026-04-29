@@ -65,7 +65,13 @@ class OrderController extends Controller
             if ($activeReservation) $prefilledCustomerName = $activeReservation->customer_name;
         }
 
-        return view('cashier.orders.create', compact('categories', 'tables', 'prefilledCustomerName'));
+        $bundles = \App\Models\BundlePackage::where('store_id', $storeId)
+            ->where('is_active', true)
+            ->with('items.product', 'items.variant')
+            ->get()
+            ->filter(fn($b) => $b->isCurrentlyActive());
+
+        return view('cashier.orders.create', compact('categories', 'tables', 'bundles', 'prefilledCustomerName'));
     }
 
     public function store(StoreOrderRequest $request): RedirectResponse

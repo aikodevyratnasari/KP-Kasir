@@ -24,8 +24,27 @@
                     @endforeach
                 </select>
             </div>
-            <button type="submit" class="btn-primary">Tampilkan</button>
-            <a href="{{ route('manager.reports.revenue') }}" class="btn-secondary">Reset</a>
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                onmouseout="this.style.backgroundColor='#2D54BF'">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="6" x2="20" y2="6"/>
+                    <circle cx="16" cy="6" r="2"/>
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <circle cx="8" cy="12" r="2"/>
+                    <line x1="4" y1="18" x2="20" y2="18"/>
+                    <circle cx="14" cy="18" r="2"/>
+                </svg>
+                Filter
+            </button>
+            <a href="{{ route('manager.reports.revenue') }}" class="btn-secondary text-sm inline-flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74"/>
+                    <path d="M3 3v6h6"/>
+                </svg>
+                Reset
+            </a>
             <div class="ml-auto">
                 <x-manager.reports.actions type="revenue" :from="$from->format('Y-m-d')" :to="$to->format('Y-m-d')" :period="$period" />
             </div>
@@ -45,7 +64,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Total Revenue</p>
@@ -55,7 +74,7 @@
         </div>
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Jumlah Periode</p>
@@ -65,7 +84,7 @@
         </div>
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Rata-rata / Periode</p>
@@ -80,10 +99,9 @@
     @if($nonRevenueOrders->isNotEmpty())
     <div class="card">
         <div class="flex items-center gap-2 mb-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9a3412" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <h2 class="font-semibold text-gray-800 text-sm">Pesanan Tidak Menghasilkan Revenue</h2>
         </div>
-        <p class="text-xs text-gray-400 mb-4">Pesanan yang belum selesai</p>
+        <p class="text-xs text-gray-400 mb-4 border-b border-gray-200 pb-3">Pesanan yang belum selesai</p>
         @php
             $nonRevConfig = [
                 'cancelled' => ['label' => 'Dibatalkan', 'bg' => '#fef2f2', 'border' => '#fca5a5', 'text' => '#991b1b'],
@@ -105,18 +123,21 @@
             @endforeach
         </div>
         @if($cancelledData)
-        <div class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style="background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span><strong>{{ $cancelledData->count }} pesanan dibatalkan</strong> senilai Rp {{ number_format($cancelledData->total_amount, 0, ',', '.') }} tidak termasuk dalam total revenue.</span>
-        </div>
+        <div class="mt-4 flex items-center gap-1.5 text-xs text-red-600">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <span><strong>{{ $cancelledData->count }} pesanan dibatalkan</strong> senilai Rp {{ number_format($cancelledData->total_amount, 0, ',', '.') }} tidak termasuk dalam total revenue</span>
+</div>
         @endif
     </div>
     @endif
 
     {{-- Tabel Data Revenue --}}
     <div class="card">
-        <div class="flex items-center gap-2 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <div class="flex items-center gap-2 mb-4 border-b border-gray-200 pb-3">
             <h2 class="font-semibold text-gray-800 text-sm">
                 Data Revenue
                 <span class="text-xs font-normal text-gray-400 ml-1">({{ $periodLabels[$periodType] ?? $periodType }})</span>
@@ -154,5 +175,12 @@
             </table>
         </div>
     </div>
+    <a href="{{ route('manager.reports.index') }}"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+        onmouseout="this.style.backgroundColor='white';">
+        Kembali
+    </a>
 </div>
 @endsection

@@ -40,15 +40,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 |  EMAIL VERIFICATION ROUTES
 |───────────────────────────────────────────────────────────────────────────────
 */
-
-// Verifikasi email: TANPA middleware auth — user tidak perlu login dulu.
-// Klik link dari email → langsung diverifikasi → redirect ke halaman login.
 Route::get('/email/verify/{id}/{hash}',
     [EmailVerificationController::class, 'verify'])
     ->middleware('signed')
     ->name('verification.verify');
 
-// Route yang butuh auth (user sudah login tapi belum verifikasi)
 Route::middleware(['auth', 'account.status'])->group(function () {
     Route::get('/email/verify',
         [EmailVerificationController::class, 'notice'])
@@ -109,11 +105,15 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::get('/dashboard',        [ReportController::class, 'dashboard'])->name('dashboard');
             Route::get('/dashboard/filter', [ReportController::class, 'dashboardFilter'])->name('dashboard.filter');
 
-            // Menu
+            // ── Kategori ─────────────────────────────────────────────────
             Route::resource('categories', CategoryController::class)->except(['show']);
-            Route::resource('products',   ProductController::class)->except(['show']);
+
+            // ── Produk ────────────────────────────────────────────────────
+            // PENTING: route statis (trashed) harus didaftarkan SEBELUM resource
+            // agar tidak tertangkap sebagai {product} parameter.
+            Route::get('products/trashed', [ProductController::class, 'trashed'])->name('products.trashed');
+            Route::resource('products', ProductController::class)->except(['show']);
             Route::patch('products/{product}/stock', [ProductController::class, 'adjustStock'])->name('products.stock');
-            Route::get('products/trashed',           [ProductController::class, 'trashed'])->name('products.trashed');
 
             // Variants
             Route::post('products/{product}/variants',             [ProductController::class, 'storeVariant'])->name('products.variants.store');
@@ -124,22 +124,24 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::delete('products/{product}/discounts/{discount}',       [ProductController::class, 'destroyDiscount'])->name('products.discounts.destroy');
             Route::patch('products/{product}/discounts/{discount}/toggle', [ProductController::class, 'toggleDiscount'])->name('products.discounts.toggle');
 
-            // Bundle Packages
+            // ── Bundle Packages ───────────────────────────────────────────
+            // PENTING: route statis (create) harus sebelum route dengan parameter {bundle}
             Route::get('bundles',               [ProductController::class, 'bundles'])->name('bundles.index');
+            Route::get('bundles/create',        [ProductController::class, 'createBundle'])->name('bundles.create');
             Route::post('bundles',              [ProductController::class, 'storeBundle'])->name('bundles.store');
             Route::get('bundles/{bundle}/edit', [ProductController::class, 'editBundle'])->name('bundles.edit');
             Route::put('bundles/{bundle}',      [ProductController::class, 'updateBundle'])->name('bundles.update');
             Route::delete('bundles/{bundle}',   [ProductController::class, 'destroyBundle'])->name('bundles.destroy');
 
-            // Table management
+            // ── Meja ──────────────────────────────────────────────────────
             Route::post('tables/bulk', [\App\Http\Controllers\Manager\TableManagerController::class, 'storeBulk'])->name('tables.bulk');
             Route::resource('tables', \App\Http\Controllers\Manager\TableManagerController::class)->except(['show']);
 
-            // Store Settings
+            // ── Pengaturan Toko ───────────────────────────────────────────
             Route::get('settings',   [\App\Http\Controllers\Manager\StoreSettingsController::class, 'index'])->name('settings.index');
             Route::patch('settings', [\App\Http\Controllers\Manager\StoreSettingsController::class, 'update'])->name('settings.update');
 
-            // Reports
+            // ── Laporan ───────────────────────────────────────────────────
             Route::prefix('reports')->name('reports.')->group(function () {
                 Route::get('/',         [ReportController::class, 'index'])->name('index');
                 Route::get('/sales',    [ReportController::class, 'sales'])->name('sales');
@@ -190,9 +192,7 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::post('orders/{order}/payment',          [PaymentController::class, 'store'])->name('payments.store');
             Route::post('orders/{order}/payment/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
             Route::get('payments/{payment}/poll',          [PaymentController::class, 'pollStatus'])->name('payments.poll');
-
-            Route::delete('payments/{payment}/cancel-pending', [PaymentController::class, 'cancelPending'])
-                ->name('payments.cancel-pending');
+            Route::delete('payments/{payment}/cancel-pending', [PaymentController::class, 'cancelPending'])->name('payments.cancel-pending');
 
             // ── Receipts ──────────────────────────────────────────────────
             Route::get('receipts/{payment}',        [ReceiptController::class, 'show'])->name('receipts.show');

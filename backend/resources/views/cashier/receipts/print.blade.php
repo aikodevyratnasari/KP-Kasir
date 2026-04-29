@@ -24,6 +24,13 @@
         .total-row   { font-size: 13px; font-weight: bold; margin: 1.5mm 0; }
         .footer      { margin-top: 3mm; text-align: center; font-size: 10px; }
         .no-print    { display: block; margin: 6px 0; text-align: center; }
+
+        /* Bundle styles */
+        .bundle-label   { font-size: 10px; font-weight: bold; }
+        .bundle-contents { padding-left: 3mm; margin: 1mm 0 2mm; border-left: 1px solid #999; }
+        .bundle-item     { font-size: 10px; color: #444; }
+        .bundle-savings  { padding-left: 3mm; font-size: 10px; font-style: italic; }
+
         @media print { .no-print { display: none !important; } }
     </style>
 </head>
@@ -61,23 +68,55 @@
 
     {{-- Item Pesanan --}}
     @foreach($payment->order->items as $item)
-        <div class="item-name bold">{{ $item->product_name }}</div>
-        @if($item->variant_name)
-            <div class="variant-row">Variasi: {{ $item->variant_name }}</div>
-        @endif
-        @if($item->discount_label && $item->discount_amount > 0)
-            <div class="item-detail" style="font-style:italic; color:#555;">
-                Diskon: {{ $item->discount_label }}
-            </div>
+        @if(!empty($item->bundle_id))
+            {{-- ── BUNDLE ITEM ── --}}
+            <div class="item-name bold">[PAKET] {{ $item->product_name }}</div>
+
+            {{-- Isi bundle --}}
+            @if($item->bundlePackage)
+                <div class="bundle-contents">
+                    @foreach($item->bundlePackage->items as $bi)
+                        <div class="bundle-item">
+                            - {{ $bi->product->name }}
+                            @if($bi->variant)({{ $bi->variant->name }})@endif
+                            ×{{ $bi->quantity }}
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            @if($item->discount_amount > 0)
+                <div class="bundle-savings">
+                    Normal: <span style="text-decoration:line-through;">Rp {{ number_format($item->original_price, 0, ',', '.') }}</span>
+                </div>
+                <div class="bundle-savings">Hemat: Rp {{ number_format($item->discount_amount, 0, ',', '.') }}</div>
+            @endif
+
             <div class="row item-detail">
-                <span>Harga asli</span>
-                <span style="text-decoration:line-through;">Rp {{ number_format($item->original_price, 0, ',', '.') }}</span>
+                <span>{{ $item->quantity }} × Rp {{ number_format($item->unit_price, 0, ',', '.') }}</span>
+                <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+            </div>
+        @else
+            {{-- ── PRODUK BIASA ── --}}
+            <div class="item-name bold">{{ $item->product_name }}</div>
+            @if($item->variant_name)
+                <div class="variant-row">Variasi: {{ $item->variant_name }}</div>
+            @endif
+            @if($item->discount_label && $item->discount_amount > 0)
+                <div class="item-detail" style="font-style:italic; color:#555;">
+                    Diskon: {{ $item->discount_label }}
+                </div>
+                <div class="row item-detail">
+                    <span>Harga asli</span>
+                    <span style="text-decoration:line-through;">Rp {{ number_format($item->original_price, 0, ',', '.') }}</span>
+                </div>
+            @endif
+            <div class="row item-detail">
+                <span>{{ $item->quantity }} × Rp {{ number_format($item->unit_price, 0, ',', '.') }}</span>
+                <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
             </div>
         @endif
-        <div class="row item-detail">
-            <span>{{ $item->quantity }} × Rp {{ number_format($item->unit_price, 0, ',', '.') }}</span>
-            <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
-        </div>
+
         @if($item->special_notes)
             <div class="item-note">* {{ $item->special_notes }}</div>
         @endif

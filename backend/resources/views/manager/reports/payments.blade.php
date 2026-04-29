@@ -34,8 +34,27 @@
                     <option value="pending"  {{ request('status') === 'pending'  ? 'selected' : '' }}>Pending</option>
                 </select>
             </div>
-            <button type="submit" class="btn-primary">Filter</button>
-            <a href="{{ route('manager.reports.payments') }}" class="btn-secondary">Reset</a>
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                onmouseout="this.style.backgroundColor='#2D54BF'">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="6" x2="20" y2="6"/>
+                    <circle cx="16" cy="6" r="2"/>
+                    <line x1="4" y1="12" x2="20" y2="12"/>
+                    <circle cx="8" cy="12" r="2"/>
+                    <line x1="4" y1="18" x2="20" y2="18"/>
+                    <circle cx="14" cy="18" r="2"/>
+                </svg>
+                Filter
+            </button>
+            <a href="{{ route('manager.reports.payments') }}" class="btn-secondary text-sm inline-flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74"/>
+                    <path d="M3 3v6h6"/>
+                </svg>
+                Reset
+            </a>
             <div class="ml-auto">
                 <x-manager.reports.actions
                     type="payments"
@@ -60,7 +79,7 @@
         {{-- Lunas --}}
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Lunas</p>
@@ -72,7 +91,7 @@
         {{-- Refund --}}
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Refund</p>
@@ -84,7 +103,7 @@
         {{-- Belum Bayar --}}
         <div class="card" style="{{ $unpaidOrders->count() > 0 ? 'border-left:3px solid #f97316;' : '' }}">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Belum Bayar</p>
@@ -112,7 +131,6 @@
     @if(isset($byMethodSummary) && $byMethodSummary->count() > 0)
     <div class="card">
         <div class="flex items-center gap-2 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             <h2 class="font-semibold text-gray-800 text-sm">Ringkasan per Metode Pembayaran</h2>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -189,15 +207,15 @@
 
     {{-- Tabel Transaksi --}}
     <div class="card p-0 overflow-hidden">
-        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-gray-200">
             <div>
                 <h2 class="font-semibold text-gray-800 text-sm">Daftar Transaksi Pembayaran</h2>
                 <p class="text-xs text-gray-400 mt-0.5">Transaksi yang sudah diproses (Lunas / Refund / Pending Gateway)</p>
             </div>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto border-b border-gray-200">
             <table class="w-full text-sm" style="min-width: 780px;">
-                <thead class="bg-gray-50 border-b border-gray-200">
+                <thead class="border-gray-200">
                     <tr>
                         <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">No. Pesanan</th>
                         <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Pelanggan</th>
@@ -286,8 +304,17 @@
             </table>
         </div>
         <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <div class="pagination-custom">
             {{ $payments->links() }}
+            </div>
         </div>
     </div>
+    <a href="{{ route('manager.reports.index') }}"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+        style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+        onmouseover="this.style.backgroundColor='#f3f4f6';"
+        onmouseout="this.style.backgroundColor='white';">
+        Kembali
+    </a>
 </div>
 @endsection

@@ -19,7 +19,10 @@ class StoreOrderRequest extends FormRequest
             'customer_name'           => ['nullable', 'string', 'max:100'],
             'notes'                   => ['nullable', 'string', 'max:500'],
             'items'                   => ['required', 'array', 'min:1'],
-            'items.*.product_id'      => ['required', 'exists:products,id'],
+            // product_id: required hanya jika bukan bundle
+            'items.*.product_id'      => ['nullable', 'exists:products,id'],
+            // bundle_id: nullable, exists jika diisi
+            'items.*.bundle_id'       => ['nullable', 'exists:bundle_packages,id'],
             'items.*.variant_id'      => ['nullable', 'exists:product_variants,id'],
             'items.*.quantity'        => ['required', 'integer', 'min:1'],
             'items.*.special_notes'   => ['nullable', 'string', 'max:255'],

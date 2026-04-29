@@ -2,16 +2,17 @@
 // ============================================================
 // FILE: app/Services/OrderService.php
 // PERUBAHAN:
-//   1. cancel() — tambahkan pembatalan payment 'pending' saat order dibatalkan.
-//      Sebelumnya hanya payment 'paid' yang di-refund, payment 'pending'
-//      (gateway yang belum settlement) dibiarkan menggantung.
-//      Sekarang: pending → cancelled, paid → refunded.
+//   1. resolveItems() — tambahkan support bundle_id.
+//      Saat item adalah bundle, expand menjadi OrderItem per
+//      produk dalam bundle dengan harga proporsional.
+//   2. cancel() — payment 'pending' → cancelled, paid → refunded.
 // ============================================================
 
 namespace App\Services;
 
 use App\Events\OrderCreated;
 use App\Events\OrderStatusChanged;
+use App\Models\BundlePackage;
 use App\Models\KitchenOrder;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -71,15 +72,16 @@ class OrderService
 
             foreach ($items as $item) {
                 OrderItem::create([
-                    'order_id'      => $order->id,
-                    'product_id'    => $item['product_id'],
-                    'variant_id'    => $item['variant_id'] ?? null,
-                    'product_name'  => $item['product_name'],
-                    'variant_name'  => $item['variant_name'] ?? null,
-                    'unit_price'    => $item['unit_price'],
-                    'quantity'      => $item['quantity'],
-                    'subtotal'      => $item['unit_price'] * $item['quantity'],
-                    'special_notes' => $item['special_notes'] ?? null,
+                    'order_id'        => $order->id,
+                    'product_id'      => $item['product_id'],
+                    'variant_id'      => $item['variant_id'] ?? null,
+                    'bundle_id'       => $item['bundle_id'] ?? null,
+                    'product_name'    => $item['product_name'],
+                    'variant_name'    => $item['variant_name'] ?? null,
+                    'unit_price'      => $item['unit_price'],
+                    'quantity'        => $item['quantity'],
+                    'subtotal'        => $item['unit_price'] * $item['quantity'],
+                    'special_notes'   => $item['special_notes'] ?? null,
                     'original_price'  => $item['original_price'],
                     'discount_amount' => $item['discount_amount'],
                     'discount_label'  => $item['discount_label'],
@@ -142,15 +144,16 @@ class OrderService
 
             foreach ($items as $item) {
                 OrderItem::create([
-                    'order_id'      => $order->id,
-                    'product_id'    => $item['product_id'],
-                    'variant_id'    => $item['variant_id'] ?? null,
-                    'product_name'  => $item['product_name'],
-                    'variant_name'  => $item['variant_name'] ?? null,
-                    'unit_price'    => $item['unit_price'],
-                    'quantity'      => $item['quantity'],
-                    'subtotal'      => $item['unit_price'] * $item['quantity'],
-                    'special_notes' => $item['special_notes'] ?? null,
+                    'order_id'        => $order->id,
+                    'product_id'      => $item['product_id'],
+                    'variant_id'      => $item['variant_id'] ?? null,
+                    'bundle_id'       => $item['bundle_id'] ?? null,
+                    'product_name'    => $item['product_name'],
+                    'variant_name'    => $item['variant_name'] ?? null,
+                    'unit_price'      => $item['unit_price'],
+                    'quantity'        => $item['quantity'],
+                    'subtotal'        => $item['unit_price'] * $item['quantity'],
+                    'special_notes'   => $item['special_notes'] ?? null,
                     'original_price'  => $item['original_price'],
                     'discount_amount' => $item['discount_amount'],
                     'discount_label'  => $item['discount_label'],
@@ -191,13 +194,6 @@ class OrderService
                 $order->kitchenOrder->update(['status' => 'cancelled']);
             }
 
-            // ── Tangani semua payment saat order dibatalkan ───────────────
-            //
-            // 1. Payment 'paid'    → refund (uang sudah masuk, harus dikembalikan)
-            // 2. Payment 'pending' → cancel (belum ada transaksi nyata, cukup ditandai cancelled)
-            //
-            // Payment 'cancelled' dan 'refunded' sudah final — lewati.
-
             // Refund payment yang sudah paid
             $paidPayments = $order->payments()->where('status', 'paid')->get();
             foreach ($paidPayments as $payment) {
@@ -210,9 +206,7 @@ class OrderService
                 ]);
             }
 
-            // Cancel payment yang masih pending (gateway belum settlement)
-            // Tidak perlu hit Midtrans API karena pembayaran belum benar-benar terjadi.
-            // Status 'cancelled' di sini berarti "percobaan pembayaran dibatalkan oleh sistem".
+            // Cancel payment yang masih pending
             $order->payments()->where('status', 'pending')->update([
                 'status' => 'cancelled',
             ]);
@@ -285,9 +279,68 @@ class OrderService
         return $order->fresh();
     }
 
+    /**
+     * Resolve raw items dari request menjadi array siap simpan ke OrderItem.
+     *
+     * Mendukung dua jenis item:
+     *   1. Produk biasa  → harus ada product_id
+     *   2. Bundle        → harus ada bundle_id, di-expand per produk dalam bundle
+     *      dengan harga proporsional (harga bundle dibagi sesuai bobot normal price).
+     */
     private function resolveItems(array $rawItems): array
     {
-        return collect($rawItems)->map(function ($item) {
+        $resolved = [];
+
+        foreach ($rawItems as $item) {
+            // ── Bundle item ───────────────────────────────────────────────
+            if (! empty($item['bundle_id'])) {
+                $bundle = BundlePackage::with('items.product', 'items.variant')->find($item['bundle_id']);
+                abort_if(! $bundle, 422, 'Paket bundling tidak ditemukan.');
+                abort_if(! $bundle->isCurrentlyActive(), 422, "Paket bundling '{$bundle->name}' sudah tidak aktif.");
+
+                $qty         = (int) ($item['quantity'] ?? 1);
+                $bundlePrice = (float) $bundle->bundle_price;
+                $normalTotal = (float) $bundle->items->sum(fn($i) => (float) $i->product->price * $i->quantity);
+
+                // Setiap produk dalam bundle disimpan sebagai OrderItem terpisah
+                // dengan harga proporsional berdasarkan bobot harga normal masing-masing.
+                foreach ($bundle->items as $bundleItem) {
+                    $productNormalPrice = (float) $bundleItem->product->price;
+                    $itemNormalTotal    = $productNormalPrice * $bundleItem->quantity;
+
+                    // Harga proporsional: harga_bundle × (bobot item / total normal)
+                    $ratio     = $normalTotal > 0 ? $itemNormalTotal / $normalTotal : 1;
+                    $unitPrice = $normalTotal > 0
+                        ? round($bundlePrice * $ratio / $bundleItem->quantity, 2)
+                        : $productNormalPrice;
+
+                    $discountAmount = round($productNormalPrice - $unitPrice, 2);
+                    $discountLabel  = "Paket: {$bundle->name}";
+
+                    $variantName = null;
+                    if ($bundleItem->variant) {
+                        $variantName = $bundleItem->variant->name;
+                    }
+
+                    $resolved[] = [
+                        'product_id'      => $bundleItem->product_id,
+                        'product_name'    => $bundleItem->product->name,
+                        'variant_id'      => $bundleItem->product_variant_id,
+                        'variant_name'    => $variantName,
+                        'bundle_id'       => $bundle->id,
+                        'original_price'  => round($productNormalPrice, 2),
+                        'discount_amount' => max(0, $discountAmount),
+                        'discount_label'  => $discountLabel,
+                        'unit_price'      => round($unitPrice, 2),
+                        'quantity'        => $bundleItem->quantity * $qty,
+                        'special_notes'   => $item['special_notes'] ?? null,
+                    ];
+                }
+
+                continue;
+            }
+
+            // ── Produk biasa ──────────────────────────────────────────────
             $product = Product::with('discounts')->findOrFail($item['product_id']);
             abort_if($product->isOutOfStock() && $product->track_stock, 422, "{$product->name} habis.");
 
@@ -318,19 +371,22 @@ class OrderService
                     : $activeDiscount->name . ' (Rp ' . number_format($activeDiscount->value, 0, ',', '.') . ' OFF)';
             }
 
-            return [
-                'product_id'     => $product->id,
-                'product_name'   => $product->name,
-                'variant_id'     => $variantId,
-                'variant_name'   => $variantName,
-                'original_price' => round($originalPrice, 2),
-                'discount_amount'=> $discountAmount,
-                'discount_label' => $discountLabel,
-                'unit_price'     => round($unitPrice, 2),
-                'quantity'       => $item['quantity'],
-                'special_notes'  => $item['special_notes'] ?? null,
+            $resolved[] = [
+                'product_id'      => $product->id,
+                'product_name'    => $product->name,
+                'variant_id'      => $variantId,
+                'variant_name'    => $variantName,
+                'bundle_id'       => null,
+                'original_price'  => round($originalPrice, 2),
+                'discount_amount' => $discountAmount,
+                'discount_label'  => $discountLabel,
+                'unit_price'      => round($unitPrice, 2),
+                'quantity'        => $item['quantity'],
+                'special_notes'   => $item['special_notes'] ?? null,
             ];
-        })->toArray();
+        }
+
+        return $resolved;
     }
 
     private function generateOrderNumber(int $storeId): string

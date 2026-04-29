@@ -36,13 +36,12 @@
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <button onclick="loadDashboard('today')"   id="btn-today"   class="filter-btn active">Hari Ini</button>
+            <button onclick="loadDashboard('today')"   id="btn-today"   class="filter-btn">Hari Ini</button>
             <button onclick="loadDashboard('week')"    id="btn-week"    class="filter-btn">Minggu Ini</button>
             <button onclick="loadDashboard('month')"   id="btn-month"   class="filter-btn">Bulan Ini</button>
             <button onclick="loadDashboard('year')"    id="btn-year"    class="filter-btn">Tahun Ini</button>
-            <button onclick="loadDashboard('all')"     id="btn-all"     class="filter-btn">Semua</button>
+            <button onclick="loadDashboard('all')"     id="btn-all"     class="filter-btn active">Total</button>
             <button onclick="toggleCustomRange()"      id="btn-custom"  class="filter-btn flex items-center gap-1.5">
-                {{-- calendar --}}
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
@@ -103,43 +102,38 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {{-- Top Products --}}
+        {{-- Donut: Metode Pembayaran --}}
         <div class="card">
-            <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2-mb-4 pb-3 border-b border-gray-250">
-                Top Produk
-            </h2>
-            <div id="top-products-list">
-                @forelse($topProducts ?? [] as $i => $p)
-                    <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                        <div class="flex items-center gap-2">
-                            <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">{{ $i + 1 }}</span>
-                            <span class="text-sm text-gray-700">{{ $p->product_name }}</span>
-                        </div>
-                        <span class="text-sm font-semibold">{{ $p->total_qty }} pcs</span>
-                    </div>
-                @empty
-                    <div class="flex items-center justify-center h-40">
-                        <p class="text-sm text-gray-400">Belum ada data</p>
-                    </div>
-                @endforelse
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-250">
+                <h2 class="font-semibold text-gray-800">Metode Pembayaran</h2>
             </div>
+            <div class="relative h-56">
+                <canvas id="paymentChart"></canvas>
+            </div>
+            <div class="flex flex-wrap gap-3 mt-3" id="payment-legend"></div>
         </div>
 
-        {{-- Chart --}}
+        {{-- Chart: Lunas vs Dibatalkan --}}
         <div class="card lg:col-span-2">
-            <div class="flex items-center justify-between mb-4 mb-4 pb-3 border-b border-gray-250">
-                <h2 class="font-semibold text-gray-800 flex items-center gap-2" id="chart-title-wrapper">
-                    <span id="chart-title">Tren Penjualan Hari Ini</span>
-                </h2>
-                <div id="chart-loading" class="hidden">
-                    <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-250">
+                <h2 class="font-semibold text-gray-800" id="chart-title">Pesanan Total</h2>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-1.5 text-xs text-gray-500">
+                        <span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#10b981"></span>Lunas
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs text-gray-500">
+                        <span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#ef4444"></span>Dibatalkan
+                    </div>
+                    <div id="chart-loading" class="hidden">
+                        <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
             <div class="relative h-64">
-                <canvas id="salesChart"></canvas>
+                <canvas id="statusChart"></canvas>
             </div>
         </div>
     </div>
@@ -149,10 +143,9 @@
         <div class="card lg:col-span-2">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-250">
                 <h2 class="font-semibold text-gray-800 flex items-center gap-2">
-                    {{-- clock --}}
                     Pesanan Terbaru
                 </h2>
-                 <a href="{{ route('cashier.orders.index') }}" 
+                 <a href="{{ route('cashier.orders.index') }}"
                         class="ml-auto inline-flex items-center px-2 py-1 text-xs font-medium text-white rounded-lg transition-colors"
                         style="background-color: #2D54BF; border: 1px solid #2D54BF;"
                         onmouseover="this.style.backgroundColor='#1e3d8f'"
@@ -189,12 +182,12 @@
         </div>
 
         {{-- Low Stock --}}
-        <div class="card ">
+        <div class="card">
             <div class="flex items-center justify-between mb-2 pb-1 border-b border-gray-250">
-            <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                Stok Menipis
-            </h2>
-        </div>
+                <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    Stok Menipis
+                </h2>
+            </div>
             @forelse($lowStockProducts ?? [] as $p)
                 <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                     <span class="text-sm text-gray-700 truncate flex-1">{{ $p->name }}</span>
@@ -209,37 +202,121 @@
             @endforelse
         </div>
     </div>
+
+
 </div>
 
 <script>
-let salesChart = null;
+let statusChart  = null;
+let paymentChart = null;
+
+const PAYMENT_COLORS = {
+    cash:          '#10b981',
+    card:          '#6366f1',
+    qris:          '#8b5cf6',
+    ewallet:       '#f59e0b',
+    bank_transfer: '#ec4899',
+};
+const PAYMENT_LABELS = {
+    cash: 'Tunai', card: 'Kartu', qris: 'QRIS',
+    ewallet: 'E-Wallet', bank_transfer: 'Transfer Bank',
+};
 
 document.addEventListener('DOMContentLoaded', function () {
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    const trendData = @json($trend ?? []);
+    const trendByStatus  = @json($trendByStatus ?? []);
+    const paymentBreakdown = @json($paymentBreakdown ?? []);
 
-    salesChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: formatLabels(trendData),
-            datasets: [{
-                label: 'Total Penjualan (Rp)',
-                data: trendData.map(i => Number(i.total)),
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 4,
-                pointBackgroundColor: '#6366f1'
-            }]
-        },
-        options: chartOptions()
-    });
+    statusChart  = buildStatusChart(trendByStatus);
+    paymentChart = buildPaymentChart(paymentBreakdown);
 });
 
+function buildStatusChart(data) {
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    return new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: formatLabels(data),
+            datasets: [
+                {
+                    label: 'Lunas',
+                    data: data.map(d => d.completed ?? 0),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16,185,129,0.1)',
+                    borderWidth: 2.5, fill: true, tension: 0.4,
+                    pointRadius: 4, pointBackgroundColor: '#10b981',
+                },
+                {
+                    label: 'Dibatalkan',
+                    data: data.map(d => d.cancelled ?? 0),
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239,68,68,0.08)',
+                    borderWidth: 2.5, fill: true, tension: 0.4,
+                    pointRadius: 4, pointBackgroundColor: '#ef4444',
+                },
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 },
+                    grid: { color: '#f3f4f6' }
+                },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+function buildPaymentChart(breakdown) {
+    const ctx    = document.getElementById('paymentChart').getContext('2d');
+    const labels = breakdown.map(p => PAYMENT_LABELS[p.payment_method] ?? p.payment_method);
+    const colors = breakdown.map(p => PAYMENT_COLORS[p.payment_method] ?? '#94a3b8');
+    const values = breakdown.map(p => Number(p.total));
+
+    renderPaymentLegend(breakdown, labels, colors);
+
+    return new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, hoverOffset: 6 }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct   = ((ctx.parsed / total) * 100).toFixed(1);
+                            return ` Rp ${Number(ctx.parsed).toLocaleString('id-ID')} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderPaymentLegend(breakdown, labels, colors) {
+    const el = document.getElementById('payment-legend');
+    el.innerHTML = breakdown.map((_, i) =>
+        `<div class="flex items-center gap-1.5 text-xs text-gray-500">
+            <span class="w-2.5 h-2.5 rounded-full inline-block" style="background:${colors[i]}"></span>
+            ${labels[i]}
+        </div>`
+    ).join('');
+}
+
 function toggleCustomRange() {
-    const el = document.getElementById('custom-range');
+    const el  = document.getElementById('custom-range');
     const btn = document.getElementById('btn-custom');
     const hidden = el.classList.contains('hidden');
     el.classList.toggle('hidden', !hidden);
@@ -256,7 +333,7 @@ function loadCustomRange() {
     const to   = document.getElementById('custom-to').value;
     if (!from || !to) return;
 
-    document.getElementById('chart-title').textContent = `Tren Penjualan ${from} – ${to}`;
+    document.getElementById('chart-title').textContent = `Pesanan ${from} – ${to}`;
     setLoading(true);
 
     fetch(`{{ route('manager.dashboard.filter') }}?period=custom&from=${from}&to=${to}`, {
@@ -269,8 +346,8 @@ function loadCustomRange() {
     .then(res => { if (!res.ok) throw new Error('Network error'); return res.json(); })
     .then(data => {
         updateStats(data);
-        updateChart(data.trend, 'custom');
-        updateTopProducts(data.topProducts);
+        updateStatusChart(data.trendByStatus, 'custom');
+        updatePaymentChart(data.paymentBreakdown);
         updateRecentOrders(data.recentOrders);
         setLoading(false);
     })
@@ -293,8 +370,8 @@ function loadDashboard(period) {
     .then(res => { if (!res.ok) throw new Error('Network error'); return res.json(); })
     .then(data => {
         updateStats(data);
-        updateChart(data.trend, period);
-        updateTopProducts(data.topProducts);
+        updateStatusChart(data.trendByStatus, period);
+        updatePaymentChart(data.paymentBreakdown);
         updateRecentOrders(data.recentOrders);
         setLoading(false);
     })
@@ -315,37 +392,32 @@ function updateStats(data) {
     }
 }
 
-function updateChart(trendData, period) {
+function updateStatusChart(trendData, period) {
     const titles = {
-        today: 'Tren Penjualan Hari Ini',
-        week:  'Tren Penjualan Minggu Ini',
-        month: 'Tren Penjualan Bulan Ini',
-        year:  'Tren Penjualan Tahun Ini',
-        all:   'Tren Penjualan Semua Waktu',
+        today: 'Pesanan Hari Ini',
+        week:  'Pesanan Minggu Ini',
+        month: 'Pesanan Bulan Ini',
+        year:  'Pesanan Tahun Ini',
+        all:   'Pesanan Total',
     };
     if (period !== 'custom') {
-        document.getElementById('chart-title').textContent = titles[period] ?? 'Tren Penjualan';
+        document.getElementById('chart-title').textContent = titles[period] ?? 'Pesanan ';
     }
-    salesChart.data.labels = formatLabels(trendData);
-    salesChart.data.datasets[0].data = (trendData || []).map(i => Number(i.total));
-    salesChart.update('active');
+    statusChart.data.labels          = formatLabels(trendData);
+    statusChart.data.datasets[0].data = (trendData || []).map(d => d.completed ?? 0);
+    statusChart.data.datasets[1].data = (trendData || []).map(d => d.cancelled ?? 0);
+    statusChart.update('active');
 }
 
-function updateTopProducts(products) {
-    const el = document.getElementById('top-products-list');
-    if (!products || products.length === 0) {
-        el.innerHTML = '<p class="text-sm text-gray-400 text-center py-6">Belum ada data</p>';
-        return;
-    }
-    el.innerHTML = products.map((p, i) => `
-        <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-            <div class="flex items-center gap-2">
-                <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">${i+1}</span>
-                <span class="text-sm text-gray-700">${p.product_name}</span>
-            </div>
-            <span class="text-sm font-semibold">${p.total_qty} pcs</span>
-        </div>
-    `).join('');
+function updatePaymentChart(breakdown) {
+    if (!breakdown || !paymentChart) return;
+    const labels = breakdown.map(p => PAYMENT_LABELS[p.payment_method] ?? p.payment_method);
+    const colors = breakdown.map(p => PAYMENT_COLORS[p.payment_method] ?? '#94a3b8');
+    paymentChart.data.labels                       = labels;
+    paymentChart.data.datasets[0].data             = breakdown.map(p => Number(p.total));
+    paymentChart.data.datasets[0].backgroundColor  = colors;
+    paymentChart.update('active');
+    renderPaymentLegend(breakdown, labels, colors);
 }
 
 function updateRecentOrders(orders) {
@@ -371,28 +443,6 @@ function formatLabels(trendData) {
         const d = new Date(item.date);
         return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
     });
-}
-
-function chartOptions() {
-    return {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(v) {
-                        if (v >= 1000000) return 'Rp ' + (v/1000000).toFixed(1) + 'jt';
-                        if (v >= 1000)    return 'Rp ' + (v/1000).toFixed(0) + 'rb';
-                        return 'Rp ' + v;
-                    }
-                },
-                grid: { color: '#f3f4f6' }
-            },
-            x: { grid: { display: false } }
-        }
-    };
 }
 
 function setLoading(state) {

@@ -34,24 +34,37 @@
 
     {{-- SIDEBAR --}}
     <aside
-        x-cloak
-        :style="open ? 'width:240px' : 'width:64px'"
-        class="sidebar fixed inset-y-0 left-0 z-50 flex flex-col overflow-visible"
-        style="background-color: #ffffff; border-right: 1px solid #d1d5db; box-shadow: 2px 0 8px rgba(0,0,0,0.08);">
+        :style="(open ? 'width:240px' : 'width:64px') + ';background-color:#181375;border-right:none;box-shadow:2px 0 12px rgba(24,19,117,0.4);'"
+        class="sidebar fixed inset-y-0 left-0 z-50 flex flex-col overflow-visible">
 
         {{-- Logo --}}
-        <div class="h-14 flex items-center justify-between px-3 flex-shrink-0" style="border-bottom: 2px solid #e5e7eb;">
-            <a href="{{ auth()->user()->dashboardRoute() }}" class="flex items-center gap-2.5 min-w-0 overflow-hidden">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0"
-                     style="background-color: #181375; color: white;">D</div>
-                <span x-show="open" class="font-bold text-base whitespace-nowrap overflow-hidden" style="color: #181375;">DePOS</span>
-            </a>
-            <button x-show="open" @click="open = false" class="p-1 rounded-md transition flex-shrink-0" style="color: #6b7280;"
-                    onmouseover="this.style.color='#181375';" onmouseout="this.style.color='#6b7280';" title="Tutup sidebar">«</button>
-            <button x-show="!open" @click="open = true" class="absolute z-50 font-bold"
-                    style="color:#fff; background-color:#2D54BF; width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; box-shadow:2px 2px 6px rgba(0,0,0,0.2); right:-11px; top:16px; font-size:14px; line-height:1; padding:0;"
-                    onmouseover="this.style.backgroundColor='#1e3d8f';" onmouseout="this.style.backgroundColor='#2D54BF';" title="Buka sidebar">»</button>
-        </div>
+        
+<div class="h-14 flex items-center px-3 flex-shrink-0 gap-3" style="border-bottom: 1px solid rgba(255,255,255,0.15);">
+    
+{{-- Logo D + tulisan DePOS (hanya saat terbuka) --}}
+    <a x-show="open" href="{{ auth()->user()->dashboardRoute() }}" class="flex items-center gap-2 min-w-0 overflow-hidden">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0"
+             style="background-color: rgba(255,255,255,0.2); color: white;">D</div>
+        <span class="font-bold text-base whitespace-nowrap overflow-hidden" style="color: #ffffff;">DePOS</span>
+    </a>
+    
+{{-- Hamburger button (selalu tampil, buat buka/tutup) --}}
+    {{-- Hamburger button (selalu tampil) --}}
+<button @click="open = !open"
+        class="flex items-center justify-center flex-shrink-0 transition-all ml-auto"
+        style="width:36px;height:36px;border-radius:8px;color:white;border:none;cursor:pointer;"
+        onmouseover="this.style.backgroundColor='rgba(255,255,255,0.15)';"
+        onmouseout="this.style.backgroundColor='transparent';">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+    </button>
+
+    
+
+</div>
 
         {{-- NAV --}}
         <nav class="sidebar-nav py-2">
@@ -60,15 +73,15 @@
             {{-- MANAGER --}}
             @if(in_array($role, ['admin', 'manager']))
                 <div x-show="open" class="px-4 pt-3 pb-1">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Menu Utama</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: rgba(255,255,255,0.5);">Menu Utama</p>
                 </div>
-                <div x-show="!open" class="my-1 mx-2" style="border-top: 2px solid #e5e7eb;"></div>
+                <div x-show="!open" class="my-1 mx-2" style="border-top: 1px solid rgba(255,255,255,0.15);"></div>
 
                 @foreach([
     ['manager.dashboard',        'manager.dashboard',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>', 'Dashboard'],
     ['manager.products.index',   'manager.products.*',   '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>', 'Menu'],
     ['manager.categories.index', 'manager.categories.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg>', 'Kategori'],
-    ['manager.tables.index', 'manager.tables.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="3" rx="0.5"/><rect x="11" y="6" width="2" height="5"/><path d="M4 18a8 8 0 0 1 16 0H4z"/><path d="M7 18a5 5 0 0 1 10 0H7z" fill="{{ request()->routeIs(\'manager.tables.*\') ? \'#181375\' : \'white\' }}"/></svg>', 'Kelola Meja'],
+    ['manager.tables.index', 'manager.tables.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="3" rx="0.5"/><rect x="11" y="6" width="2" height="5"/><path d="M4 18a8 8 0 0 1 16 0H4z"/><path d="M7 18a5 5 0 0 1 10 0H7z" fill="rgba(255,255,255,0.3)"/></svg>', 'Kelola Meja'],
     [
     'manager.settings.index',
     'manager.settings.*',
@@ -92,9 +105,9 @@
        @mouseleave="hovered = false"
        class="relative flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-all mb-0.5"
        :class="open ? 'px-3' : 'justify-center px-0'"
-       style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
-       onmouseover="{{ $a ? '' : "this.style.backgroundColor='#181375'; this.style.color='white';" }}"
-       onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}"
+       style="{{ $a ? 'background-color: rgba(255,255,255,0.2); color: white; font-weight: 600;' : 'color: rgba(255,255,255,0.75);' }}"
+       onmouseover="{{ $a ? '' : "this.style.backgroundColor='rgba(255,255,255,0.12)'; this.style.color='white';" }}"
+       onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='rgba(255,255,255,0.75)';" }}"
        onmousedown="{{ $a ? '' : "this.style.transform='scale(0.98)';" }}"
        onmouseup="{{ $a ? '' : "this.style.transform='scale(1)';" }}">
         <span class="w-6 flex-shrink-0 flex items-center justify-center">{!! $icon !!}</span>
@@ -121,9 +134,9 @@
             {{-- KASIR --}}
             @if(in_array($role, ['admin', 'manager', 'cashier']))
                 <div x-show="open" class="px-4 pt-4 pb-1">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Pemesanan</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: rgba(255,255,255,0.5);">Pemesanan</p>
                 </div>
-                <div x-show="!open" class="my-1 mx-2" style="border-top: 2px solid #e5e7eb;"></div>
+                <div x-show="!open" class="my-1 mx-2" style="border-top: 1px solid rgba(255,255,255,0.15);"></div>
 
                 @foreach([
     ['cashier.orders.index',     'cashier.orders.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h6"/></svg>', 'Pesanan'],
@@ -137,9 +150,9 @@
        @mouseleave="hovered = false"
        class="relative flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-all mb-0.5"
        :class="open ? 'px-3' : 'justify-center px-0'"
-       style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
-       onmouseover="{{ $a ? '' : "this.style.backgroundColor='#181375'; this.style.color='white';" }}"
-       onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}"
+       style="{{ $a ? 'background-color: rgba(255,255,255,0.2); color: white; font-weight: 600;' : 'color: rgba(255,255,255,0.75);' }}"
+       onmouseover="{{ $a ? '' : "this.style.backgroundColor='rgba(255,255,255,0.12)'; this.style.color='white';" }}"
+       onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='rgba(255,255,255,0.75)';" }}"
        onmousedown="{{ $a ? '' : "this.style.transform='scale(0.98)';" }}"
        onmouseup="{{ $a ? '' : "this.style.transform='scale(1)';" }}">
         <span class="w-6 flex-shrink-0 flex items-center justify-center">{!! $icon !!}</span>
@@ -170,9 +183,9 @@
    @mouseleave="hovered = false"
    class="relative flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-all mb-0.5"
    :class="open ? 'px-3' : 'justify-center px-0'"
-   style="{{ $isCreate ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
-   onmouseover="{{ $isCreate ? '' : "this.style.backgroundColor='#181375'; this.style.color='white';" }}"
-   onmouseout="{{ $isCreate ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}"
+   style="{{ $isCreate ? 'background-color: rgba(255,255,255,0.2); color: white; font-weight: 600;' : 'color: rgba(255,255,255,0.75);' }}"
+   onmouseover="{{ $isCreate ? '' : "this.style.backgroundColor='rgba(255,255,255,0.12)'; this.style.color='white';" }}"
+   onmouseout="{{ $isCreate ? '' : "this.style.backgroundColor=''; this.style.color='rgba(255,255,255,0.75)';" }}"
    onmousedown="{{ $isCreate ? '' : "this.style.transform='scale(0.98)';" }}"
    onmouseup="{{ $isCreate ? '' : "this.style.transform='scale(1)';" }}">
     <span class="w-6 flex-shrink-0 flex items-center justify-center">
@@ -202,9 +215,9 @@
             {{-- DAPUR --}}
             @if($role === 'kitchen_staff')
                 <div x-show="open" class="px-4 pt-4 pb-1">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Dapur</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: rgba(255,255,255,0.5);">Dapur</p>
                 </div>
-                <div x-show="!open" class="my-1 mx-2" style="border-top: 2px solid #e5e7eb;"></div>
+                <div x-show="!open" class="my-1 mx-2" style="border-top: 1px solid rgba(255,255,255,0.15);"></div>
                 @php $a = request()->routeIs('kitchen.*'); @endphp
 <a href="{{ route('kitchen.display') }}"
    x-data="{ hovered: false, tipY: 0 }"
@@ -212,9 +225,9 @@
    @mouseleave="hovered = false"
    class="relative flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-all mb-0.5"
    :class="open ? 'px-3' : 'justify-center px-0'"
-   style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
-   onmouseover="{{ $a ? '' : "this.style.backgroundColor='#181375'; this.style.color='white';" }}"
-   onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}"
+   style="{{ $a ? 'background-color: rgba(255,255,255,0.2); color: white; font-weight: 600;' : 'color: rgba(255,255,255,0.75);' }}"
+   onmouseover="{{ $a ? '' : "this.style.backgroundColor='rgba(255,255,255,0.12)'; this.style.color='white';" }}"
+   onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='rgba(255,255,255,0.75)';" }}"
    onmousedown="{{ $a ? '' : "this.style.transform='scale(0.98)';" }}"
    onmouseup="{{ $a ? '' : "this.style.transform='scale(1)';" }}">
 
@@ -258,9 +271,9 @@
             {{-- ADMIN --}}
             @if($role === 'admin')
                 <div x-show="open" class="px-4 pt-4 pb-1">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #9ca3af;">Akun</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: rgba(255,255,255,0.5);">Akun</p>
                 </div>
-                <div x-show="!open" class="my-1 mx-2" style="border-top: 2px solid #e5e7eb;"></div>
+                <div x-show="!open" class="my-1 mx-2" style="border-top: 1px solid rgba(255,255,255,0.15);"></div>
                 @php $a = request()->routeIs('admin.users.*'); @endphp
                 <a href="{{ route('admin.users.index') }}" title="Users"
    x-data="{ hovered: false, tipY: 0 }"
@@ -268,9 +281,9 @@
    @mouseleave="hovered = false"
    class="relative flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-all mb-0.5"
    :class="open ? 'px-3' : 'justify-center px-0'"
-   style="{{ $a ? 'background-color: #181375; color: white; font-weight: 600;' : 'color: #374151;' }}"
-   onmouseover="{{ $a ? '' : "this.style.backgroundColor='#181375'; this.style.color='white';" }}"
-   onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='#374151';" }}"
+   style="{{ $a ? 'background-color: rgba(255,255,255,0.2); color: white; font-weight: 600;' : 'color: rgba(255,255,255,0.75);' }}"
+   onmouseover="{{ $a ? '' : "this.style.backgroundColor='rgba(255,255,255,0.12)'; this.style.color='white';" }}"
+   onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='rgba(255,255,255,0.75)';" }}"
    onmousedown="{{ $a ? '' : "this.style.transform='scale(0.98)';" }}"
    onmouseup="{{ $a ? '' : "this.style.transform='scale(1)';" }}">
     <span class="w-6 flex-shrink-0 flex items-center justify-center">
@@ -301,21 +314,22 @@
         </nav>
 
         {{-- USER --}}
-        <div class="flex-shrink-0 relative" style="border-top: 2px solid #e5e7eb;">
+        <div class="flex-shrink-0 relative" style="border-top: 1px solid rgba(255,255,255,0.15);">
             <div class="p-3 relative" x-data="{ menuOpen: false }">
                 <button @click="menuOpen = !menuOpen"
-                    class="flex items-center gap-3 w-full rounded-lg p-2 transition text-left"
-                    onmouseover="this.style.backgroundColor='#181375'; this.querySelector('.user-name').style.color='white'; this.querySelector('.user-role').style.color='#c7d2fe'; this.querySelector('.avatar-circle').style.backgroundColor='#2D54BF';"
-                    onmouseout="this.style.backgroundColor=''; this.querySelector('.user-name').style.color='#1f2937'; this.querySelector('.user-role').style.color='#6b7280'; this.querySelector('.avatar-circle').style.backgroundColor='#181375';">
-                    <div class="avatar-circle w-8 h-8 rounded-full text-white text-xs font-bold flex items-center justify-center flex-shrink-0 transition-all duration-200"
-                        style="background-color: #181375;">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
-                    </div>
-                    <span x-show="open" class="flex-1 min-w-0">
-                        <p class="user-name text-sm font-medium truncate" style="color: #1f2937;">{{ auth()->user()->name }}</p>
-                        <p class="user-role text-xs capitalize" style="color: #6b7280;">{{ auth()->user()->role->name }}</p>
-                    </span>
-                </button>
+    class="flex items-center gap-3 w-full rounded-lg transition text-left"
+    :class="open ? 'p-2' : 'justify-center p-2'"
+    onmouseover="this.style.backgroundColor='rgba(255,255,255,0.12)';"
+    onmouseout="this.style.backgroundColor='';">
+    <div class="avatar-circle w-8 h-8 rounded-full text-white text-xs font-bold flex items-center justify-center flex-shrink-0 transition-all duration-200"
+        style="background-color: rgba(255,255,255,0.2);">
+        {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+    </div>
+    <span x-show="open" class="flex-1 min-w-0">
+        <p class="user-name text-sm font-medium truncate" style="color: #ffffff;">{{ auth()->user()->name }}</p>
+        <p class="user-role text-xs capitalize" style="color: rgba(255,255,255,0.6);">{{ auth()->user()->role->name }}</p>
+    </span>
+</button>
 
                 <div x-show="menuOpen"
                      x-transition:enter="transition ease-out duration-150"
@@ -364,7 +378,7 @@
          :style="open ? 'padding-left:240px' : 'padding-left:64px'">
 
         {{-- Topbar --}}
-        <header class="h-14 border-b flex items-center justify-between px-6 sticky top-0 z-40 flex-shrink-0" style="background-color: #181375;">
+        <header class="h-14 border-b flex items-center justify-between px-6 sticky top-0 z-40 flex-shrink-0" style="background-color: #000000;">
             <h2 class="text-base font-semibold text-white truncate">@yield('page-title', 'Dashboard')</h2>
             <span class="text-sm text-white whitespace-nowrap">{{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</span>
         </header>

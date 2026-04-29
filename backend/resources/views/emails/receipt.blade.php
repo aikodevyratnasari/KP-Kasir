@@ -47,7 +47,7 @@
             letter-spacing: 0.08em; color: #aaa; margin-bottom: 14px;
         }
 
-        /* Info rows — label kiri, value kanan */
+        /* Info rows */
         .row          { display: table; width: 100%; padding: 5px 0; }
         .row-label    { display: table-cell; font-size: 13px; color: #666; vertical-align: top; width: 42%; }
         .row-value    { display: table-cell; font-size: 13px; font-weight: 600; color: #111; text-align: right; vertical-align: top; }
@@ -68,6 +68,46 @@
         .item-subtotal { font-size: 13px; font-weight: 700; color: #111; }
         .item-unit     { font-size: 11px; color: #aaa; margin-top: 2px; }
 
+        /* Bundle-specific */
+        .bundle-badge {
+            display: inline-block;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            color: #16a34a;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 7px;
+            border-radius: 6px;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        .bundle-contents {
+            margin-top: 5px;
+            padding: 7px 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 3px solid #86efac;
+        }
+        .bundle-contents-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 3px;
+        }
+        .bundle-item-row {
+            font-size: 11px;
+            color: #555;
+            padding: 1px 0;
+        }
+        .bundle-savings {
+            font-size: 11px;
+            color: #16a34a;
+            font-weight: 700;
+            margin-top: 3px;
+        }
+
         /* Notes */
         .notes-box {
             background: #fafafa; border-left: 3px solid #e0e0e0; border-radius: 4px;
@@ -75,7 +115,7 @@
         }
         .notes-box strong { color: #444; }
 
-        /* Summary — semua pakai table display agar label kiri, angka kanan */
+        /* Summary */
         .sum-row    { display: table; width: 100%; padding: 6px 0; }
         .sum-label  { display: table-cell; font-size: 13px; color: #555; vertical-align: middle; }
         .sum-amount { display: table-cell; font-size: 13px; font-weight: 600; color: #111; text-align: right; white-space: nowrap; padding-left: 12px; vertical-align: middle; }
@@ -148,15 +188,42 @@
         <div class="item">
             <div class="item-top">
                 <div class="item-name-col">
-                    <div class="item-name">{{ $item->product_name }}</div>
+                    {{-- Nama produk / bundle --}}
+                    <div class="item-name">
+                        {{ $item->product_name }}
+                        @if(!empty($item->bundle_id))
+                            <span class="bundle-badge">Paket</span>
+                        @endif
+                    </div>
                     <div class="item-qty">× {{ $item->quantity }}</div>
+
                     @if($item->variant_name)
                         <div class="item-variant">{{ $item->variant_name }}</div>
                     @endif
-                    @if(!empty($item->discount_label) && $item->discount_amount > 0)
+
+                    {{-- Tampilkan isi bundle --}}
+                    @if(!empty($item->bundle_id) && $item->bundlePackage)
+                        <div class="bundle-contents">
+                            <div class="bundle-contents-label">Isi Paket</div>
+                            @foreach($item->bundlePackage->items as $bi)
+                                <div class="bundle-item-row">
+                                    • {{ $bi->product->name }}
+                                    @if($bi->variant) <span style="color:#5c6bc0;">({{ $bi->variant->name }})</span> @endif
+                                    × {{ $bi->quantity }}
+                                </div>
+                            @endforeach
+                            @if($item->discount_amount > 0)
+                                <div class="bundle-savings">
+                                    Hemat Rp {{ number_format($item->discount_amount, 0, ',', '.') }} dari harga normal
+                                </div>
+                            @endif
+                        </div>
+                    @elseif(!empty($item->discount_label) && $item->discount_amount > 0)
+                        {{-- Diskon produk biasa --}}
                         <div class="item-discount">{{ $item->discount_label }}</div>
                         <div class="item-original">Rp {{ number_format($item->original_price, 0, ',', '.') }}</div>
                     @endif
+
                     @if($item->special_notes)
                         <div class="item-note">* {{ $item->special_notes }}</div>
                     @endif
@@ -165,6 +232,11 @@
                     <div class="item-subtotal">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</div>
                     @if($item->quantity > 1)
                         <div class="item-unit">@ Rp {{ number_format($item->unit_price, 0, ',', '.') }}</div>
+                    @endif
+                    @if(!empty($item->bundle_id) && $item->discount_amount > 0)
+                        <div style="font-size:11px; color:#bbb; text-decoration:line-through; margin-top:2px;">
+                            Rp {{ number_format($item->original_price * $item->quantity, 0, ',', '.') }}
+                        </div>
                     @endif
                 </div>
             </div>

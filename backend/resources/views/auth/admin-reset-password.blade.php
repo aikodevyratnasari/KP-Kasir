@@ -44,7 +44,7 @@
                         Password Baru <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <input :type="show ? 'text' : 'password'" name="password" required
+                        <input :type="show ? 'text' : 'password'" name="password" id="input-password"
                                placeholder="Masukkan password baru"
                                class="form-input pr-10 @error('password') border-red-400 @enderror">
                         <button type="button" @click="show = !show"
@@ -70,7 +70,7 @@
                         Konfirmasi Password <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <input :type="show2 ? 'text' : 'password'" name="password_confirmation" required
+                        <input :type="show2 ? 'text' : 'password'" name="password_confirmation" id="input-confirm"
                                placeholder="Ulangi password baru"
                                class="form-input pr-10">
                         <button type="button" @click="show2 = !show2"
@@ -108,4 +108,37 @@
             </a>
         </div>
 </div>
+@push('scripts')
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('input-password');
+    const confirm  = document.getElementById('input-confirm');
+
+    document.querySelectorAll('.err-msg').forEach(el => el.remove());
+    document.querySelectorAll('.form-input').forEach(el => el.classList.remove('border-red-400'));
+
+    let valid = true;
+
+    if (!password.value.trim()) {
+        e.preventDefault();
+        valid = false;
+        password.classList.add('border-red-400');
+        const msg = document.createElement('p');
+        msg.className = 'mt-1 text-xs text-red-600 err-msg';
+        msg.textContent = 'Password baru wajib diisi.';
+        password.closest('div').appendChild(msg);
+    }
+
+    if (!confirm.value.trim()) {
+        e.preventDefault();
+        valid = false;
+        confirm.classList.add('border-red-400');
+        const msg = document.createElement('p');
+        msg.className = 'mt-1 text-xs text-red-600 err-msg';
+        msg.textContent = 'Konfirmasi password wajib diisi.';
+        confirm.closest('div').appendChild(msg);
+    }
+});
+</script>
+@endpush
 @endsection
