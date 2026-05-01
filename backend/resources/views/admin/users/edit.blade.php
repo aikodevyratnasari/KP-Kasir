@@ -74,7 +74,7 @@
             </div>
 
             {{-- Tombol aksi — TIDAK ada <form> lain di sini --}}
-            <div class="flex items-center justify-between mt-6 gap-3">
+            <div class="flex items-center mt-6 gap-3 justify-end">
                 <div class="flex items-center gap-2">
                     <a href="{{ route('admin.users.reset-password', $user) }}"
                        onclick="return confirm('Reset password {{ addslashes($user->name) }}?\nAnda akan diarahkan ke halaman reset password.')"
@@ -84,19 +84,6 @@
                        onmouseout="this.style.backgroundColor='white';">
                         Ubah Password
                     </a>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    @if($user->id !== auth()->id())
-                    <button type="button"
-                            onclick="confirmDelete()"
-                            class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-                            style="border: 1.5px solid #dc2626; background-color: #dc2626; color: white;"
-                            onmouseover="this.style.backgroundColor='#b91c1c';"
-                            onmouseout="this.style.backgroundColor='#dc2626';">
-                        Hapus User
-                    </button>
-                    @endif
                 </div>
             </div>
         </form>

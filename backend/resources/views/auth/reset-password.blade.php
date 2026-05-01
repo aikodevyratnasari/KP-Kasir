@@ -43,10 +43,10 @@
                    required autocomplete="new-password" placeholder="Ulangi password baru"
                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
-
         <button type="submit"
                 class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
             Simpan Password Baru
         </button>
     </form>
 </x-guest-layout>
+

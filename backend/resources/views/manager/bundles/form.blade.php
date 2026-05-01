@@ -14,7 +14,7 @@
 
         {{-- INFO PAKET --}}
         <div class="card space-y-4 border-b border-gray-200 pb-4">
-            <h3 class="font-semibold text-gray-800 border-b border-gray-100 pb-3">Informasi Paket</h3>
+            <h3 class="font-semibold text-gray-800 border-b border-gray-200 pb-1">Informasi Paket</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Paket <span class="text-red-500">*</span></label>
@@ -27,7 +27,7 @@
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi <span class="text-gray-400 font-normal text-xs">(opsional)</span></label>
                     <textarea name="description" rows="2" class="form-input"
-                              placeholder="Ceritakan keunggulan paket ini...">{{ old('description', $bundle->description ?? '') }}</textarea>
+                              placeholder="Ceritakan keunggulan paket ini">{{ old('description', $bundle->description ?? '') }}</textarea>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Berlaku Mulai <span class="text-gray-400 font-normal text-xs">(opsional)</span></label>
@@ -67,22 +67,24 @@
                         <svg id="img-placeholder" class="w-8 h-8 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     @endif
                 </div>
-                <div class="flex flex-col gap-1.5">
-                    <input type="file" name="image" id="imageInput" accept="image/jpeg,image/png,image/webp"
-                           onchange="previewBundleImage(this)" class="hidden">
-                    <button type="button" onclick="document.getElementById('imageInput').click()"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
-                        style="background:#2D54BF; color:white; border:1px solid #2D54BF;"
-                        onmouseover="this.style.backgroundColor='#1e3d8f'"
-                        onmouseout="this.style.backgroundColor='#2D54BF'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4l4 4"/></svg>
-                        Upload Foto
-                    </button>
-                    <span id="fileName" class="text-xs text-gray-400">
-                        {{ isset($bundle) && $bundle->image ? basename($bundle->image) : 'Belum ada file' }}
-                    </span>
-                    <span class="text-xs text-gray-400">JPG, PNG, WebP · maks. 2MB</span>
-                </div>
+                <div class="flex flex-col gap-1.5 w-fit">
+                            <input type="file" name="image" id="imageInput" accept="image/jpeg,image/png,image/webp"
+                                   onchange="previewBundleImage(this); document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : 'Belum ada file dipilih'"
+                                   class="hidden">
+                            <button type="button"
+                                onclick="document.getElementById('imageInput').click()"
+                                class="w-fit inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors mt-4"
+                                style="border: 1px solid #2D54BF; background-color: #2D54BF; color: white;"
+                                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                                onmouseout="this.style.backgroundColor='#2D54BF'">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4l4 4"/>
+                                </svg>
+                                Upload
+                            </button>
+                            <span id="fileName" class="text-xs text-gray-500">Belum ada file dipilih</span>
+                            <span class="text-xs text-gray-400">JPG, PNG, WebP, maks. 2MB</span>
+                        </div>
             </div>
         </div>
 
@@ -95,77 +97,104 @@
                 </div>
                 <button type="button"
                     onclick="window.dispatchEvent(new CustomEvent('open-product-picker'))"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
-                    style="background:#f0f9ff; color:#0284c7; border:1px solid #bae6fd;"
-                    onmouseover="this.style.background='#e0f2fe';"
-                    onmouseout="this.style.background='#f0f9ff';">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        style="border: 1.5px solid #c4b5fd; background-color: #ede9fe; color: #7c3aed;"
+                            onmouseover="this.style.backgroundColor='#7c3aed'; this.style.color='white'; this.style.borderColor='#7c3aed';"
+                            onmouseout="this.style.backgroundColor='#ede9fe'; this.style.color='#7c3aed'; this.style.borderColor='#c4b5fd';">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"/>
+                    <circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
                     Tambah Produk
                 </button>
             </div>
 
-            <div x-show="selectedItems.length === 0"
-                 class="text-center py-8 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
-                Belum ada produk. Klik "Tambah Produk" untuk memilih.
-            </div>
-
             <div x-show="selectedItems.length > 0" class="space-y-2">
-                <div class="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-500 uppercase px-2">
-                    <div class="col-span-5">Produk</div>
-                    <div class="col-span-3">Varian</div>
-                    <div class="col-span-2 text-center">Qty</div>
-                    <div class="col-span-1 text-right">Harga</div>
-                    <div class="col-span-1"></div>
+                <div class="gap-2 text-xs font-semibold text-gray-500 uppercase px-3"
+                    style="display:grid; grid-template-columns: 2.5fr 2.5fr 90px 80px 24px;">
+                    <div>Produk</div>
+                    <div>Varian</div>
+                    <div style="text-align:center;">Qty</div>
+                    <div style="text-align:left; padding-left:20px;">Harga</div>
+                    <div></div>
                 </div>
                 <template x-for="(item, idx) in selectedItems" :key="item.key">
-                    <div class="grid grid-cols-12 gap-2 items-center bg-gray-50 rounded-xl px-3 py-2.5">
+                    <div class="items-center rounded-xl px-3 py-2.5"
+                        style="display:grid; grid-template-columns: 2.5fr 2.5fr 90px 80px 24px; gap:8px; background:#f9fafb; border:1px solid #e5e7eb;">
                         <input type="hidden" :name="`items[${idx}][product_id]`"         :value="item.product_id">
                         <input type="hidden" :name="`items[${idx}][product_variant_id]`"  :value="item.variant_id ?? ''">
                         <input type="hidden" :name="`items[${idx}][quantity]`"            :value="item.quantity">
-                        <div class="col-span-5">
+                        <div>
                             <p class="text-sm font-medium text-gray-900 leading-tight" x-text="item.product_name"></p>
-                        </div>
-                        <div class="col-span-3">
-                            <select :name="`items[${idx}][product_variant_id]`"
-                                    x-model="item.variant_id"
-                                    @change="onVariantChange(idx)"
-                                    class="form-input text-xs py-1">
-                                <option value="">Tidak ada</option>
-                                <template x-for="v in item.variants" :key="v.id">
-                                    <option :value="v.id" x-text="v.name + (Number(v.price_adjustment) !== 0 ? ' (' + (Number(v.price_adjustment) > 0 ? '+' : '') + 'Rp' + formatRp(v.price_adjustment) + ')' : '')"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div class="col-span-2 flex items-center justify-center gap-1">
-                            <button type="button"
-                                    @click="item.quantity > 1 ? item.quantity-- : null; recalcNormal()"
-                                    style="width:22px;height:22px;border-radius:4px;background:#e5e7eb;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;"
-                                    onmouseover="this.style.background='#d1d5db'" onmouseout="this.style.background='#e5e7eb'">−</button>
-                            <span class="text-sm font-semibold text-gray-800 w-6 text-center" x-text="item.quantity"></span>
-                            <button type="button"
-                                    @click="item.quantity++; recalcNormal()"
-                                    style="width:22px;height:22px;border-radius:4px;background:#e5e7eb;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;"
-                                    onmouseover="this.style.background='#d1d5db'" onmouseout="this.style.background='#e5e7eb'">+</button>
-                        </div>
-                        <div class="col-span-1 text-right">
-                            <span class="text-xs font-semibold text-gray-700" x-text="'Rp '+formatRp(item.effectivePrice * item.quantity)"></span>
-                        </div>
-                        <div class="col-span-1 flex justify-center">
-                            <button type="button" @click="removeItem(idx)"
-                                    style="color:#9ca3af;background:none;border:none;cursor:pointer;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;"
-                                    onmouseover="this.style.background='#fee2e2';this.style.color='#ef4444';"
-                                    onmouseout="this.style.background='none';this.style.color='#9ca3af';">
-                                <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </button>
-                        </div>
                     </div>
-                </template>
+                <div x-data="{ open: false }" style="position:relative; width:85%; min-width:0;" @click.outside="open = false">
+    <input type="hidden" :name="`items[${idx}][product_variant_id]`" :value="item.variant_id ?? ''">
+    <button type="button"
+        @click="open = !open"
+        x-text="(() => {
+            const v = item.variants.find(v => String(v.id) === String(item.variant_id));
+            if (!v) return 'Tidak ada';
+            const adj = Number(v.price_adjustment);
+            return v.name.replace(/^\+\s*/, '') + (adj !== 0 ? ' (' + (adj > 0 ? '+' : '') + 'Rp' + formatRp(adj) + ')' : '');
+        })()"
+            style="width:100%; padding:5px 28px 5px 8px; font-size:12px; border-radius:8px; border:1px solid #d1d5db; background:white; color:#111827; cursor:pointer; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; position:relative;">
+    </button>
+    <span style="position:absolute; right:9px; top:50%; transform:translateY(-50%); pointer-events:none;">
+        <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;color:#6b7280;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </span>
+    <div x-show="open" x-cloak
+         style="position:absolute; top:calc(85% + 4px); left:0; right:0; background:white; border:1px solid #d1d5db; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:50; overflow:hidden; max-height:180px; overflow-y:auto;">
+        <div @click="item.variant_id = null; onVariantChange(idx); open = false;"
+     class="varian-option"
+     :class="!item.variant_id ? 'active' : ''">
+    Tidak ada
+</div>
+        <template x-for="v in item.variants" :key="v.id">
+            <div @click="item.variant_id = v.id; onVariantChange(idx); open = false;"
+     class="varian-option"
+     :class="String(v.id) === String(item.variant_id) ? 'active' : ''"
+     x-text="v.name.replace(/^\+\s*/, '') + (Number(v.price_adjustment) !== 0 ? ' (' + (Number(v.price_adjustment) > 0 ? '+' : '') + 'Rp' + formatRp(v.price_adjustment) + ')' : '')">
+</div>
+        </template>
+    </div>
+</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                <button type="button"
+                    @click="item.quantity > 1 ? item.quantity-- : null; recalcNormal()"
+                    style="width:22px;height:22px;border-radius:5px;background:#e5e7eb;border:0.5px solid #d1d5db;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;"
+                    onmouseover="this.style.background='#d1d5db'" onmouseout="this.style.background='#e5e7eb'">
+                    <span style="position:relative; top:-1px; line-height:1;">−</span>
+                </button>
+
+                <span class="text-sm font-semibold text-gray-800" style="min-width:16px; text-align:center;" x-text="item.quantity"></span>
+
+                <button type="button"
+                    @click="item.quantity++; recalcNormal()"
+                    style="width:22px;height:22px;border-radius:5px;background:#e5e7eb;border:0.5px solid #d1d5db;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;"
+                    onmouseover="this.style.background='#d1d5db'" onmouseout="this.style.background='#e5e7eb'">
+                    <span style="position:relative; top:-1px; line-height:1;">+</span>
+                </button>
             </div>
+            <div style="text-align:left; padding-left:20px;">
+                <span class="text-xs font-semibold text-gray-700" style="white-space:nowrap;" x-text="'Rp '+formatRp(item.effectivePrice * item.quantity)"></span>
+            </div>
+            <div style="display:flex; justify-content:center;">
+                <button type="button" @click="removeItem(idx)"
+                        style="color:#9ca3af;background:none;border:none;cursor:pointer;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;"
+                        onmouseover="this.style.background='#fee2e2';this.style.color='#ef4444';"
+                        onmouseout="this.style.background='none';this.style.color='#9ca3af';">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+    </template>
+</div>
         </div>
 
         {{-- HARGA BUNDLE --}}
         <div class="card mt-4 space-y-4">
-            <h3 class="font-semibold text-gray-800">Harga Paket</h3>
+            <h3 class="font-semibold text-gray-800 border-b border-gray-200 pb-1">Harga Paket</h3>
             <div x-show="selectedItems.length > 0"
                  style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding:14px 16px;">
                 <div class="flex justify-between items-center mb-2">
@@ -197,10 +226,10 @@
                     <button type="button"
                             @click="bundlePrice = normalTotal"
                             x-show="selectedItems.length > 0"
-                            class="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md transition-colors"
-                            style="background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;"
-                            onmouseover="this.style.background='#dbeafe';"
-                            onmouseout="this.style.background='#eff6ff';">
+                            class="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-full transition-colors"
+                            style="background:#ede9fe; color:#7c3aed; border:1.5px solid #c4b5fd;"
+                            onmouseover="this.style.background='#7c3aed'; this.style.color='white'; this.style.borderColor='#7c3aed';"
+                            onmouseout="this.style.background='#ede9fe'; this.style.color='#7c3aed'; this.style.borderColor='#c4b5fd';">
                         Pakai total normal
                     </button>
                 </div>
@@ -212,7 +241,7 @@
         </div>
 
         {{-- TOMBOL SIMPAN --}}
-        <div class="flex gap-3 mt-4">
+        <div class="flex justify-between mt-4">
             <a href="{{ route('manager.products.index') }}"
                class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg"
                style="border:1.5px solid #dcdcdc; background:white; color:#374151;"
@@ -226,7 +255,6 @@
                     style="background-color:#2D54BF; border:1px solid #2D54BF;"
                     onmouseover="if(!this.disabled)this.style.backgroundColor='#1e3d8f';"
                     onmouseout="this.style.backgroundColor='#2D54BF';">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 {{ isset($bundle) ? 'Simpan Perubahan' : 'Buat Paket' }}
             </button>
         </div>
@@ -318,7 +346,24 @@
 }
 .picker-row:hover .picker-badge { background:#7c3aed; color:#fff; border-color:#7c3aed; transform:scale(1.05); }
 .picker-row:active .picker-badge { transform:scale(0.97); }
-</style>
+select {
+    border-radius: 8px !important;
+}
+.varian-option {
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #111827;
+    transition: background 0.1s;
+}
+.varian-option:hover {
+    background: #f3f4f6 !important;
+}
+.varian-option.active {
+    background: #ede9fe !important;
+    color: #7c3aed !important;
+    font-weight: 500;
+}
 @endpush
 
 @push('scripts')

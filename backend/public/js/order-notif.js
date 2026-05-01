@@ -159,7 +159,7 @@
             ? `${order.customer_name}${tableInfo} — siap disajikan!`
             : `Pesanan #${order.order_number}${tableInfo} siap disajikan!`;
 
-        const notif = new Notification('🍽️ Pesanan Siap!', {
+        const notif = new Notification('Pesanan Siap!', {
             body,
             icon: '/favicon.ico',
             tag: 'ready-' + order.id,
@@ -219,7 +219,7 @@
                     </svg>
                 </div>
                 <div class="banner-text">
-                    <p class="banner-title">🍽️ Pesanan Siap Disajikan!</p>
+                    <p class="banner-title">Pesanan Siap Disajikan!</p>
                     <p class="banner-subtitle">${customerLabel} · ${tableInfo}</p>
                     <div class="banner-order">#${order.order_number}</div>
                 </div>

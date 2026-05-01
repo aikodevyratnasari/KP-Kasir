@@ -28,9 +28,10 @@
                         <input type="email" value="{{ $user->email }}" disabled
                                class="form-input flex-1 bg-gray-50 text-gray-400 cursor-not-allowed">
                         @if($user->hasVerifiedEmail())
-                            <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700 whitespace-nowrap">
-                                Terverifikasi
-                            </span>
+    <span class="inline-flex items-center px-3 py-1.5 text-xs font-bold text-white whitespace-nowrap"
+      style="background:#16a34a; border-radius:999px;">
+    Verified
+</span>
                         @else
                             <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-yellow-100 text-yellow-700 whitespace-nowrap">
                                 ⚠ Belum diverifikasi
@@ -73,7 +74,7 @@
 
         @if(session('status') === 'password-updated')
             <div class="mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">
-                ✅ Password berhasil diperbarui.
+                Password berhasil diperbarui.
             </div>
         @endif
 
