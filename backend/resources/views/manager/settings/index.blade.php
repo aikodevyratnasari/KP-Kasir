@@ -10,7 +10,7 @@
 
         {{-- Info Toko --}}
         <div class="card space-y-4 mb-5">
-            <h3 class="font-semibold text-gray-800">Informasi Toko</h3>
+            <h3 class="font-semibold text-gray-800 border-b border-gray-200">Informasi Toko</h3>
             <div class="grid grid-cols-2 gap-4">
                 <div class="col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Toko <span class="text-red-500">*</span></label>
@@ -40,7 +40,7 @@
         <div class="card space-y-4 mb-5">
             <div>
                 <h3 class="font-semibold text-gray-800">Pengaturan Pajak</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Pajak diterapkan otomatis saat kasir membuat pesanan</p>
+                <p class="text-xs text-gray-500 mt-0.5 ">Pajak diterapkan otomatis saat kasir membuat pesanan</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4 items-end">
@@ -89,9 +89,28 @@
             </div>
         </div>
 
-        {{-- Struk --}}
+        {{-- Alur Pesanan --}}
         <div class="card space-y-4 mb-5">
-            <h3 class="font-semibold text-gray-800">Pengaturan Struk</h3>
+            <div>
+                <h3 class="font-semibold text-gray-800">Alur Pesanan</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Atur apakah status dimasak dan siap ditangani oleh user kitchen atau langsung oleh kasir</p>
+            </div>
+
+            <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50 cursor-pointer">
+                <input type="hidden" name="has_kitchen" value="0">
+                <input type="checkbox" name="has_kitchen" value="1"
+                       class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                       {{ old('has_kitchen', $store->has_kitchen ?? true) ? 'checked' : '' }}>
+                <span>
+                    <span class="block text-sm font-semibold text-gray-800">Gunakan user kitchen</span>
+                    <span class="block text-xs text-gray-500 mt-0.5">Jika aktif, pesanan lunas masuk ke display dapur. Jika nonaktif, kasir menangani status Dimasak dan Siap Disajikan dari detail pesanan.</span>
+                </span>
+            </label>
+        </div>
+
+        {{-- Struk --}}
+        <div class="card space-y-4 mb-5 ">
+            <h3 class="font-semibold text-gray-800 border-b border-gray-200">Pengaturan Struk</h3>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Footer Struk</label>
                 <textarea name="receipt_footer" rows="3" class="form-input"

@@ -43,10 +43,11 @@
     
 {{-- Logo D + tulisan DePOS (hanya saat terbuka) --}}
     <a x-show="open" href="{{ auth()->user()->dashboardRoute() }}" class="flex items-center gap-2 min-w-0 overflow-hidden">
-        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0"
-             style="background-color: rgba(255,255,255,0.2); color: white;">D</div>
-        <span class="font-bold text-base whitespace-nowrap overflow-hidden" style="color: #ffffff;">DePOS</span>
-    </a>
+    <div class="w-6 h-6 rounded-lg overflow-hidden flex-shrink-0">
+        <img src="{{ asset('images/image.png') }}" alt="DePOS Logo" class="w-full h-full object-contain">
+    </div>
+    <span class="font-bold text-base whitespace-nowrap overflow-hidden" style="color: #ffffff;">DePOS</span>
+</a>
     
 {{-- Hamburger button (selalu tampil, buat buka/tutup) --}}
     {{-- Hamburger button (selalu tampil) --}}
@@ -68,7 +69,10 @@
 
         {{-- NAV --}}
         <nav class="sidebar-nav py-2">
-            @php $role = auth()->user()->role->slug; @endphp
+            @php
+                $role = auth()->user()->role->slug;
+                $hasKitchen = auth()->user()->store?->has_kitchen ?? true;
+            @endphp
 
             {{-- MANAGER --}}
             @if(in_array($role, ['admin', 'manager']))
@@ -80,7 +84,7 @@
                 @foreach([
     ['manager.dashboard',        'manager.dashboard',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>', 'Dashboard'],
     ['manager.products.index',   'manager.products.*',   '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>', 'Menu'],
-    ['manager.categories.index', 'manager.categories.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg>', 'Kategori'],
+    ['manager.categories.index', 'manager.categories.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><polyline points="2 15.5 12 22 22 15.5"/><polyline points="2 12 12 18.5 22 12"/></svg>', 'Kategori'],
     ['manager.tables.index', 'manager.tables.*', '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="20" height="3" rx="0.5"/><rect x="11" y="6" width="2" height="5"/><path d="M4 18a8 8 0 0 1 16 0H4z"/><path d="M7 18a5 5 0 0 1 10 0H7z" fill="rgba(255,255,255,0.3)"/></svg>', 'Kelola Meja'],
     [
     'manager.settings.index',
@@ -213,7 +217,7 @@
             @endif
 
             {{-- DAPUR --}}
-            @if($role === 'kitchen_staff')
+            @if($role === 'kitchen_staff' && $hasKitchen)
                 <div x-show="open" class="px-4 pt-4 pb-1">
                     <p class="text-xs font-semibold uppercase tracking-wider" style="color: rgba(255,255,255,0.5);">Dapur</p>
                 </div>

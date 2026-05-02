@@ -5,16 +5,7 @@
 @section('content')
 @php $taxRate = $order->tax_rate; @endphp
 <div style="display:flex; gap:0; height:calc(100vh - 64px); overflow:hidden;"
-     x-data="orderForm({{ json_encode($order->items->map(fn($i) => [
-         'key'          => 'p_' . $i->product_id . ($i->variant_id ? '_v_' . $i->variant_id : ''),
-         'product_id'   => $i->product_id,
-         'name'         => $i->product_name,
-         'price'        => (float) $i->unit_price,
-         'quantity'     => $i->quantity,
-         'variant_id'   => $i->variant_id ?? null,
-         'variant_name' => ($i->variant_id && $i->variant) ? $i->variant->name : null,
-         'special_notes' => $i->special_notes ?? '',
-     ])) }}, {{ $taxRate }})" x-init="mounted()">
+     x-data="orderForm({{ json_encode($cartItems->values()) }}, {{ $taxRate }})" x-init="mounted()">
 
     {{-- ── KIRI: Form + Menu (scrollable) ── --}}
     <div style="flex:1; overflow-y:auto; padding:20px 16px 20px 0;">
@@ -60,6 +51,65 @@
             </div>
             
             {{-- ── Pilih Menu ── --}}
+            @if(isset($bundles) && $bundles->count() > 0)
+            <div style="margin-bottom:32px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-top:4px;">
+                    <span style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.09em; white-space:nowrap;">Paket Bundling</span>
+                    <div style="flex:1; height:1px; background:#e5e7eb;"></div>
+                    <span style="font-size:10px; color:#9ca3af; white-space:nowrap;">{{ $bundles->count() }} paket</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    @foreach($bundles as $bundle)
+                    @php
+                        $normalPrice = $bundle->normalPrice();
+                        $savings     = $bundle->savings();
+                    @endphp
+                    <div style="background:#fff; border:1.5px solid #e5e7eb; border-radius:12px; overflow:hidden; cursor:pointer; transition:border-color 0.15s, box-shadow 0.15s, transform 0.15s; user-select:none;"
+                         onmouseover="this.style.borderColor='#6366f1'; this.style.boxShadow='0 4px 12px rgba(99,102,241,0.12)'; this.style.transform='translateY(-2px)';"
+                         onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'; this.style.transform='none';"
+                         onmousedown="this.style.transform='scale(0.97)';"
+                         onmouseup="this.style.borderColor='#6366f1'; this.style.boxShadow='0 4px 12px rgba(99,102,241,0.12)'; this.style.transform='translateY(-2px)';"
+                         @click="addBundle({{ $bundle->id }}, '{{ addslashes($bundle->name) }}', {{ $bundle->bundle_price }}, {{ $normalPrice }}, {{ $savings }})">
+                        <div style="height:110px; background:#f8fafc; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center;">
+                            @if($bundle->image)
+                                <img src="{{ Storage::url($bundle->image) }}" alt="{{ $bundle->name }}"
+                                     style="width:100%; height:100%; object-fit:cover; display:block;">
+                            @else
+                                <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#d1d5db;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                                    </svg>
+                                </div>
+                            @endif
+                            <div style="position:absolute; top:6px; right:6px; background:#6366f1; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">PAKET</div>
+                            @if($savings > 0)
+                                <div style="position:absolute; top:6px; left:6px; background:#ef4444; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">
+                                    HEMAT {{ number_format($savings, 0, ',', '.') }}
+                                </div>
+                            @endif
+                        </div>
+                        <div style="padding:10px 12px 12px;">
+                            <p style="font-size:13px; font-weight:600; color:#111827; margin:0 0 3px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ $bundle->name }}</p>
+                            <p style="font-size:11px; color:#9ca3af; margin:0 0 6px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">
+                                {{ $bundle->items->map(fn($i) => $i->product->name . ' x' . $i->quantity)->join(' + ') }}
+                            </p>
+                            <span style="font-size:13px; font-weight:700; color:#4f46e5;">
+                                Rp {{ number_format($bundle->bundle_price, 0, ',', '.') }}
+                            </span>
+                            @if($savings > 0)
+                                <span style="font-size:10px; color:#9ca3af; text-decoration:line-through; display:block; margin-top:1px;">
+                                    Rp {{ number_format($normalPrice, 0, ',', '.') }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             @foreach($categories as $category)
                 @if($category->products->where('is_available', true)->count() > 0)
                 <div style="margin-bottom:32px;">
@@ -163,15 +213,34 @@
             <div class="space-y-2">
                 <template x-for="(item, index) in items" :key="item.key">
                     <div class="bg-gray-50 rounded-xl p-3">
-                        <input type="hidden" :name="'items['+index+'][product_id]'" :value="item.product_id" form="order-form">
-                        <input type="hidden" :name="'items['+index+'][quantity]'" :value="item.quantity" form="order-form">
-                        <template x-if="item.variant_id">
-                            <input type="hidden" :name="'items['+index+'][variant_id]'" :value="item.variant_id" form="order-form">
+                        <template x-if="!item.is_bundle">
+                            <span>
+                                <input type="hidden" :name="'items['+index+'][product_id]'" :value="item.product_id" form="order-form">
+                                <input type="hidden" :name="'items['+index+'][quantity]'" :value="item.quantity" form="order-form">
+                                <template x-if="item.variant_id">
+                                    <input type="hidden" :name="'items['+index+'][variant_id]'" :value="item.variant_id" form="order-form">
+                                </template>
+                            </span>
+                        </template>
+                        <template x-if="item.is_bundle">
+                            <span>
+                                <input type="hidden" :name="'items['+index+'][bundle_id]'" :value="item.bundle_id" form="order-form">
+                                <input type="hidden" :name="'items['+index+'][quantity]'" :value="item.quantity" form="order-form">
+                            </span>
                         </template>
                         <div class="flex items-start justify-between mb-1.5">
                             <div class="flex-1 leading-tight">
+                                <template x-if="item.is_bundle">
+                                    <span style="display:inline-flex; align-items:center; gap:3px; background:#ede9fe; color:#6d28d9; border:1px solid #c4b5fd; border-radius:6px; padding:1px 6px; font-size:10px; font-weight:700; margin-bottom:3px;">
+                                        PAKET
+                                    </span>
+                                </template>
                                 <p class="text-sm font-semibold text-gray-900" x-text="item.name"></p>
                                 <p x-show="item.variant_name" class="text-xs text-indigo-500 font-medium mt-0.5" x-text="item.variant_name"></p>
+                                <template x-if="item.is_bundle && item.savings > 0">
+                                    <p style="font-size:10px; color:#6d28d9; font-weight:600; margin-top:2px;"
+                                       x-text="'Hemat Rp ' + formatRp(item.savings)"></p>
+                                </template>
                             </div>
                             <button type="button" @click="removeItem(index)"
                                 class="ml-2 flex-shrink-0 transition-colors"
@@ -195,7 +264,13 @@
                                     onmouseover="this.style.backgroundColor='#f3f4f6'"
                                     onmouseout="this.style.backgroundColor='white'">+</button>
                             </div>
-                            <span class="text-sm font-bold text-indigo-600" x-text="'Rp ' + formatRp(item.price * item.quantity)"></span>
+                            <div style="text-align:right;">
+                                <span class="text-sm font-bold text-indigo-600" x-text="'Rp ' + formatRp(item.price * item.quantity)"></span>
+                                <template x-if="item.is_bundle && item.savings > 0">
+                                    <span style="display:block; font-size:10px; color:#9ca3af; text-decoration:line-through;"
+                                          x-text="'Rp ' + formatRp(item.normalPrice * item.quantity)"></span>
+                                </template>
+                            </div>
                         </div>
                         <div class="mt-2">
                             <input type="text" :name="'items['+index+'][special_notes]'" form="order-form"
@@ -354,14 +429,33 @@ function orderForm(initial = [], taxRate) {
             const key = 'p_' + id;
             const ex  = this.items.find(i => i.key === key);
             if (ex) { ex.quantity++; return; }
-            this.items.push({ key, product_id: id, name, price: Number(price), quantity: 1, variant_id: null, variant_name: null, special_notes: '' });
+            this.items.push({ key, product_id: id, name, price: Number(price), quantity: 1, variant_id: null, variant_name: null, special_notes: '', is_bundle: false });
         },
         addItemWithVariant(productId, productName, basePrice, variantId, variantName, priceAdjustment) {
             const price = Number(basePrice) + (Number(priceAdjustment) || 0);
             const key   = 'p_' + productId + '_v_' + variantId;
             const ex    = this.items.find(i => i.key === key);
             if (ex) { ex.quantity++; return; }
-            this.items.push({ key, product_id: productId, name: productName, price, quantity: 1, variant_id: variantId, variant_name: variantName, special_notes: '' });
+            this.items.push({ key, product_id: productId, name: productName, price, quantity: 1, variant_id: variantId, variant_name: variantName, special_notes: '', is_bundle: false });
+        },
+        addBundle(bundleId, bundleName, bundlePrice, normalPrice, savings) {
+            const key = 'bundle_' + bundleId;
+            const ex  = this.items.find(i => i.key === key);
+            if (ex) { ex.quantity++; return; }
+            this.items.push({
+                key,
+                product_id: null,
+                bundle_id: bundleId,
+                name: bundleName,
+                price: Number(bundlePrice),
+                normalPrice: Number(normalPrice),
+                savings: Number(savings),
+                quantity: 1,
+                variant_id: null,
+                variant_name: null,
+                special_notes: '',
+                is_bundle: true,
+            });
         },
         removeItem(index) { this.items.splice(index, 1); },
         formatRp(val) { return new Intl.NumberFormat('id-ID').format(Math.round(val)); },

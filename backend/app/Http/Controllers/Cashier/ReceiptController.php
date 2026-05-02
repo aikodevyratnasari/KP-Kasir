@@ -14,13 +14,13 @@ class ReceiptController extends Controller
 {
     public function show(Payment $payment): View
     {
-        $payment->load('order.items', 'order.table', 'cashier', 'order.cashier', 'order.store');
+        $payment->load('order.items.bundlePackage.items.product', 'order.items.bundlePackage.items.variant', 'order.table', 'cashier', 'order.cashier', 'order.store');
         return view('cashier.receipts.show', compact('payment'));
     }
 
     public function print(Payment $payment): View
     {
-        $payment->load('order.items', 'order.table', 'order.store', 'order.cashier');
+        $payment->load('order.items.bundlePackage.items.product', 'order.items.bundlePackage.items.variant', 'order.table', 'order.store', 'order.cashier');
         return view('cashier.receipts.print', compact('payment'));
     }
 
@@ -37,7 +37,7 @@ class ReceiptController extends Controller
             'email.email'    => 'Format email tidak valid.',
         ]);
 
-        $payment->load('order.items', 'order.table', 'order.store', 'order.cashier');
+        $payment->load('order.items.bundlePackage.items.product', 'order.items.bundlePackage.items.variant', 'order.table', 'order.store', 'order.cashier');
 
         // $recipientName = $payment->order->customer_name ?? '';
 

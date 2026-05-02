@@ -232,6 +232,12 @@ class OrderService
             "Tidak dapat pindah dari {$order->status} ke {$newStatus}."
         );
 
+        abort_if(
+            $newStatus === 'cooking' && ! $order->isFullyPaid(),
+            422,
+            'Pesanan harus lunas sebelum mulai dimasak.'
+        );
+
         $old        = $order->status;
         $timestamps = ['cooking' => 'cooking_at', 'ready' => 'ready_at', 'completed' => 'completed_at'];
 

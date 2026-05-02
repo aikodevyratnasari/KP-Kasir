@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="space-y-6 max-w-3xl mx-auto" id="order-detail" data-order-id="{{ $order->id }}">
+    @php $hasKitchen = $order->store?->has_kitchen ?? true; @endphp
 
     {{-- Header --}}
     <div class="flex items-center justify-between">
@@ -28,7 +29,7 @@
             $steps = [
                 ['key' => 'pending',   'label' => 'Pesanan Dibuat'],
                 ['key' => 'paid',      'label' => 'Lunas'],
-                ['key' => 'cooking',   'label' => 'Dimasak Dapur'],
+                ['key' => 'cooking',   'label' => $hasKitchen ? 'Dimasak Dapur' : 'Dimasak'],
                 ['key' => 'ready',     'label' => 'Siap Disajikan'],
                 ['key' => 'completed', 'label' => 'Selesai'],
             ];
@@ -66,6 +67,52 @@
     @endif
 
     {{-- ── AKSI: Selesai & Meja Kosong ── --}}
+    {{-- Aksi Produksi oleh Kasir saat tidak memakai user kitchen --}}
+    @if(!$hasKitchen && !$order->isCancelled() && !$order->isCompleted() && $order->isFullyPaid())
+        @if($order->status === 'pending')
+            <div class="bg-blue-50 border border-blue-300 rounded-xl px-4 py-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                        <p class="font-semibold text-blue-800 flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                            Pesanan sudah lunas
+                        </p>
+                        <p class="text-sm text-blue-600 mt-0.5">Kasir dapat menandai pesanan mulai dimasak tanpa display dapur</p>
+                    </div>
+                    <form method="POST" action="{{ route('cashier.orders.status', $order) }}" class="flex-shrink-0">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="status" value="cooking">
+                        <button type="submit" class="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                                style="background-color:#2D54BF; border:1px solid #2D54BF;"
+                                onmouseover="this.style.backgroundColor='#1e3d8f'"
+                                onmouseout="this.style.backgroundColor='#2D54BF'">
+                            Mulai Dimasak
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @elseif($order->status === 'cooking')
+            <div class="bg-orange-50 border border-orange-300 rounded-xl px-4 py-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                        <p class="font-semibold text-orange-800 flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m16 6-4 4-4-4"/></svg>
+                            Pesanan sedang dimasak
+                        </p>
+                        <p class="text-sm text-orange-600 mt-0.5">Tandai siap jika pesanan sudah dapat disajikan atau diambil</p>
+                    </div>
+                    <form method="POST" action="{{ route('cashier.orders.status', $order) }}" class="flex-shrink-0">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="status" value="ready">
+                        <button type="submit" class="btn-success w-full sm:w-auto justify-center inline-flex items-center gap-1.5">
+                            Tandai Siap
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
+    @endif
+
     <div id="complete-action">
         @if($order->status === 'ready' && $order->table_id)
             <div class="bg-green-50 border border-green-300 rounded-xl px-4 py-4">
@@ -131,7 +178,7 @@
                     <dd class="text-right break-words leading-relaxed text-justify" style="max-width:65%;">{{ $order->notes }}</dd>
                 </div>
                 @endif
-                @if($order->sent_to_kitchen_at)
+                @if($hasKitchen && $order->sent_to_kitchen_at)
                 <div class="flex justify-between"><dt class="text-gray-500">Masuk Dapur</dt><dd class="text-indigo-600 font-medium">{{ $order->sent_to_kitchen_at->format('H:i') }}</dd></div>
                 @endif
             </dl>
@@ -252,6 +299,49 @@
     {{-- Items --}}
     <div class="card">
         <h2 class="font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-3">Item Pesanan</h2>
+
+        @php
+            $receiptItems = collect();
+
+            foreach ($order->items->whereNull('bundle_id') as $item) {
+                $receiptItems->push(['type' => 'product', 'item' => $item]);
+            }
+
+            foreach ($order->items->whereNotNull('bundle_id')->groupBy('bundle_id') as $bundleId => $bundleGroupItems) {
+                $bundle = $bundleGroupItems->first()->bundlePackage;
+                if (! $bundle) {
+                    foreach ($bundleGroupItems as $item) {
+                        $receiptItems->push(['type' => 'product', 'item' => $item]);
+                    }
+                    continue;
+                }
+
+                $bundleQty = $bundle->items
+                    ->map(function ($bundleItem) use ($bundleGroupItems) {
+                        $orderItem = $bundleGroupItems->first(fn($item) => (int) $item->product_id === (int) $bundleItem->product_id
+                            && (int) ($item->variant_id ?? 0) === (int) ($bundleItem->product_variant_id ?? 0));
+                        if (! $orderItem || $bundleItem->quantity <= 0) return null;
+                        return intdiv((int) $orderItem->quantity, (int) $bundleItem->quantity);
+                    })
+                    ->filter(fn($qty) => $qty !== null && $qty > 0)
+                    ->min() ?? 1;
+
+                $subtotal    = (float) $bundleGroupItems->sum('subtotal');
+                $normalTotal = $bundle->normalPrice() * $bundleQty;
+
+                $receiptItems->push([
+                    'type'          => 'bundle',
+                    'bundle'        => $bundle,
+                    'quantity'      => $bundleQty,
+                    'unit_price'    => $bundleQty > 0 ? $subtotal / $bundleQty : $subtotal,
+                    'subtotal'      => $subtotal,
+                    'normal_total'  => $normalTotal,
+                    'savings'       => max(0, $normalTotal - $subtotal),
+                    'special_notes' => $bundleGroupItems->first()->special_notes,
+                ]);
+            }
+        @endphp
+
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-gray-500 pb-3">
@@ -262,31 +352,72 @@
                 </tr>
             </thead>
             <tbody>
-            @foreach($order->items as $item)
-                <tr class="border-b border-gray-50">
-                    <td class="py-2">
-                        <p class="font-medium text-gray-900">{{ $item->product_name }}</p>
-                        @if($item->variant_name)
-                            <p class="text-xs text-indigo-500">{{ $item->variant_name }}</p>
-                        @endif
-                        @if($item->discount_label && $item->discount_amount > 0)
-                            <p class="text-xs text-red-500">🏷 {{ $item->discount_label }}</p>
-                        @endif
-                        @if($item->special_notes)
-                            <p class="text-xs text-gray-400">{{ $item->special_notes }}</p>
-                        @endif
-                    </td>
-                    <td class="py-2 text-center">{{ $item->quantity }}</td>
-                    <td class="py-2 text-right">
-                        @if($item->discount_amount > 0)
-                            <span class="text-xs text-gray-400 line-through block">
-                                Rp {{ number_format($item->original_price, 0, ',', '.') }}
-                            </span>
-                        @endif
-                        Rp {{ number_format($item->unit_price, 0, ',', '.') }}
-                    </td>
-                    <td class="py-2 text-right font-semibold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
-                </tr>
+            @foreach($receiptItems as $ri)
+                @if($ri['type'] === 'bundle')
+                    @php $bundle = $ri['bundle']; @endphp
+                    <tr class="border-b border-gray-50">
+                        <td class="py-2 align-top">
+                            <p class="font-medium text-gray-900">
+                                {{ $bundle->name }}
+                                <span class="ml-1 inline-block px-1.5 py-0.5 rounded text-xs font-semibold align-middle"
+                                      style="background:#f0fdf4; border:1px solid #86efac; color:#16a34a;">Bundle</span>
+                            </p>
+                            <div class="mt-1 pl-2 border-l-2 border-green-200">
+                                @foreach($bundle->items as $bi)
+                                    <p class="text-xs text-gray-500">
+                                        • {{ $bi->product->name }}
+                                        @if($bi->variant)
+                                            <span class="text-indigo-400">({{ $bi->variant->name }})</span>
+                                        @endif
+                                        ×{{ $bi->quantity }}
+                                    </p>
+                                @endforeach
+    
+                            </div>
+                            @if($ri['special_notes'])
+                                <p class="text-xs text-gray-400 mt-1 italic">* {{ $ri['special_notes'] }}</p>
+                            @endif
+                        </td>
+                        <td class="py-2 text-center align-top">{{ $ri['quantity'] }}</td>
+                        <td class="py-2 text-right align-top">
+                            @if($ri['savings'] > 0)
+                                <span class="text-xs text-gray-400 line-through block">
+                                    Rp {{ number_format($ri['quantity'] > 0 ? $ri['normal_total'] / $ri['quantity'] : $ri['normal_total'], 0, ',', '.') }}
+                                </span>
+                            @endif
+                            Rp {{ number_format($ri['unit_price'], 0, ',', '.') }}
+                        </td>
+                        <td class="py-2 text-right font-semibold align-top">
+                            Rp {{ number_format($ri['subtotal'], 0, ',', '.') }}
+                        </td>
+                    </tr>
+                @else
+                    @php $item = $ri['item']; @endphp
+                    <tr class="border-b border-gray-50">
+                        <td class="py-2">
+                            <p class="font-medium text-gray-900">{{ $item->product_name }}</p>
+                            @if($item->variant_name)
+                                <p class="text-xs text-indigo-500">{{ $item->variant_name }}</p>
+                            @endif
+                            @if($item->discount_label && $item->discount_amount > 0)
+                                <p class="text-xs text-red-500">🏷 {{ $item->discount_label }}</p>
+                            @endif
+                            @if($item->special_notes)
+                                <p class="text-xs text-gray-400">{{ $item->special_notes }}</p>
+                            @endif
+                        </td>
+                        <td class="py-2 text-center">{{ $item->quantity }}</td>
+                        <td class="py-2 text-right">
+                            @if($item->discount_amount > 0)
+                                <span class="text-xs text-gray-400 line-through block">
+                                    Rp {{ number_format($item->original_price, 0, ',', '.') }}
+                                </span>
+                            @endif
+                            Rp {{ number_format($item->unit_price, 0, ',', '.') }}
+                        </td>
+                        <td class="py-2 text-right font-semibold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                    </tr>
+                @endif
             @endforeach
                 <tr class="border-t border-gray-100">
                     <td colspan="3" class="py-1.5 text-right text-xs text-gray-400">Subtotal</td>
@@ -310,7 +441,7 @@
             $canEdit        = $order->isPending() && ! $order->isFullyPaid();
         @endphp
 
-        @if($kitchenOrder && ! $order->isCancelled() && ! $order->isCompleted())
+        @if($hasKitchen && $kitchenOrder && ! $order->isCancelled() && ! $order->isCompleted())
             @php
                 $kitchenStatusConfig = [
                     'waiting_payment' => ['label' => 'Menunggu Pembayaran', 'bg' => '#fefce8', 'border' => '#fde047', 'text' => '#854d0e'],

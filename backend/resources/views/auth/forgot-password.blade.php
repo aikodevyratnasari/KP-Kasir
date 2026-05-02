@@ -26,15 +26,21 @@
         </div>
 
         <button type="submit"
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors mb-4">
+            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors mb-4"
+            style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+            onmouseover="this.style.backgroundColor='#1e3d8f'"
+            onmouseout="this.style.backgroundColor='#2D54BF'">
             Kirim Link Reset Password
         </button>
 
-        <div class="text-center">
-            <a href="{{ route('login') }}" class="text-sm text-gray-500 hover:text-indigo-600">
-                ← Kembali ke halaman login
-            </a>
-        </div>
+            <a href="{{ route('login') }}" 
+    class="w-full inline-flex items-center justify-center py-2.5 text-sm font-medium rounded-lg transition-colors"
+    style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+    onmouseover="this.style.backgroundColor='#f3f4f6';"
+    onmouseout="this.style.backgroundColor='white';">
+    Kembali ke halaman login
+</a>
+        
     </form>
 
     {{-- Info jika email tidak terkirim --}}

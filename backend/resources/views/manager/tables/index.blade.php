@@ -7,26 +7,24 @@
 
     {{-- Ringkasan --}}
     <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ $tables->count() }} meja terdaftar</p>
-        <div class="flex gap-2">
-            <button onclick="document.getElementById('modal-bulk').classList.remove('hidden')"
-        class="text-sm inline-flex items-center px-4 py-2 font-medium rounded-lg transition-colors"
-        style="border: 1px solid #2D54BF; background-color: white; color: #2D54BF;"
-        onmouseover="this.style.backgroundColor='#eef2ff';"
-        onmouseout="this.style.backgroundColor='white';"
-        onmousedown="this.style.transform='scale(0.98)';"
-        onmouseup="this.style.transform='scale(1)';">
-    Tambah Massal
-</button>
-            <button onclick="document.getElementById('modal-add').classList.remove('hidden')"
-        class="text-sm inline-flex items-center px-4 py-2 font-medium text-white rounded-lg transition-colors"
-        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
-        onmouseover="this.style.backgroundColor='#1e3d8f'"
-        onmouseout="this.style.backgroundColor='#2D54BF'">
-    Tambah Meja
-</button>
-        </div>
+    <p class="text-sm text-gray-500">{{ $tables->count() }} meja terdaftar</p>
+    <div class="flex gap-2">
+        <button onclick="document.getElementById('modal-bulk').classList.remove('hidden')"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+            onmouseover="this.style.backgroundColor='#f3f4f6';"
+            onmouseout="this.style.backgroundColor='white';">
+            Tambah Massal
+        </button>
+        <button onclick="document.getElementById('modal-add').classList.remove('hidden')"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+            style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+            onmouseover="this.style.backgroundColor='#1e3d8f'"
+            onmouseout="this.style.backgroundColor='#2D54BF'">
+            Tambah Meja
+        </button>
     </div>
+</div>
 
     {{-- Kelompokkan per section --}}
     @foreach($tables->groupBy('section') as $section => $sectionTables)
@@ -191,21 +189,19 @@
                 </div>
             </div>
             <div class="flex justify-between mt-6">
+                <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
+    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+    style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+    onmouseover="this.style.backgroundColor='#f3f4f6';"
+    onmouseout="this.style.backgroundColor='white';">
+    Batal
+</button>
     <button type="submit"
         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
         style="background-color: #2D54BF; border: 1px solid #2D54BF;"
         onmouseover="this.style.backgroundColor='#1e3d8f'"
         onmouseout="this.style.backgroundColor='#2D54BF'">
         Simpan
-    </button>
-    <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
-        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
-        onmouseover="this.style.backgroundColor='#f3f4f6';"
-        onmouseout="this.style.backgroundColor='white';"
-        onmousedown="this.style.transform='scale(0.98)';"
-        onmouseup="this.style.transform='scale(1)';">
-        Batal
     </button>
 </div>
         </form>
@@ -309,21 +305,19 @@
             </div>
 
             <div class="flex justify-between mt-6">
+                <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
+    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+    style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+    onmouseover="this.style.backgroundColor='#f3f4f6';"
+    onmouseout="this.style.backgroundColor='white';">
+    Batal
+</button>
     <button type="submit"
         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
         style="background-color: #2D54BF; border: 1px solid #2D54BF;"
         onmouseover="this.style.backgroundColor='#1e3d8f'"
         onmouseout="this.style.backgroundColor='#2D54BF'">
         Buat Semua Meja
-    </button>
-    <button type="button" onclick="document.getElementById('modal-bulk').classList.add('hidden')"
-        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
-        onmouseover="this.style.backgroundColor='#f3f4f6';"
-        onmouseout="this.style.backgroundColor='white';"
-        onmousedown="this.style.transform='scale(0.98)';"
-        onmouseup="this.style.transform='scale(1)';">
-        Batal
     </button>
 </div>
         </form>
@@ -389,22 +383,20 @@
                 </div>
             </div>
             <div class="flex justify-between mt-6">
-                <button type="submit" 
+                <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
+    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+    style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+    onmouseover="this.style.backgroundColor='#f3f4f6';"
+    onmouseout="this.style.backgroundColor='white';">
+    Batal
+</button>
+<button type="submit" 
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
                     style="background-color: #2D54BF"
                     onmouseover="this.style.backgroundColor='#1e3d8f'"
                     onmouseout="this.style.backgroundColor='#2D54BF'">
                     Simpan Perubahan
                 </button>
-                <button type="button" onclick="document.getElementById('modal-edit').classList.add('hidden')"
-        class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
-        onmouseover="this.style.backgroundColor='#f3f4f6';"
-        onmouseout="this.style.backgroundColor='white';"
-        onmousedown="this.style.transform='scale(0.98)';"
-        onmouseup="this.style.transform='scale(1)';">
-        Batal
-    </button>
             </div>
         </form>
     </div>

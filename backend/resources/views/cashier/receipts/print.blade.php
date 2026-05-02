@@ -35,6 +35,53 @@
     </style>
 </head>
 <body>
+    @php
+        $receiptItems = collect();
+
+        foreach ($payment->order->items->whereNull('bundle_id') as $item) {
+            $receiptItems->push(['type' => 'product', 'item' => $item]);
+        }
+
+        foreach ($payment->order->items->whereNotNull('bundle_id')->groupBy('bundle_id') as $items) {
+            $bundle = $items->first()->bundlePackage;
+            if (! $bundle) {
+                foreach ($items as $item) {
+                    $receiptItems->push(['type' => 'product', 'item' => $item]);
+                }
+                continue;
+            }
+
+            $bundleQty = $bundle->items
+                ->map(function ($bundleItem) use ($items) {
+                    $orderItem = $items->first(fn($item) => (int) $item->product_id === (int) $bundleItem->product_id
+                        && (int) ($item->variant_id ?? 0) === (int) ($bundleItem->product_variant_id ?? 0));
+
+                    if (! $orderItem || $bundleItem->quantity <= 0) {
+                        return null;
+                    }
+
+                    return intdiv((int) $orderItem->quantity, (int) $bundleItem->quantity);
+                })
+                ->filter(fn($qty) => $qty !== null && $qty > 0)
+                ->min() ?? 1;
+
+            $subtotal = (float) $items->sum('subtotal');
+            $normalTotal = $bundle->normalPrice() * $bundleQty;
+
+            $receiptItems->push([
+                'type' => 'bundle',
+                'bundle' => $bundle,
+                'quantity' => $bundleQty,
+                'unit_price' => $bundleQty > 0 ? $subtotal / $bundleQty : $subtotal,
+                'subtotal' => $subtotal,
+                'normal_total' => $normalTotal,
+                'savings' => max(0, $normalTotal - $subtotal),
+                'special_notes' => $items->first()->special_notes,
+            ]);
+        }
+
+        $printedBundleIds = [];
+    @endphp
 
     <div class="no-print">
         <button onclick="window.print()" style="padding:6px 16px; background:#4f46e5; color:white; border:none; border-radius:6px; font-size:12px; cursor:pointer;">🖨 Cetak Sekarang</button>
@@ -69,8 +116,15 @@
     {{-- Item Pesanan --}}
     @foreach($payment->order->items as $item)
         @if(!empty($item->bundle_id))
+            @if(in_array($item->bundle_id, $printedBundleIds, true))
+                @continue
+            @endif
+            @php
+                $printedBundleIds[] = $item->bundle_id;
+                $receiptItem = $receiptItems->first(fn($ri) => $ri['type'] === 'bundle' && (int) $ri['bundle']->id === (int) $item->bundle_id);
+            @endphp
             {{-- ── BUNDLE ITEM ── --}}
-            <div class="item-name bold">[PAKET] {{ $item->product_name }}</div>
+            <div class="item-name bold">[BUNDLE] {{ $receiptItem['bundle']->name ?? $item->bundlePackage?->name ?? $item->product_name }}</div>
 
             {{-- Isi bundle --}}
             @if($item->bundlePackage)
@@ -85,16 +139,16 @@
                 </div>
             @endif
 
-            @if($item->discount_amount > 0)
+            @if(($receiptItem['savings'] ?? 0) > 0)
                 <div class="bundle-savings">
-                    Normal: <span style="text-decoration:line-through;">Rp {{ number_format($item->original_price, 0, ',', '.') }}</span>
+                    Normal: <span style="text-decoration:line-through;">Rp {{ number_format($receiptItem['normal_total'], 0, ',', '.') }}</span>
                 </div>
-                <div class="bundle-savings">Hemat: Rp {{ number_format($item->discount_amount, 0, ',', '.') }}</div>
+                <div class="bundle-savings">Hemat: Rp {{ number_format($receiptItem['savings'], 0, ',', '.') }}</div>
             @endif
 
             <div class="row item-detail">
-                <span>{{ $item->quantity }} × Rp {{ number_format($item->unit_price, 0, ',', '.') }}</span>
-                <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                <span>{{ $receiptItem['quantity'] ?? $item->quantity }} × Rp {{ number_format($receiptItem['unit_price'] ?? $item->unit_price, 0, ',', '.') }}</span>
+                <span>Rp {{ number_format($receiptItem['subtotal'] ?? $item->subtotal, 0, ',', '.') }}</span>
             </div>
         @else
             {{-- ── PRODUK BIASA ── --}}

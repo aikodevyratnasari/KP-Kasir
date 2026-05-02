@@ -30,6 +30,12 @@ class KitchenOnly
 
         $roleSlug = $user->role->slug ?? null;
 
+        if (! ($user->store?->has_kitchen ?? true)) {
+            return $request->expectsJson()
+                ? response()->json(['success' => false, 'message' => 'Mode dapur tidak aktif untuk toko ini.'], 403)
+                : abort(403, 'Mode dapur tidak aktif untuk toko ini.');
+        }
+
         if (! in_array($roleSlug, $this->allowed)) {
             return $request->expectsJson()
                 ? response()->json(['success' => false, 'message' => 'Akses hanya untuk staf dapur.'], 403)

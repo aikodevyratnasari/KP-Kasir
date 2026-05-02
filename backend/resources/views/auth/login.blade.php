@@ -76,16 +76,21 @@
 
         {{-- Remember me --}}
         <div class="flex items-center justify-between mb-6">
-            <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                <input type="checkbox" name="remember" id="remember"
-                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                Ingat saya
-            </label>
-        </div>
+    <label class="flex items-center gap-2 text-sm text-gray-600 outline-none">
+        <input type="checkbox" name="remember" id="remember"
+       class="rounded border-gray-300 accent-[#2D54BF] focus:ring-0 focus:outline-none"
+       style="outline: none !important; box-shadow: none !important;">
+        Ingat saya
+    </label>
+</div>
 
         {{-- Submit --}}
+       
         <button type="submit"
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+               onmouseover="this.style.backgroundColor='#1e3d8f'"
+               onmouseout="this.style.backgroundColor='#2D54BF'">
             Masuk
         </button>
     </form>

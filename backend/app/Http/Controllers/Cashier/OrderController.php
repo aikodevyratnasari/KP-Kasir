@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\CancelOrderRequest;
 use App\Http\Requests\Order\StoreOrderRequest;
 use App\Http\Requests\Order\UpdateOrderRequest;
+use App\Models\BundlePackage;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Reservation;
@@ -84,7 +85,7 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load('items.product', 'items.variant', 'table', 'cashier', 'payments', 'kitchenOrder');
+        $order->load('items.product', 'items.variant', 'table', 'cashier', 'payments', 'kitchenOrder', 'store');
         return view('cashier.orders.show', compact('order'));
     }
 
@@ -110,9 +111,67 @@ class OrderController extends Controller
             if ($t && !$tables->contains($t)) $tables = $tables->push($t)->sortBy('number')->values();
         }
 
-        $order->load('items.variant');
+        $bundles = BundlePackage::where('store_id', $storeId)
+            ->where('is_active', true)
+            ->with('items.product', 'items.variant')
+            ->get()
+            ->filter(fn($b) => $b->isCurrentlyActive());
 
-        return view('cashier.orders.edit', compact('order', 'categories', 'tables'));
+        $order->load('items.variant', 'items.bundlePackage.items.product', 'items.bundlePackage.items.variant');
+
+        $cartItems = collect();
+
+        foreach ($order->items->whereNull('bundle_id') as $item) {
+            $cartItems->push([
+                'key'           => 'p_' . $item->product_id . ($item->variant_id ? '_v_' . $item->variant_id : ''),
+                'product_id'    => $item->product_id,
+                'name'          => $item->product_name,
+                'price'         => (float) $item->unit_price,
+                'quantity'      => $item->quantity,
+                'variant_id'    => $item->variant_id,
+                'variant_name'  => ($item->variant_id && $item->variant) ? $item->variant->name : null,
+                'special_notes' => $item->special_notes ?? '',
+                'is_bundle'     => false,
+            ]);
+        }
+
+        foreach ($order->items->whereNotNull('bundle_id')->groupBy('bundle_id') as $bundleId => $items) {
+            $bundle = $items->first()->bundlePackage;
+            if (! $bundle) {
+                continue;
+            }
+
+            $bundleQty = $bundle->items
+                ->map(function ($bundleItem) use ($items) {
+                    $orderItem = $items->first(fn($item) => (int) $item->product_id === (int) $bundleItem->product_id
+                        && (int) ($item->variant_id ?? 0) === (int) ($bundleItem->product_variant_id ?? 0));
+
+                    if (! $orderItem || $bundleItem->quantity <= 0) {
+                        return null;
+                    }
+
+                    return intdiv((int) $orderItem->quantity, (int) $bundleItem->quantity);
+                })
+                ->filter(fn($qty) => $qty !== null && $qty > 0)
+                ->min() ?? 1;
+
+            $cartItems->push([
+                'key'           => 'bundle_' . $bundle->id,
+                'product_id'    => null,
+                'bundle_id'     => $bundle->id,
+                'name'          => $bundle->name,
+                'price'         => (float) $bundle->bundle_price,
+                'normalPrice'   => $bundle->normalPrice(),
+                'savings'       => $bundle->savings(),
+                'quantity'      => $bundleQty,
+                'variant_id'    => null,
+                'variant_name'  => null,
+                'special_notes' => $items->first()->special_notes ?? '',
+                'is_bundle'     => true,
+            ]);
+        }
+
+        return view('cashier.orders.edit', compact('order', 'categories', 'tables', 'bundles', 'cartItems'));
     }
 
     public function update(UpdateOrderRequest $request, Order $order): RedirectResponse
@@ -128,11 +187,23 @@ class OrderController extends Controller
         return redirect()->route('cashier.orders.index')->with('success', "Pesanan #{$order->order_number} dibatalkan.");
     }
 
-    public function updateStatus(Request $request, Order $order): JsonResponse
+    public function updateStatus(Request $request, Order $order): JsonResponse|RedirectResponse
     {
         $request->validate(['status' => 'required|in:cooking,ready,completed']);
         $order = $this->orderService->updateStatus($order, $request->status, auth()->id());
-        return response()->json(['success' => true, 'status' => $order->status]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'status' => $order->status]);
+        }
+
+        $message = match ($order->status) {
+            'cooking' => 'Pesanan ditandai sedang dimasak.',
+            'ready' => 'Pesanan ditandai siap disajikan.',
+            'completed' => 'Pesanan selesai.',
+            default => 'Status pesanan diperbarui.',
+        };
+
+        return back()->with('success', $message);
     }
 
     public function complete(Order $order): RedirectResponse

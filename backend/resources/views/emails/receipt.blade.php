@@ -134,6 +134,53 @@
     </style>
 </head>
 <body>
+@php
+    $receiptItems = collect();
+
+    foreach ($payment->order->items->whereNull('bundle_id') as $item) {
+        $receiptItems->push(['type' => 'product', 'item' => $item]);
+    }
+
+    foreach ($payment->order->items->whereNotNull('bundle_id')->groupBy('bundle_id') as $items) {
+        $bundle = $items->first()->bundlePackage;
+        if (! $bundle) {
+            foreach ($items as $item) {
+                $receiptItems->push(['type' => 'product', 'item' => $item]);
+            }
+            continue;
+        }
+
+        $bundleQty = $bundle->items
+            ->map(function ($bundleItem) use ($items) {
+                $orderItem = $items->first(fn($item) => (int) $item->product_id === (int) $bundleItem->product_id
+                    && (int) ($item->variant_id ?? 0) === (int) ($bundleItem->product_variant_id ?? 0));
+
+                if (! $orderItem || $bundleItem->quantity <= 0) {
+                    return null;
+                }
+
+                return intdiv((int) $orderItem->quantity, (int) $bundleItem->quantity);
+            })
+            ->filter(fn($qty) => $qty !== null && $qty > 0)
+            ->min() ?? 1;
+
+        $subtotal = (float) $items->sum('subtotal');
+        $normalTotal = $bundle->normalPrice() * $bundleQty;
+
+        $receiptItems->push([
+            'type' => 'bundle',
+            'bundle' => $bundle,
+            'quantity' => $bundleQty,
+            'unit_price' => $bundleQty > 0 ? $subtotal / $bundleQty : $subtotal,
+            'subtotal' => $subtotal,
+            'normal_total' => $normalTotal,
+            'savings' => max(0, $normalTotal - $subtotal),
+            'special_notes' => $items->first()->special_notes,
+        ]);
+    }
+
+    $printedBundleIds = [];
+@endphp
 <div class="wrapper">
 <div class="card">
 
@@ -185,26 +232,35 @@
         <div class="section-label">Item Pesanan</div>
 
         @foreach($payment->order->items as $item)
+        @if(!empty($item->bundle_id))
+            @if(in_array($item->bundle_id, $printedBundleIds, true))
+                @continue
+            @endif
+            @php
+                $printedBundleIds[] = $item->bundle_id;
+                $receiptItem = $receiptItems->first(fn($ri) => $ri['type'] === 'bundle' && (int) $ri['bundle']->id === (int) $item->bundle_id);
+            @endphp
+        @endif
         <div class="item">
             <div class="item-top">
                 <div class="item-name-col">
                     {{-- Nama produk / bundle --}}
                     <div class="item-name">
-                        {{ $item->product_name }}
+                        {{ !empty($item->bundle_id) ? ($receiptItem['bundle']->name ?? $item->bundlePackage?->name ?? $item->product_name) : $item->product_name }}
                         @if(!empty($item->bundle_id))
-                            <span class="bundle-badge">Paket</span>
+                            <span class="bundle-badge">Bundle</span>
                         @endif
                     </div>
-                    <div class="item-qty">× {{ $item->quantity }}</div>
+                    <div class="item-qty">× {{ !empty($item->bundle_id) ? ($receiptItem['quantity'] ?? $item->quantity) : $item->quantity }}</div>
 
-                    @if($item->variant_name)
+                    @if(empty($item->bundle_id) && $item->variant_name)
                         <div class="item-variant">{{ $item->variant_name }}</div>
                     @endif
 
                     {{-- Tampilkan isi bundle --}}
                     @if(!empty($item->bundle_id) && $item->bundlePackage)
                         <div class="bundle-contents">
-                            <div class="bundle-contents-label">Isi Paket</div>
+                            <!-- <div class="bundle-contents-label">Isi Bundle</div> -->
                             @foreach($item->bundlePackage->items as $bi)
                                 <div class="bundle-item-row">
                                     • {{ $bi->product->name }}
@@ -212,9 +268,9 @@
                                     × {{ $bi->quantity }}
                                 </div>
                             @endforeach
-                            @if($item->discount_amount > 0)
+                            @if(($receiptItem['savings'] ?? 0) > 0)
                                 <div class="bundle-savings">
-                                    Hemat Rp {{ number_format($item->discount_amount, 0, ',', '.') }} dari harga normal
+                                    Hemat Rp {{ number_format($receiptItem['savings'], 0, ',', '.') }}
                                 </div>
                             @endif
                         </div>
@@ -229,13 +285,13 @@
                     @endif
                 </div>
                 <div class="item-price-col">
-                    <div class="item-subtotal">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</div>
-                    @if($item->quantity > 1)
-                        <div class="item-unit">@ Rp {{ number_format($item->unit_price, 0, ',', '.') }}</div>
+                    <div class="item-subtotal">Rp {{ number_format(!empty($item->bundle_id) ? ($receiptItem['subtotal'] ?? $item->subtotal) : $item->subtotal, 0, ',', '.') }}</div>
+                    @if(!empty($item->bundle_id) ? (($receiptItem['quantity'] ?? $item->quantity) > 1) : ($item->quantity > 1))
+                        <div class="item-unit">@ Rp {{ number_format(!empty($item->bundle_id) ? ($receiptItem['unit_price'] ?? $item->unit_price) : $item->unit_price, 0, ',', '.') }}</div>
                     @endif
-                    @if(!empty($item->bundle_id) && $item->discount_amount > 0)
+                    @if(!empty($item->bundle_id) && ($receiptItem['savings'] ?? 0) > 0)
                         <div style="font-size:11px; color:#bbb; text-decoration:line-through; margin-top:2px;">
-                            Rp {{ number_format($item->original_price * $item->quantity, 0, ',', '.') }}
+                            Rp {{ number_format($receiptItem['normal_total'], 0, ',', '.') }}
                         </div>
                     @endif
                 </div>

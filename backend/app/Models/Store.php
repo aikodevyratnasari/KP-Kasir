@@ -9,10 +9,14 @@ class Store extends Model
 {
     protected $fillable = [
         'name', 'address', 'phone', 'email',
-        'tax_number', 'tax_rate', 'receipt_footer', 'is_active',
+        'tax_number', 'tax_rate', 'receipt_footer', 'is_active', 'has_kitchen',
     ];
 
-    protected $casts = ['is_active' => 'boolean', 'tax_rate' => 'decimal:2'];
+    protected $casts = [
+        'is_active'   => 'boolean',
+        'has_kitchen' => 'boolean',
+        'tax_rate'    => 'decimal:2',
+    ];
 
     public function users(): HasMany      { return $this->hasMany(User::class); }
     public function categories(): HasMany { return $this->hasMany(Category::class); }

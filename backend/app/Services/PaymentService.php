@@ -428,6 +428,10 @@ class PaymentService
             return;
         }
 
+        if (! ($order->store?->has_kitchen ?? true)) {
+            return;
+        }
+
         $order->update(['sent_to_kitchen_at' => now()]);
 
         if ($order->kitchenOrder) {

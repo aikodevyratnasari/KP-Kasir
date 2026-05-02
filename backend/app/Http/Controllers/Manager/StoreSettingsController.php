@@ -27,7 +27,10 @@ class StoreSettingsController extends Controller
             'tax_rate'        => ['required', 'numeric', 'min:0', 'max:100'],
             'tax_number'      => ['nullable', 'string', 'max:50'],
             'receipt_footer'  => ['nullable', 'string', 'max:500'],
+            'has_kitchen'     => ['nullable', 'boolean'],
         ]);
+
+        $data['has_kitchen'] = $request->boolean('has_kitchen');
 
         $store->update($data);
 
