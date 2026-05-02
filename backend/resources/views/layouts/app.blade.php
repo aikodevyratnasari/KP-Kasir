@@ -38,34 +38,34 @@
         class="sidebar fixed inset-y-0 left-0 z-50 flex flex-col overflow-visible">
 
         {{-- Logo --}}
-        
-<div class="h-14 flex items-center px-3 flex-shrink-0 gap-3" style="border-bottom: 1px solid rgba(255,255,255,0.15);">
-    
-{{-- Logo D + tulisan DePOS (hanya saat terbuka) --}}
-    <a x-show="open" href="{{ auth()->user()->dashboardRoute() }}" class="flex items-center gap-2 min-w-0 overflow-hidden">
-    <div class="w-6 h-6 rounded-lg overflow-hidden flex-shrink-0">
-        <img src="{{ asset('images/image.png') }}" alt="DePOS Logo" class="w-full h-full object-contain">
-    </div>
-    <span class="font-bold text-base whitespace-nowrap overflow-hidden" style="color: #ffffff;">DePOS</span>
-</a>
-    
-{{-- Hamburger button (selalu tampil, buat buka/tutup) --}}
-    {{-- Hamburger button (selalu tampil) --}}
-<button @click="open = !open"
-        class="flex items-center justify-center flex-shrink-0 transition-all ml-auto"
-        style="width:36px;height:36px;border-radius:8px;color:white;border:none;cursor:pointer;"
-        onmouseover="this.style.backgroundColor='rgba(255,255,255,0.15)';"
-        onmouseout="this.style.backgroundColor='transparent';">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-    </button>
+        @php
+            $storeLogo = auth()->user()->store?->logo_url ?? asset('images/image.png');
+        @endphp
 
-    
+        <div class="h-14 flex items-center px-3 flex-shrink-0 gap-3" style="border-bottom: 1px solid rgba(255,255,255,0.15);">
 
-</div>
+            {{-- Logo + tulisan DePOS (hanya saat terbuka) --}}
+            <a x-show="open" href="{{ auth()->user()->dashboardRoute() }}" class="flex items-center gap-2 min-w-0 overflow-hidden">
+                <div class="w-6 h-6 rounded-lg overflow-hidden flex-shrink-0">
+                    <img src="{{ $storeLogo }}" alt="Logo" class="w-full h-full object-contain">
+                </div>
+                <span class="font-bold text-base whitespace-nowrap overflow-hidden" style="color: #ffffff;">DePOS</span>
+            </a>
+
+            {{-- Hamburger button (selalu tampil) --}}
+            <button @click="open = !open"
+                    class="flex items-center justify-center flex-shrink-0 transition-all ml-auto"
+                    style="width:36px;height:36px;border-radius:8px;color:white;border:none;cursor:pointer;"
+                    onmouseover="this.style.backgroundColor='rgba(255,255,255,0.15)';"
+                    onmouseout="this.style.backgroundColor='transparent';">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+            </button>
+
+        </div>
 
         {{-- NAV --}}
         <nav class="sidebar-nav py-2">
@@ -145,7 +145,6 @@
                 @foreach([
     ['cashier.orders.index',     'cashier.orders.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h6"/></svg>', 'Pesanan'],
     ['cashier.tables.index',     'cashier.tables.*',    '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3C7.03 3 3 7.03 3 12h18c0-4.97-4.03-9-9-9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18"/><path stroke-linecap="round" stroke-linejoin="round" d="M2 15h20"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 15v2"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 15v2"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 17h16"/></svg>', 'Dine-In'],
-    /*['cashier.payments.history', 'cashier.payments.*',  '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>', 'Pembayaran'],*/
 ] as [$r, $m, $icon, $label])
     @php $a = request()->routeIs($m) && !request()->routeIs('cashier.orders.create'); @endphp
     <a href="{{ route($r) }}" title=""
@@ -234,7 +233,6 @@
    onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='rgba(255,255,255,0.75)';" }}"
    onmousedown="{{ $a ? '' : "this.style.transform='scale(0.98)';" }}"
    onmouseup="{{ $a ? '' : "this.style.transform='scale(1)';" }}">
-
     <span class="w-6 flex-shrink-0 flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 28" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 2c0 1.5 1.5 1.5 1.5 3S8 6.5 8 8" />
@@ -245,10 +243,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M20 14h2" />
         </svg>
     </span>
-
     <span x-show="open" class="whitespace-nowrap">Tampilan Dapur</span>
-
-    {{-- Tooltip hanya saat sidebar tertutup --}}
     <span x-show="hovered"
           x-transition:enter="transition ease-out duration-150"
           x-transition:enter-start="opacity-0"
@@ -392,7 +387,6 @@
     <div class="px-6 pt-4 space-y-2 flex flex-col items-center">
         @if((session('success') || session('status')) && !request()->routeIs('manager.categories.*'))
                     <div id="flash-success" class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm flex items-start gap-2.5">
-                        {{-- check-circle --}}
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0 mt-0.5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
                         </svg>
@@ -401,7 +395,6 @@
                 @endif
                 @if(session('error'))
                     <div class="bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm flex items-start gap-2.5">
-                        {{-- x-circle --}}
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0 mt-0.5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
                         </svg>
@@ -413,17 +406,13 @@
      class="fixed inset-0 z-[99999] flex items-center justify-center"
      style="background-color: rgba(0,0,0,0.5);">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs mx-4">
-        {{-- Isi --}}
         <div class="px-6 py-8 flex flex-col items-center text-center">
-            {{-- Icon X bulat merah --}}
             <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4" style="background-color: #e53e3e;">
     <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9" viewBox="0 0 24 24" fill="white">
         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
     </svg>
 </div>
-            {{-- Pesan --}}
            <p class="text-sm text-gray-600 mb-6">Mohon lengkapi semua field yang wajib diisi dengan benar.</p>
-            {{-- Button Close --}}
             <button @click="show = false"
                     class="w-full py-2.5 text-sm font-bold text-white rounded-lg transition-colors"
                     style="background-color: #e53e3e;"

@@ -107,12 +107,12 @@
         <table class="w-full text-sm min-w-[700px]">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                    <th class="py-3 px-4 text-left text-xs font-semibold text-indigo-600 uppercase tracking-wide">Produk</th>
-                    <th class="py-3 px-4 text-left text-xs font-semibold text-indigo-600 uppercase tracking-wide">Kategori</th>
-                    <th class="py-3 px-4 text-center text-xs font-semibold text-indigo-600 uppercase tracking-wide">Harga</th>
-                    <th class="py-3 px-4 text-center text-xs font-semibold text-indigo-600 uppercase tracking-wide">Stok</th>
-                    <th class="py-3 px-4 text-center text-xs font-semibold text-indigo-600 uppercase tracking-wide">Tersedia</th>
-                    <th class="py-3 px-4 text-center text-xs font-semibold text-indigo-600 uppercase tracking-wide">Aksi</th>
+                    <th class="py-3 px-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Produk</th>
+                    <th class="py-3 px-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Kategori</th>
+                    <th class="py-3 px-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">Harga</th>
+                    <th class="py-3 px-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">Stok</th>
+                    <th class="py-3 px-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">Tersedia</th>
+                    <th class="py-3 px-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">

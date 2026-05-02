@@ -9,7 +9,8 @@ class Store extends Model
 {
     protected $fillable = [
         'name', 'address', 'phone', 'email',
-        'tax_number', 'tax_rate', 'receipt_footer', 'is_active', 'has_kitchen',
+        'tax_number', 'tax_rate', 'receipt_footer',
+        'is_active', 'has_kitchen', 'logo_path', // tambah logo_path
     ];
 
     protected $casts = [
@@ -17,6 +18,15 @@ class Store extends Model
         'has_kitchen' => 'boolean',
         'tax_rate'    => 'decimal:2',
     ];
+
+    // Accessor untuk URL logo (fallback ke default jika belum diupload)
+    public function getLogoUrlAttribute(): string
+    {
+        if ($this->logo_path && \Storage::disk('public')->exists($this->logo_path)) {
+            return asset('storage/' . $this->logo_path);
+        }
+        return asset('images/image.png'); // fallback ke logo default
+    }
 
     public function users(): HasMany      { return $this->hasMany(User::class); }
     public function categories(): HasMany { return $this->hasMany(Category::class); }

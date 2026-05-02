@@ -48,18 +48,19 @@
                 <div class="flex flex-col items-center flex-1 relative">
                     @if($i < count($steps) - 1)
                         <div id="tracker-line-{{ $i }}"
-                             class="absolute top-4 left-1/2 w-full h-1 rounded-full {{ $i < $currentStep ? 'bg-indigo-500' : 'bg-gray-200' }}"
-                             style="z-index:0;"></div>
-                    @endif
-                    <div id="tracker-circle-{{ $i }}"
-                         class="relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2
-                                {{ $done ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-300 text-gray-400' }}">
-                        {{ $i + 1 }}
-                    </div>
-                    <span id="tracker-label-{{ $i }}"
-                          class="text-xs mt-1 text-center {{ $done ? 'text-indigo-700 font-semibold' : 'text-gray-400' }}">
-                        {{ $step['label'] }}
-                    </span>
+                    class="absolute top-4 left-1/2 w-full h-1 rounded-full"
+                    style="z-index:0; background-color:{{ $i < $currentStep ? '#2D54BF' : '#e5e7eb' }};"></div>
+                                    @endif
+                                    <div id="tracker-circle-{{ $i }}"
+                    class="relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2"
+                    style="{{ $done ? 'background-color:#2D54BF; border-color:#2D54BF; color:white;' : 'background-color:white; border-color:#d1d5db; color:#9ca3af;' }}">
+                    {{ $i + 1 }}
+                </div>
+                <span id="tracker-label-{{ $i }}"
+                    class="text-xs mt-1 text-center"
+                    style="{{ $done ? 'color:#2D54BF; font-weight:600;' : 'color:#9ca3af;' }}">
+                    {{ $step['label'] }}
+                </span>
                 </div>
             @endforeach
         </div>
@@ -156,10 +157,10 @@
         @endif
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
 
         {{-- Info Pesanan --}}
-        <div class="card">
+        <div class="card h-full">
             <h2 class="font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-3">Informasi Pesanan</h2>
             <dl class="space-y-2 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">No. Pesanan</dt><dd class="font-medium">{{ $order->order_number }}</dd></div>
@@ -265,33 +266,33 @@
             <div id="payment-actions">
                 @if($order->remainingBalance() > 0 && !$order->isCancelled())
                     <a href="{{ route('cashier.payments.create', $order) }}"
-                       class="btn-success w-full justify-center mt-4 inline-flex items-center gap-1.5"
-                       style="color:white; background-color:#1c8b59;"
-                       onmouseover="this.style.backgroundColor='#0e663e';"
-                       onmouseout="this.style.backgroundColor='#1c8b59';">
+                       class="w-full justify-center mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
+       style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
+       onmouseover="this.style.backgroundColor='#1e3d8f';"
+       onmouseout="this.style.backgroundColor='#2D54BF';">
                         Proses Pembayaran
                     </a>
 
-                @elseif($order->isFullyPaid() && $lastPayment)
-                    <a href="{{ route('cashier.receipts.print', $lastPayment) }}"
-                       target="_blank" rel="noopener noreferrer"
-                       class="w-full justify-center mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
-                       style="color:white; background-color:#EF8F00; border:1px solid #EF8F00;"
-                       onmouseover="this.style.backgroundColor='#cc7a00';"
-                       onmouseout="this.style.backgroundColor='#EF8F00';">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                        Cetak Struk
-                    </a>
-                    <button type="button"
-                            onclick="document.getElementById('send-receipt-modal').style.display='flex'; document.body.style.overflow='hidden';"
-                            class="w-full justify-center mt-2 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
-                            style="color:#6366f1; background-color:#eef2ff; border:1px solid #c7d2fe;"
-                            onmouseover="this.style.backgroundColor='#e0e7ff';"
-                            onmouseout="this.style.backgroundColor='#eef2ff';">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                        Kirim Struk
-                    </button>
-                @endif
+               @elseif($order->isFullyPaid() && $lastPayment)
+    <a href="{{ route('cashier.receipts.print', $lastPayment) }}"
+       target="_blank" rel="noopener noreferrer"
+       class="w-full justify-center mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
+       style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
+       onmouseover="this.style.backgroundColor='#1e3d8f';"
+       onmouseout="this.style.backgroundColor='#2D54BF';">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Cetak Struk
+    </a>
+    <button type="button"
+            onclick="document.getElementById('send-receipt-modal').style.display='flex'; document.body.style.overflow='hidden';"
+            class="w-full justify-center mt-2 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all"
+            style="color:#2D54BF; background-color:#eef2ff; border:1px solid #2D54BF;"
+            onmouseover="this.style.backgroundColor='#dce8ff';"
+            onmouseout="this.style.backgroundColor='#eef2ff';">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        Kirim Struk
+    </button>
+@endif
             </div>
         </div>
     </div>
@@ -451,18 +452,13 @@
                 ];
                 $ksCfg = $kitchenStatusConfig[$kitchenOrder->status] ?? ['label' => ucfirst($kitchenOrder->status), 'bg' => '#f9fafb', 'border' => '#e5e7eb', 'text' => '#374151'];
             @endphp
-            <div class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
-                 style="background:{{ $ksCfg['bg'] }};border:1px solid {{ $ksCfg['border'] }};color:{{ $ksCfg['text'] }};">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-                    <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
-                </svg>
-                <span>Status Dapur: <strong>{{ $ksCfg['label'] }}</strong></span>
-                @if($kitchenCooking)
-                    <span class="opacity-70 ml-1">— Pembatalan tidak tersedia</span>
-                @endif
-            </div>
+            <div class="mt-3 flex items-center gap-2 text-xs">
+    <span class="text-gray-500">Status Dapur:</span>
+    <strong style="color:#dc2626;">{{ $ksCfg['label'] }}</strong>
+    @if($kitchenCooking)
+        <span style="color:#dc2626;">Pembatalan tidak tersedia</span>
+    @endif
+</div>
         @endif
 
         @if($canEdit || $canCancel)
@@ -585,9 +581,9 @@
                 <button type="button"
                         onclick="document.getElementById('cancel-modal').style.display='none'; document.body.style.overflow='';"
                         class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-                        style="border: 1.5px solid #9ca3af; background-color: white; color: #374151;"
-                        onmouseover="this.style.backgroundColor='#f3f4f6';"
-                        onmouseout="this.style.backgroundColor='white';">
+           style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
+           onmouseover="this.style.backgroundColor='#f3f4f6';"
+           onmouseout="this.style.backgroundColor='white';">
                     Tidak
                 </button>
                 <button type="submit" class="btn-danger text-sm inline-flex items-center gap-1.5">
@@ -620,16 +616,16 @@
     }
 
     function updateTracker(step) {
-        for (let i = 0; i <= 4; i++) {
-            const c  = document.getElementById('tracker-circle-' + i);
-            const l  = document.getElementById('tracker-label-' + i);
-            const ln = document.getElementById('tracker-line-' + i);
-            const done = i <= step;
-            if (c)  c.className  = 'relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 ' + (done ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-300 text-gray-400');
-            if (l)  l.className  = 'text-xs mt-1 text-center ' + (done ? 'text-indigo-700 font-semibold' : 'text-gray-400');
-            if (ln) { ln.className = 'absolute top-4 left-1/2 w-full h-1 rounded-full ' + (i < step ? 'bg-indigo-500' : 'bg-gray-200'); ln.style.zIndex = '0'; }
-        }
+    for (let i = 0; i <= 4; i++) {
+        const c  = document.getElementById('tracker-circle-' + i);
+        const l  = document.getElementById('tracker-label-' + i);
+        const ln = document.getElementById('tracker-line-' + i);
+        const done = i <= step;
+        if (c)  { c.className = 'relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2'; c.style.cssText = done ? 'background-color:#2D54BF; border-color:#2D54BF; color:white;' : 'background-color:white; border-color:#d1d5db; color:#9ca3af;'; }
+        if (l)  { l.className = 'text-xs mt-1 text-center'; l.style.cssText = done ? 'color:#2D54BF; font-weight:600;' : 'color:#9ca3af;'; }
+        if (ln) { ln.className = 'absolute top-4 left-1/2 w-full h-1 rounded-full'; ln.style.backgroundColor = i < step ? '#2D54BF' : '#e5e7eb'; ln.style.zIndex = '0'; }
     }
+}
 
     async function poll() {
         try {

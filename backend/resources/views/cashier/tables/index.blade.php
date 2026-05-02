@@ -49,11 +49,11 @@
                         $reservation = $table->activeReservation;
                         $status      = $table->status;
                         $colorMap = [
-                            'available' => 'border-green-300 bg-green-50 hover:bg-green-100',
-                            'occupied'  => 'border-red-300 bg-red-50',
-                            'reserved'  => 'border-yellow-300 bg-yellow-50',
-                            'closed'    => 'border-gray-200 bg-gray-100 opacity-70',
-                        ];
+    'available' => 'border-green-200 bg-green-50',
+    'occupied'  => 'border-red-200 bg-red-50',
+    'reserved'  => 'border-yellow-200 bg-yellow-50',
+    'closed'    => 'border-gray-100 bg-gray-100 opacity-70',
+];
                         $dotMap = [
                             'available' => 'bg-green-400',
                             'occupied'  => 'bg-red-400',
@@ -136,10 +136,13 @@
                                     </form>
                                 </div>
                             @else
-                                <a href="{{ route('cashier.orders.create') }}?table={{ $table->id }}"
-                                   class="mt-2 block text-center text-xs bg-white border border-green-200 text-green-700 rounded-lg py-1 hover:bg-green-50 transition">
-                                    Buat Pesanan
-                                </a>
+                               <a href="{{ route('cashier.orders.create') }}?table={{ $table->id }}"
+   class="mt-2 block text-center text-xs rounded-lg py-1 transition-all"
+   style="color:white; background-color:#16a34a; border:1px solid #16a34a;"
+   onmouseover="this.style.backgroundColor='#15803d';"
+   onmouseout="this.style.backgroundColor='#16a34a';">
+    Buat Pesanan
+</a>
                             @endif
                         </div>
                     </div>
@@ -167,11 +170,11 @@
     const POLL_URL = '{{ route('poll.tables') }}';
 
     const colorMap = {
-        available: 'border-green-300 bg-green-50 hover:bg-green-100',
-        occupied:  'border-red-300 bg-red-50',
-        reserved:  'border-yellow-300 bg-yellow-50',
-        closed:    'border-gray-200 bg-gray-100 opacity-70',
-    };
+    available: 'border-green-200 bg-green-50',
+    occupied:  'border-red-200 bg-red-50',
+    reserved:  'border-yellow-200 bg-yellow-50',
+    closed:    'border-gray-100 bg-gray-100 opacity-70',
+};
     const dotMap = {
         available: 'bg-green-400',
         occupied:  'bg-red-400',

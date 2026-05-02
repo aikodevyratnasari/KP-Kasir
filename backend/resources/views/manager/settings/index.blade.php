@@ -5,8 +5,64 @@
 @section('content')
 <div class="max-w-2xl space-y-5 mx-auto">
 
-    <form method="POST" action="{{ route('manager.settings.update') }}">
+    {{-- Ubah tag form: tambah enctype --}}
+    <form method="POST" action="{{ route('manager.settings.update') }}" enctype="multipart/form-data">
         @csrf @method('PATCH')
+
+        {{-- ===== CARD LOGO (baru, taruh paling atas) ===== --}}
+        <div class="card space-y-4 mb-5">
+            <h3 class="font-semibold text-gray-800 border-b border-gray-200">Logo Toko</h3>
+
+            <div class="flex items-center gap-5"
+                 x-data="{
+                    preview: '{{ $store->logo_url }}',
+                    onChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        this.preview = ev.target.result;
+        document.getElementById('logoFileName').textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+}
+                 }">
+
+                {{-- Preview logo --}}
+                <div id="logo-box" class="w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0">
+    <img id="logo-preview" :src="preview" alt="Logo"
+         class="w-full h-full object-cover"
+         :class="preview ? '' : 'hidden'"
+         @load="if(preview) { $el.classList.remove('hidden'); document.getElementById('logo-placeholder').style.display='none'; document.getElementById('logo-box').style.border='none'; }">
+    <svg xmlns="http://www.w3.org/2000/svg" id="logo-placeholder" class="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+    </svg>
+</div>
+
+                {{-- Upload control --}}
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Upload Logo Baru</label>
+                    <input type="file" name="logo" accept="image/png,image/jpg,image/jpeg,image/webp"
+       @change="onChange($event)"
+       id="logoInput"
+       class="hidden">
+<button type="button"
+    onclick="document.getElementById('logoInput').click()"
+    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+    style="border: 1px solid #2D54BF; background-color: #2D54BF; color: white;"
+    onmouseover="this.style.backgroundColor='#1e3d8f'"
+    onmouseout="this.style.backgroundColor='#2D54BF'">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4l4 4"/>
+    </svg>
+    Upload
+</button>
+<span id="logoFileName" class="ml-2 text-xs text-gray-500">Tidak ada file yang dipilih</span>
+                    <p class="mt-1 text-xs text-gray-400">PNG, JPG, atau WEBP. Maks. 1 MB. Rasio 1:1 direkomendasikan.</p>
+                    @error('logo')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+            </div>
+        </div>
 
         {{-- Info Toko --}}
         <div class="card space-y-4 mb-5">
@@ -99,7 +155,8 @@
             <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50 cursor-pointer">
                 <input type="hidden" name="has_kitchen" value="0">
                 <input type="checkbox" name="has_kitchen" value="1"
-                       class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                       class="mt-1 rounded border-gray-300 accent-[#2D54BF] focus:ring-0 focus:outline-none"
+                       style="outline: none !important; box-shadow: none !important;"
                        {{ old('has_kitchen', $store->has_kitchen ?? true) ? 'checked' : '' }}>
                 <span>
                     <span class="block text-sm font-semibold text-gray-800">Gunakan user kitchen</span>
@@ -125,7 +182,7 @@
                         style="background-color: #2D54BF; border: 1px solid #2D54BF;"
                         onmouseover="this.style.backgroundColor='#1e3d8f'"
                         onmouseout="this.style.backgroundColor='#2D54BF'">
-                        Simpan Pengatuan
+                        Simpan Pengaturan
             </button>
         </div>
     </form>
@@ -139,7 +196,6 @@ function taxPreview(initialRate) {
         taxRate: initialRate,
         fmt(n) { return new Intl.NumberFormat('id-ID').format(n); },
         init() {
-            // Sync taxRate dari input form secara real-time
             const input = document.querySelector('input[name="tax_rate"]');
             if (input) {
                 input.addEventListener('input', () => {
@@ -156,6 +212,10 @@ setTimeout(() => {
         setTimeout(() => el.remove(), 500);
     });
 }, 2000);
+document.getElementById('logoInput').addEventListener('change', function() {
+    document.getElementById('logoFileName').textContent = 
+        this.files[0] ? this.files[0].name : 'Tidak ada file yang dipilih';
+});
 </script>
 @endpush
 @endsection

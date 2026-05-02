@@ -55,7 +55,7 @@ $taxRate = \App\Models\Store::select('tax_rate')->find(auth()->user()->store_id)
             <div style="margin-bottom:32px;">
                 {{-- Sekat kategori sama persis seperti kategori menu --}}
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-top:4px;">
-                    <span style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.09em; white-space:nowrap;">🎁 Paket Bundling</span>
+                    <span style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.09em; white-space:nowrap;">Paket Bundling</span>
                     <div style="flex:1; height:1px; background:#e5e7eb;"></div>
                     <span style="font-size:10px; color:#9ca3af; white-space:nowrap;">{{ $bundles->count() }} paket</span>
                 </div>
@@ -248,7 +248,7 @@ $taxRate = \App\Models\Store::select('tax_rate')->find(auth()->user()->store_id)
                                 {{-- Badge PAKET kecil, seragam dengan badge lain --}}
                                 <template x-if="item.is_bundle">
                                     <span style="display:inline-flex; align-items:center; gap:3px; background:#ede9fe; color:#6d28d9; border:1px solid #c4b5fd; border-radius:6px; padding:1px 6px; font-size:10px; font-weight:700; margin-bottom:3px;">
-                                        🎁 PAKET
+                                        PAKET
                                     </span>
                                 </template>
                                 <p class="text-sm font-semibold text-gray-900" x-text="item.name"></p>
@@ -277,12 +277,12 @@ $taxRate = \App\Models\Store::select('tax_rate')->find(auth()->user()->store_id)
                                     onmouseout="this.style.backgroundColor='white'">−</button>
                                 <span style="width:32px; height:28px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#111827; border-left:1.5px solid #d1d5db; border-right:1.5px solid #d1d5db;" x-text="item.quantity"></span>
                                 <button type="button" @click="item.quantity++"
-                                    style="width:28px; height:28px; background:white; border:none; color:#2D54BF; font-size:16px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; margin-bottom:3px;"
+    style="width:28px; height:28px; background:white; border:none; color:#374151; font-size:16px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; margin-bottom:3px;"
                                     onmouseover="this.style.backgroundColor='#f3f4f6'"
                                     onmouseout="this.style.backgroundColor='white'">+</button>
                             </div>
                             <div style="text-align:right;">
-                                <span class="text-sm font-bold text-indigo-600" x-text="'Rp ' + formatRp(item.price * item.quantity)"></span>
+                                <span class="text-sm font-bold" style="color:#2D54BF;" x-text="'Rp ' + formatRp(item.price * item.quantity)"></span>
                                 <template x-if="item.is_bundle && item.savings > 0">
                                     <span style="display:block; font-size:10px; color:#9ca3af; text-decoration:line-through;"
                                           x-text="'Rp ' + formatRp(item.normalPrice * item.quantity)"></span>
@@ -344,9 +344,9 @@ $taxRate = \App\Models\Store::select('tax_rate')->find(auth()->user()->store_id)
             </div>
             <div style="padding:12px 16px 16px; overflow-y:auto; flex:1;">
                 <template x-for="v in variantModal.variants" :key="v.id">
-                    <div style="border:1.5px solid #e5e7eb; border-radius:10px; padding:12px 14px; margin-bottom:8px; cursor:pointer; background:#fff; transition:border-color 0.12s, background 0.12s;"
-                         onmouseover="this.style.borderColor='#6366f1'; this.style.background='#f5f3ff';"
-                         onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='#fff';"
+                    <div style="border:1.5px solid #e5e7eb; border-radius:10px; padding:12px 14px; margin-bottom:8px; cursor:pointer; background:transparent; transition:border-color 0.12s, background 0.12s;"
+     onmouseover="this.style.borderColor='#2D54BF'; this.style.background='rgba(45,84,191,0.05)';"
+     onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='transparent';"
                          @click="addItemWithVariant(variantModal.productId, variantModal.productName, variantModal.basePrice, v.id, v.name, Number(v.price_adjustment||0)); variantModal.open = false">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
@@ -355,7 +355,7 @@ $taxRate = \App\Models\Store::select('tax_rate')->find(auth()->user()->store_id)
                                 x-text="v.type ? v.type.charAt(0).toUpperCase() + v.type.slice(1) : ''"></p>
                             </div>
                             <div style="text-align:right; flex-shrink:0; margin-left:12px;">
-                                <p style="font-size:13px; font-weight:700; color:#4f46e5; margin:0;"
+                               <p style="font-size:13px; font-weight:700; color:#2D54BF; margin:0;"
                                    x-text="'Rp ' + formatRp(variantModal.basePrice + Number(v.price_adjustment||0))"></p>
                                 <p x-show="Number(v.price_adjustment) !== 0" style="font-size:10px; color:#9ca3af; margin:2px 0 0;"
                                    x-text="(Number(v.price_adjustment)>0?'+':'-')+' Rp '+formatRp(Math.abs(Number(v.price_adjustment)))"></p>

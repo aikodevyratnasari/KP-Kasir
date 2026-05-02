@@ -8,7 +8,7 @@
 
     @if(session('status') === 'profile-updated')
         <div class="mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">
-            ✅ Profil berhasil diperbarui.
+            Profil berhasil diperbarui.
         </div>
     @endif
 

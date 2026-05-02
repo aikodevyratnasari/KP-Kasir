@@ -87,7 +87,7 @@
                         <div>
                             <div class="flex items-center gap-2">
                                 <p class="font-medium text-gray-900">{{ $category->name }}</p>
-                                <span class="px-1.5 py-0.5 rounded text-xs {{ $category->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                                <span class="px-1.5 py-0.5 rounded-full text-xs {{ $category->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
                                     {{ $category->is_active ? 'Aktif' : 'Nonaktif' }}
                                 </span>
                             </div>
@@ -146,13 +146,15 @@
                                 <input type="file" name="image" id="{{ $editId }}" accept="image/jpeg,image/png" class="hidden"
                                        onchange="document.getElementById('editImgName_{{ $category->id }}').textContent = this.files[0] ? this.files[0].name : 'Tidak ada file'">
                                 <button type="button" onclick="document.getElementById('{{ $editId }}').click()"
-                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border border-indigo-300 text-indigo-600 bg-indigo-50 hover:bg-indigo-100">
-                                    {{-- camera --}}
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
-                                    </svg>
-                                    Pilih Foto
-                                </button>
+    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+    style="border: 1px solid #2D54BF; background-color: #2D54BF; color: white;"
+    onmouseover="this.style.backgroundColor='#1e3d8f'"
+    onmouseout="this.style.backgroundColor='#2D54BF'">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0L8 8m4-4l4 4"/>
+    </svg>
+    Upload
+</button>
                                 <span id="editImgName_{{ $category->id }}" class="ml-1 text-xs text-gray-400">
                                     {{ $category->image ? basename($category->image) : 'Tidak ada file' }}
                                 </span>

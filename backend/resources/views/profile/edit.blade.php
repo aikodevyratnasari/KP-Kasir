@@ -62,7 +62,11 @@
             </div>
 
             <div class="mt-4 text-right">
-                <button type="submit" class="btn-primary">Simpan Perubahan</button>
+                <button type="submit" 
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
+                style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f';"
+                onmouseout="this.style.backgroundColor='#2D54BF';">Simpan Perubahan</button>
             </div>
         </form>
     </div>
@@ -109,7 +113,13 @@
             </div>
 
             <div class="mt-4 text-right">
-                <button type="submit" class="btn-primary">Ganti Password</button>
+                <button type="submit" 
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
+                style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
+                onmouseover="this.style.backgroundColor='#1e3d8f';"
+                onmouseout="this.style.backgroundColor='#2D54BF';">
+                    
+                Ganti Password</button>
             </div>
         </form>
     </div>

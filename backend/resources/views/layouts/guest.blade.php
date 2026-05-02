@@ -14,12 +14,20 @@
         <div class="w-full max-w-md">
 
             {{-- Logo --}}
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg overflow-hidden">
-                <img src="{{ asset('images/image.png') }}" alt="DePOS Logo" class="w-full h-full object-contain">
+            @php
+                $guestLogo = asset('images/image.png');
+                $guestStore = \App\Models\Store::whereNotNull('logo_path')->where('is_active', true)->first()
+                    ?? \App\Models\Store::where('is_active', true)->first();
+                if ($guestStore) {
+                    $guestLogo = $guestStore->logo_url;
+                }
+            @endphp
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg overflow-hidden">
+                    <img src="{{ $guestLogo }}" alt="DePOS Logo" class="w-full h-full object-contain">
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">DePOS</h1>
             </div>
-            <h1 class="text-2xl font-bold text-gray-900">DePOS</h1>
-        </div>
 
             {{-- Card --}}
             <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
