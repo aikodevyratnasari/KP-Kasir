@@ -29,7 +29,7 @@
                 style="color:white; background-color:#2D54BF; border:1px solid #2D54BF;"
                 onmouseover="this.style.backgroundColor='#1e3d8f';"
                 onmouseout="this.style.backgroundColor='#2D54BF';">
-                Reservasi
+                Buat Reservasi
             </a>
             <!-- <a href="{{ route('cashier.reservations.create') }}" class="btn-secondary text-sm">+ Reservasi</a> -->
         </div>
@@ -96,26 +96,20 @@
                                     <p class="text-xs text-red-400 mt-0.5 inline-flex items-center gap-1">
                                         @php $orderStatus = $activeOrder->status; @endphp
                                         @if($orderStatus === 'pending')
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
-                                            </svg>
                                             Menunggu bayar
                                         @elseif($orderStatus === 'cooking')
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
-                                            </svg>
                                             Dimasak
                                         @elseif($orderStatus === 'ready')
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                                            </svg>
                                             Siap disajikan
                                         @else
                                             {{ $activeOrder->status }}
                                         @endif
                                     </p>
                                     <a href="{{ route('cashier.orders.show', $activeOrder) }}"
-                                       class="mt-1.5 block text-center text-xs bg-white border border-red-200 text-red-700 rounded-lg py-1 hover:bg-red-50 transition">
+                                        class="mt-1.5 block text-center text-xs rounded-lg py-1 transition-all"
+                                        style="color:white; background-color:#dc2626; border:1px solid #dc2626;"
+                                        onmouseover="this.style.backgroundColor='#b91c1c';"
+                                        onmouseout="this.style.backgroundColor='#dc2626';">
                                         Lihat Pesanan
                                     </a>
                                 </div>
@@ -136,13 +130,15 @@
                                     </form>
                                 </div>
                             @else
-                               <a href="{{ route('cashier.orders.create') }}?table={{ $table->id }}"
-   class="mt-2 block text-center text-xs rounded-lg py-1 transition-all"
-   style="color:white; background-color:#16a34a; border:1px solid #16a34a;"
-   onmouseover="this.style.backgroundColor='#15803d';"
-   onmouseout="this.style.backgroundColor='#16a34a';">
-    Buat Pesanan
-</a>
+                               <div class="mt-2 pt-2 border-t border-green-200">
+    <a href="{{ route('cashier.orders.create') }}?table={{ $table->id }}"
+       class="mt-1.5 block text-center text-xs rounded-lg py-1 transition-all"
+       style="color:white; background-color:#16a34a; border:1px solid #16a34a;"
+       onmouseover="this.style.backgroundColor='#15803d';"
+       onmouseout="this.style.backgroundColor='#16a34a';">
+        Buat Pesanan
+    </a>
+</div>
                             @endif
                         </div>
                     </div>
@@ -264,9 +260,11 @@
                                 ${statusLabel[t.order_status] ?? t.order_status}
                             </p>
                             <a href="/cashier/orders/${t.order_id}"
-                               class="mt-1.5 block text-center text-xs bg-white border border-red-200
-                                      text-red-700 rounded-lg py-1 hover:bg-red-50 transition">
-                                Lihat Pesanan
+                                class="mt-1.5 block text-center text-xs rounded-lg py-1 transition-all"
+                                style="color:white; background-color:#dc2626; border:1px solid #dc2626;"
+                                onmouseover="this.style.backgroundColor='#b91c1c';"
+                                onmouseout="this.style.backgroundColor='#dc2626';">
+                                    Lihat Pesanan
                             </a>
                         </div>`;
 
@@ -283,8 +281,10 @@
                             </p>
                             <p class="text-xs text-yellow-600">${t.reservation.time}</p>
                             <a href="/cashier/orders/create?table=${t.id}"
-                               class="mt-1.5 block text-center text-xs bg-indigo-600 text-white
-                                      rounded-lg py-1.5 hover:bg-indigo-700 transition font-medium">
+                               class="mt-1.5 block text-center text-xs rounded-lg py-1.5 transition-all"
+                               style="color:white; background-color:#2563eb; border:1px solid #2563eb;"
+                               onmouseover="this.style.backgroundColor='#1d4ed8';"
+                               onmouseout="this.style.backgroundColor='#2563eb';">
                                 Mulai Pesanan
                             </a>
                             <form method="POST"
@@ -302,14 +302,17 @@
                         </div>`;
 
                 } else {
-                    // available (tidak ada order, tidak ada reservasi aktif)
-                    body.innerHTML = `
-                        <a href="/cashier/orders/create?table=${t.id}"
-                           class="mt-2 block text-center text-xs bg-white border border-green-200
-                                  text-green-700 rounded-lg py-1 hover:bg-green-50 transition">
-                            Buat Pesanan
-                        </a>`;
-                }
+    body.innerHTML = `
+        <div class="mt-2 pt-2 border-t border-green-200">
+            <a href="/cashier/orders/create?table=${t.id}"
+               class="mt-1.5 block text-center text-xs rounded-lg py-1 transition-all"
+               style="color:white; background-color:#16a34a; border:1px solid #16a34a;"
+               onmouseover="this.style.backgroundColor='#15803d';"
+               onmouseout="this.style.backgroundColor='#16a34a';">
+                Buat Pesanan
+            </a>
+        </div>`;
+}
             });
 
             // Update indikator Live

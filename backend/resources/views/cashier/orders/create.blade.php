@@ -88,7 +88,7 @@ $taxRate = \App\Models\Store::select('tax_rate')->find(auth()->user()->store_id)
                             @endif
                             {{-- Badge PAKET di kanan atas seperti badge variasi --}}
                             <div style="position:absolute; top:6px; right:6px; background:#6366f1; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">
-                                PAKET
+                                BUNDLE
                             </div>
                             @if($savings > 0)
                                 <div style="position:absolute; top:6px; left:6px; background:#ef4444; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">
@@ -247,9 +247,7 @@ $taxRate = \App\Models\Store::select('tax_rate')->find(auth()->user()->store_id)
                             <div class="flex-1 leading-tight">
                                 {{-- Badge PAKET kecil, seragam dengan badge lain --}}
                                 <template x-if="item.is_bundle">
-                                    <span style="display:inline-flex; align-items:center; gap:3px; background:#ede9fe; color:#6d28d9; border:1px solid #c4b5fd; border-radius:6px; padding:1px 6px; font-size:10px; font-weight:700; margin-bottom:3px;">
-                                        PAKET
-                                    </span>
+
                                 </template>
                                 <p class="text-sm font-semibold text-gray-900" x-text="item.name"></p>
                                 <p x-show="item.variant_name" class="text-xs text-indigo-500 font-medium mt-0.5" x-text="item.variant_name"></p>

@@ -56,9 +56,6 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Jenis Produk Terjual</p>
             </div>
             <p class="text-2xl font-bold text-indigo-600">{{ $totalItems }}</p>
@@ -67,12 +64,6 @@
 
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                    <div style="width:36px;height:36px;border-radius:50%;background:#fef9c3;display:flex;align-items:center;justify-content:center;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="8" r="6"/>
-                            <path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/>
-                        </svg>
-                    </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Produk Terlaris</p>
             </div>
             <p class="font-bold text-gray-900 leading-tight" style="font-size:1.1rem; margin-top:20px;">
@@ -87,9 +78,6 @@
 
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Pesanan Dibatalkan</p>
             </div>
             <p class="text-2xl font-bold {{ ($cancelledSummary && $cancelledSummary->count > 0) ? 'text-red-500' : 'text-gray-300' }}">
@@ -114,7 +102,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr style="border-bottom:1px solid #fecaca;">
+                            <tr style="border-bottom:1px solid #e5e7eb;">
                                 <th class="py-1.5 text-left text-xs font-semibold text-gray-500 uppercase">Produk</th>
                                 <th class="py-1.5 text-center text-xs font-semibold text-gray-500 uppercase">Qty Batal</th>
                                 <th class="py-1.5 text-right text-xs font-semibold text-gray-500 uppercase">Nilai Hilang</th>
@@ -122,10 +110,10 @@
                         </thead>
                         <tbody>
                         @foreach($cancelledItems->take(10) as $ci)
-                            <tr style="border-bottom:1px solid #fef2f2;">
+                            <tr style="border-bottom:1px solid #f3f4f6;">
                                 <td class="py-1.5 text-gray-700">{{ $ci->product_name }}</td>
-                                <td class="py-1.5 text-center font-semibold" style="color:#ef4444;">{{ $ci->total_qty }}</td>
-                                <td class="py-1.5 text-right font-semibold" style="color:#ef4444;">Rp {{ number_format($ci->total_lost, 0, ',', '.') }}</td>
+                                <td class="py-1.5 text-center font-semibold text-gray-600">{{ $ci->total_qty }}</td>
+                                <td class="py-1.5 text-right font-semibold text-gray-600">Rp {{ number_format($ci->total_lost, 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
                         </tbody>

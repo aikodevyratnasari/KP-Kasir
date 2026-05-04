@@ -26,10 +26,6 @@
     @if($pendingPayments->isNotEmpty())
     <div class="card" style="border:1px solid #fde68a; background:#fffbeb;">
         <div class="flex items-start gap-2 mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
             <div>
                 <p class="text-sm font-semibold" style="color:#92400e;">Pembayaran Menunggu Konfirmasi</p>
                 <p class="text-xs mt-0.5" style="color:#b45309;">Batalkan pembayaran di bawah jika ingin mengganti metode.</p>
@@ -48,8 +44,9 @@
                 </div>
                 <button type="button" onclick="cancelPendingPayment({{ $p->id }})"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg flex-shrink-0"
-                        style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;"
+                        onmouseover="this.style.background='#fecaca';"
+                        onmouseout="this.style.background='#fee2e2';">
                     Batalkan
                 </button>
             </div>
@@ -188,8 +185,9 @@
                     <div id="qris-cancel-container" style="margin-top:12px; display:none;">
                         <button type="button" onclick="cancelActivePayment()"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg"
-                                style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;"
+                                onmouseover="this.style.background='#fecaca';"
+                                onmouseout="this.style.background='#fee2e2';">
                             Batalkan QR Ini
                         </button>
                     </div>
@@ -239,7 +237,6 @@
                 <button type="button" id="ewallet-initiate-btn" onclick="initiateGateway('ewallet')"
                         class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-xl"
                         style="color:#4338ca; background:#eef2ff; border:1.5px solid #c7d2fe;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
                     Buka Pembayaran E-Wallet
                 </button>
 
@@ -249,8 +246,9 @@
                 <div id="ewallet-cancel-container" style="display:none; text-align:center;">
                     <button type="button" onclick="cancelActivePayment()"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg"
-                            style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;"
+                            onmouseover="this.style.background='#fecaca';"
+                            onmouseout="this.style.background='#fee2e2';">
                         Batalkan Pembayaran Ini
                     </button>
                 </div>
@@ -310,25 +308,31 @@
                         {{-- Tombol normal untuk non-Mandiri --}}
                         <button type="button" onclick="copyVaNumber()" id="copy-va-btn"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
-                                style="background:#6366f1;color:white;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                style="background:#6366f1;color:white;"
+                                onmouseover="this.style.background='#4f46e5';"
+                                onmouseout="this.style.background='#6366f1';">
                             Salin No. VA
                         </button>
                         {{-- Tombol Mandiri (tersembunyi default) --}}
                         <button type="button" onclick="copyMandiriCode('biller')" id="copy-biller-btn"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
-                                style="display:none; background:#6366f1;color:white;">
+                                style="display:none; background:#6366f1;color:white;"
+                                onmouseover="this.style.background='#4f46e5';"
+                                onmouseout="this.style.background='#6366f1';">
                             Salin Biller Code
                         </button>
                         <button type="button" onclick="copyMandiriCode('billkey')" id="copy-billkey-btn"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
-                                style="display:none; background:#6366f1;color:white;">
+                                style="display:none; background:#6366f1;color:white;"
+                                onmouseover="this.style.background='#4f46e5';"
+                                onmouseout="this.style.background='#6366f1';">
                             Salin Bill Key
                         </button>
-                        <button type="button" onclick="cancelActivePayment()" id="va-cancel-btn"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg"
-                                style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                       <button type="button" onclick="cancelActivePayment()" id="va-cancel-btn"
+                                class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg"
+                                style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;"
+                                onmouseover="this.style.background='#fecaca';"
+                                onmouseout="this.style.background='#fee2e2';">
                             Batalkan VA
                         </button>
                     </div>
@@ -340,7 +344,6 @@
                 <button type="button" id="bank-transfer-initiate-btn" onclick="initiateGateway('bank_transfer')"
                         class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-xl"
                         style="color:#4338ca; background:#eef2ff; border:1.5px solid #c7d2fe;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
                     Buat Nomor Virtual Account
                 </button>
             </div>
@@ -692,7 +695,7 @@ function copyVaNumber() {
     const doSuccess = () => {
         if (!btn) return;
         const origHtml = btn.innerHTML;
-        btn.innerHTML = '✓ Tersalin!';
+        btn.innerHTML = 'Tersalin!';
         btn.style.background = '#22c55e';
         setTimeout(() => { btn.innerHTML = origHtml; btn.style.background = '#6366f1'; }, 2500);
     };
@@ -714,7 +717,7 @@ function copyMandiriCode(type) {
 
     const doSuccess = () => {
         if (!btn) return;
-        btn.textContent = '✓ Tersalin!';
+        btn.textContent = 'Tersalin!';
         btn.style.background = '#22c55e';
         setTimeout(() => {
             btn.textContent = orig;

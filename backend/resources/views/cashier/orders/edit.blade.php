@@ -83,7 +83,7 @@
                                     </svg>
                                 </div>
                             @endif
-                            <div style="position:absolute; top:6px; right:6px; background:#6366f1; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">PAKET</div>
+                            <div style="position:absolute; top:6px; right:6px; background:#6366f1; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">BUNDLE</div>
                             @if($savings > 0)
                                 <div style="position:absolute; top:6px; left:6px; background:#ef4444; color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:8px; pointer-events:none;">
                                     HEMAT {{ number_format($savings, 0, ',', '.') }}
@@ -231,9 +231,7 @@
                         <div class="flex items-start justify-between mb-1.5">
                             <div class="flex-1 leading-tight">
                                 <template x-if="item.is_bundle">
-                                    <span style="display:inline-flex; align-items:center; gap:3px; background:#ede9fe; color:#6d28d9; border:1px solid #c4b5fd; border-radius:6px; padding:1px 6px; font-size:10px; font-weight:700; margin-bottom:3px;">
-                                        PAKET
-                                    </span>
+                                  
                                 </template>
                                 <p class="text-sm font-semibold text-gray-900" x-text="item.name"></p>
                                 <p x-show="item.variant_name" class="text-xs text-indigo-500 font-medium mt-0.5" x-text="item.variant_name"></p>

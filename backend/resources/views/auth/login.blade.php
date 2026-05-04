@@ -97,6 +97,6 @@
 
     {{-- Role info helper --}}
     <div class="mt-6 pt-4 border-t border-gray-100">
-        <p class="text-xs text-center text-gray-400">Login sesuai role Anda: Admin · Manager · Kasir · Staf Dapur</p>
+        <p class="text-xs text-center text-gray-400">Login sesuai role Anda — Admin · Manager · Kasir · Staf Dapur</p>
     </div>
 </x-guest-layout>

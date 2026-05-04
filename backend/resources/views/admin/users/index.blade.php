@@ -25,6 +25,17 @@
                 </select>
             </div>
             <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Toko</label>
+                <select name="store" class="form-input w-48">
+                    <option value="">Semua Toko</option>
+                    @foreach($stores as $store)
+                        <option value="{{ $store->id }}" {{ request('store') == $store->id ? 'selected' : '' }}>
+                            {{ $store->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
                 <select name="status" class="form-input w-44">
                     <option value="">Semua Status</option>
@@ -72,8 +83,17 @@
     </div>
 
     <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ $users->total() }} user terdaftar</p>
+        <p class="text-sm text-gray-500">
+            {{ $users->total() }} user terdaftar
+            @if(request('store'))
+                @php $filterStore = $stores->firstWhere('id', request('store')); @endphp
+                @if($filterStore)
+                    <span class="ml-1 text-gray-400">— {{ $filterStore->name }}</span>
+                @endif
+            @endif
+        </p>
     </div>
+
     {{-- Tabel --}}
     <div class="card overflow-x-auto">
         <table class="w-full text-sm">
@@ -116,7 +136,16 @@
                     </td>
 
                     <td class="py-3 px-4 text-gray-600 text-xs whitespace-nowrap">
-                        {{ $user->store->name ?? '—' }}
+                        @if($user->store)
+                            <a href="{{ route('admin.stores.edit', $user->store) }}"
+                               class="hover:underline"
+                               style="color: inherit;"
+                               title="Edit toko {{ $user->store->name }}">
+                                {{ $user->store->name }}
+                            </a>
+                        @else
+                            —
+                        @endif
                     </td>
 
                     <td class="py-3 px-4 text-center">

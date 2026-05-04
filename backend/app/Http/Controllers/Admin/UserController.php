@@ -25,12 +25,14 @@ class UserController extends Controller
         $query = User::with('role', 'store')
             ->when($request->search, fn($q, $s) => $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%"))
             ->when($request->role,   fn($q, $r) => $q->whereHas('role', fn($q2) => $q2->where('slug', $r)))
-            ->when($request->status, fn($q, $s) => $q->where('status', $s));
+            ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->when($request->store,  fn($q, $s) => $q->where('store_id', $s)); // ← filter by store
 
         $users = $query->latest()->paginate(20)->withQueryString();
-        $roles = Role::all();
+        $roles  = Role::all();
+        $stores = Store::orderBy('name')->get(); // untuk dropdown filter
 
-        return view('admin.users.index', compact('users', 'roles'));
+        return view('admin.users.index', compact('users', 'roles', 'stores'));
     }
 
     public function create(): View
@@ -68,7 +70,6 @@ class UserController extends Controller
         $emailNew     = $data['email'];
         $emailChanged = $emailBefore !== $emailNew;
 
-        // Log untuk debug — hapus setelah masalah terselesaikan
         Log::info('UserController@update', [
             'user_id'       => $user->id,
             'email_before'  => $emailBefore,
@@ -82,12 +83,10 @@ class UserController extends Controller
             $data['email_verified_at'] = null;
         }
 
-        // Update langsung via DB::table untuk menghindari event pipeline Eloquent
         DB::table('users')
             ->where('id', $user->id)
             ->update(array_merge($data, ['updated_at' => now()]));
 
-        // Cek state setelah update
         $afterUpdate = DB::table('users')->where('id', $user->id)->first();
 
         Log::info('UserController@update after', [
@@ -96,7 +95,6 @@ class UserController extends Controller
             'email'      => $afterUpdate?->email,
         ]);
 
-        // Refresh model dari DB
         $user->refresh();
 
         ActivityLogService::logUpdated($user, $old, $user->toArray());

@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ProfileController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Admin\StoreController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Cashier\OrderController;
@@ -88,11 +89,17 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::get('/dashboard',        [ReportController::class, 'dashboard'])->name('dashboard');
             Route::get('/dashboard/filter', [ReportController::class, 'dashboardFilter'])->name('dashboard.filter');
 
+            // ── User Management ───────────────────────────────────────────
             Route::resource('users', UserController::class);
             Route::patch('users/{user}/toggle-status',      [UserController::class, 'toggleStatus'])->name('users.toggle-status');
             Route::post('users/{user}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
             Route::get('users/{user}/reset-password',       [UserController::class, 'showResetPassword'])->name('users.reset-password');
             Route::patch('users/{user}/reset-password',     [UserController::class, 'resetPassword'])->name('users.reset-password.update');
+
+            // ── Store Management ──────────────────────────────────────────
+            Route::resource('stores', StoreController::class)->except(['show', 'destroy']);
+            Route::patch('stores/{store}/toggle-status',    [StoreController::class, 'toggleStatus'])->name('stores.toggle-status');
+            Route::patch('stores/{store}/set-headquarters', [StoreController::class, 'setHeadquarters'])->name('stores.set-headquarters');
         });
 
     /*──────────────────────────────────────────────────────
@@ -109,8 +116,6 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::resource('categories', CategoryController::class)->except(['show']);
 
             // ── Produk ────────────────────────────────────────────────────
-            // PENTING: route statis (trashed) harus didaftarkan SEBELUM resource
-            // agar tidak tertangkap sebagai {product} parameter.
             Route::get('products/trashed', [ProductController::class, 'trashed'])->name('products.trashed');
             Route::resource('products', ProductController::class)->except(['show']);
             Route::patch('products/{product}/stock', [ProductController::class, 'adjustStock'])->name('products.stock');
@@ -125,7 +130,6 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
             Route::patch('products/{product}/discounts/{discount}/toggle', [ProductController::class, 'toggleDiscount'])->name('products.discounts.toggle');
 
             // ── Bundle Packages ───────────────────────────────────────────
-            // PENTING: route statis (create) harus sebelum route dengan parameter {bundle}
             Route::get('bundles',               [ProductController::class, 'bundles'])->name('bundles.index');
             Route::get('bundles/create',        [ProductController::class, 'createBundle'])->name('bundles.create');
             Route::post('bundles',              [ProductController::class, 'storeBundle'])->name('bundles.store');
@@ -169,7 +173,7 @@ Route::middleware(['auth', 'verified', 'account.status', 'store.scope'])->group(
         ->name('cashier.')
         ->group(function () {
 
-            // ── Snap finish redirect (HARUS sebelum resource routes) ──────
+            // ── Snap finish redirect ───────────────────────────────────────
             Route::get('snap/finish', function (Request $request) {
                 $midtransOrderId = $request->get('order_id', '');
                 $orderNumber = preg_replace('/-\d+$/', '', $midtransOrderId);

@@ -194,7 +194,7 @@
             <div class="store-meta">Telp: {{ $payment->order->store->phone }}</div>
         @endif
         <div class="order-number">No. Pesanan: <strong>#{{ $payment->order->order_number }}</strong></div>
-        <div><span class="badge-paid">✓ Lunas</span></div>
+        <div><span class="badge-paid">Lunas</span></div>
     </div>
 
     {{-- Detail Transaksi --}}

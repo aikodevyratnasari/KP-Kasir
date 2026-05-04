@@ -53,24 +53,22 @@
 
         <div class="ml-auto flex gap-2 items-center">
 
-            {{-- Tombol Tambah Paket Bundling → langsung ke create --}}
+            {{-- Tombol Tambah Paket Bundling --}}
             <a href="{{ route('manager.bundles.create') }}"
-   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
-   style="background-color: #16a34a; border: 1px solid #16a34a; color: white;"
-   onmouseover="this.style.backgroundColor='#15803d'; this.style.borderColor='#15803d';"
-   onmouseout="this.style.backgroundColor='#16a34a'; this.style.borderColor='#16a34a';">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 22 8.5 12 15 2 8.5"/>
-        <polyline points="2 15.5 12 22 22 15.5"/>
-        <polyline points="2 12 12 18.5 22 12"/>
-    </svg>
-    Tambah Bundling
-    @if(isset($bundleCount) && $bundleCount > 0)
-        <span style="background:white; color:#16a34a; font-size:10px; font-weight:700; min-width:18px; height:18px; border-radius:9px; padding:0 4px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">
-            {{ $bundleCount }}
-        </span>
-    @endif
-</a>
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
+               style="background-color: #16a34a; border: 1px solid #16a34a; color: white;"
+               onmouseover="this.style.backgroundColor='#15803d'; this.style.borderColor='#15803d';"
+               onmouseout="this.style.backgroundColor='#16a34a'; this.style.borderColor='#16a34a';">
+                {{-- Icon: gift/box package --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 12v10H4V12"/>
+                    <path d="M22 7H2v5h20V7z"/>
+                    <path d="M12 22V7"/>
+                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                </svg>
+                Tambah Bundling
+            </a>
 
             {{-- Tambah Produk --}}
             <a href="{{ route('manager.products.create') }}"
@@ -101,8 +99,162 @@
     </form>
 </div>
 
-    {{-- Tabel Produk --}}
-    <div class="card p-0 overflow-hidden">
+{{-- ── CARD PAKET BUNDLING (hanya tampil jika filter "Semua" / tidak ada filter kategori & search) ── --}}
+@php
+    $showBundles = isset($bundles) && $bundles->count() > 0
+        && !request('category')
+        && !request('search')
+        && !request('sort');
+@endphp
+
+@if($showBundles)
+<div class="card p-0 overflow-hidden">
+    {{-- Header card bundle --}}
+    <div class="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-3">
+        <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 12v10H4V12"/>
+                <path d="M22 7H2v5h20V7z"/>
+                <path d="M12 22V7"/>
+                <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+            </svg>
+            <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">Paket Bundling</span>
+        </div>
+        <div class="flex-1 h-px bg-gray-200"></div>
+        <span class="text-xs text-gray-400">{{ $bundles->count() }} paket</span>
+    </div>
+
+    {{-- Tabel bundle dengan header kolom sejajar produk --}}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[700px]">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="py-3 px-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Produk</th>
+                    <th class="py-3 px-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Kategori</th>
+                    <th class="py-3 px-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wide">Harga</th>
+                    <th class="py-3 px-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">Tersedia</th>
+                    <th class="py-3 px-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wide">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+            @foreach($bundles as $bundle)
+            @php
+                $isActive    = $bundle->isCurrentlyActive();
+                $normalPrice = $bundle->normalPrice();
+                $savings     = $bundle->savings();
+            @endphp
+            <tr class="transition-colors"
+                onmouseover="this.style.backgroundColor='#f5f3ff'"
+                onmouseout="this.style.backgroundColor=''">
+
+                {{-- Kolom Produk --}}
+                <td class="py-3 px-4">
+                    <div class="flex items-center gap-3">
+                        @if($bundle->image)
+                            <img src="{{ Storage::url($bundle->image) }}" alt="{{ $bundle->name }}"
+                                 class="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                 style="display:none; background-color:#ede9fe;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" style="color:#7c3aed;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 12v10H4V12"/>
+                                    <path d="M22 7H2v5h20V7z"/>
+                                    <path d="M12 22V7"/>
+                                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                                </svg>
+                            </div>
+                        @else
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                 style="background-color:#ede9fe;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" style="color:#7c3aed;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 12v10H4V12"/>
+                                    <path d="M22 7H2v5h20V7z"/>
+                                    <path d="M12 22V7"/>
+                                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                                </svg>
+                            </div>
+                        @endif
+                        <div class="min-w-0">
+                            <p class="font-medium text-gray-900 truncate">{{ $bundle->name }}</p>
+                            <p class="text-xs text-gray-500 truncate max-w-xs">
+                                {{ $bundle->items->map(fn($i) => $i->product->name . ' ×' . $i->quantity)->join(' + ') }}
+                            </p>
+                        </div>
+                    </div>
+                </td>
+
+                {{-- Kolom Kategori — badge PAKET sejajar dengan badge kategori produk --}}
+                <td class="py-3 px-4">
+                    <span style="background:#ede9fe; color:#6d28d9; border:1px solid #c4b5fd; font-size:11px; font-weight:700; padding:2px 10px; border-radius:6px; white-space:nowrap; display:inline-block;">
+                        Bundle
+                    </span>
+                </td>
+
+                {{-- Kolom Harga — sejajar dengan harga produk (text-right) --}}
+                <td class="py-3 px-4 text-right whitespace-nowrap">
+                    <p class="font-semibold text-gray-900">Rp {{ number_format($bundle->bundle_price, 0, ',', '.') }}</p>
+                    @if($savings > 0)
+                        <p class="text-xs text-gray-400 line-through">Rp {{ number_format($normalPrice, 0, ',', '.') }}</p>
+                    @endif
+                </td>
+
+                {{-- Kolom Tersedia — status aktif/nonaktif/kadaluarsa --}}
+                <td class="py-3 px-4 text-center">
+                    @if($isActive)
+                        <span class="text-xs font-semibold text-green-600">Aktif</span>
+                    @elseif(!$bundle->is_active)
+                        <span class="text-xs font-semibold text-gray-400">Nonaktif</span>
+                    @else
+                        <span class="text-xs font-semibold text-amber-500">Kadaluarsa</span>
+                    @endif
+                </td>
+
+                {{-- Kolom Aksi --}}
+                <td class="py-3 px-4 text-center">
+                    <div class="flex justify-center items-center gap-2">
+                        <a href="{{ route('manager.bundles.edit', $bundle) }}"
+                           class="inline-flex items-center justify-center transition-all p-1"
+                           style="color:#EF8F00;"
+                           onmouseover="this.style.color='#cc7a00';"
+                           onmouseout="this.style.color='#EF8F00';"
+                           title="Edit Paket">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </a>
+                        <form method="POST" action="{{ route('manager.bundles.destroy', $bundle) }}"
+                              onsubmit="return confirm('Hapus paket {{ addslashes($bundle->name) }}?')">
+                            @csrf @method('DELETE')
+                            <button type="submit"
+                                    class="inline-flex items-center justify-center transition-all p-1"
+                                    style="color:#dc2626; background:none; border:none;"
+                                    onmouseover="this.style.color='#b91c1c';"
+                                    onmouseout="this.style.color='#dc2626';"
+                                    title="Hapus Paket">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                                    <path d="M10 11v6M14 11v6"/>
+                                    <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
+{{-- Tabel Produk --}}
+<div class="card p-0 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm min-w-[700px]">
             <thead class="bg-gray-50 border-b border-gray-200">
@@ -124,11 +276,17 @@
                         <div class="flex items-center gap-3">
                             @if($product->image)
                                 <img src="{{ Storage::url($product->image) }}" alt="{{ $product->name }}"
-                                     class="w-10 h-10 rounded-lg object-cover flex-shrink-0">
+                                     class="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="w-10 h-10 rounded-lg bg-gray-100 items-center justify-center flex-shrink-0" style="display:none;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                </div>
                             @else
                                 <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+                                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
                                     </svg>
                                 </div>
                             @endif
@@ -237,103 +395,12 @@
         </table>
     </div>
 
-    {{-- ── SEKAT BUNDLING — tampil di bawah produk biasa ── --}}
-    @if(isset($bundles) && $bundles->count() > 0)
-    <div class="border-t-2 border-dashed border-gray-200">
-        {{-- Header sekat --}}
-        <div style="display:flex; align-items:center; gap:10px; padding:12px 16px 8px;">
-            <span style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.09em; white-space:nowrap; display:flex; align-items:center; gap:6px;">
-                <svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                Paket Bundling
-            </span>
-            <div style="flex:1; height:1px; background:#e5e7eb;"></div>
-            <span style="font-size:10px; color:#9ca3af; white-space:nowrap;">{{ $bundles->count() }} paket</span>
-        </div>
-        {{-- Baris bundle --}}
-        @foreach($bundles as $bundle)
-        @php
-            $isActive    = $bundle->isCurrentlyActive();
-            $normalPrice = $bundle->normalPrice();
-            $savings     = $bundle->savings();
-            $savingsPct  = $normalPrice > 0 ? round($savings / $normalPrice * 100) : 0;
-        @endphp
-        <div class="border-t border-gray-100 transition-colors"
-             onmouseover="this.style.backgroundColor='#f0f4ff'"
-             onmouseout="this.style.backgroundColor=''">
-            <div class="grid py-3 px-4" style="grid-template-columns: 1fr auto auto auto auto; align-items:center; gap:16px;">
-                {{-- Nama paket --}}
-                <div class="flex items-center gap-3 min-w-0">
-                    @if($bundle->image)
-                        <img src="{{ Storage::url($bundle->image) }}" alt="{{ $bundle->name }}"
-                             class="w-10 h-10 rounded-lg object-cover flex-shrink-0">
-                    @else
-                        <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                        </div>
-                    @endif
-                    <div class="min-w-0">
-                        <p class="font-medium text-gray-900 truncate">{{ $bundle->name }}</p>
-                        <p class="text-xs text-gray-500 truncate">
-                            {{ $bundle->items->map(fn($i) => $i->product->name . ' ×' . $i->quantity)->join(' + ') }}
-                        </p>
-                    </div>
-                </div>
-                {{-- Badge PAKET --}}
-                <div>
-                    <span style="background:#ede9fe; color:#6d28d9; border:1px solid #c4b5fd; font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; white-space:nowrap;">
-                        PAKET
-                    </span>
-                </div>
-                {{-- Harga --}}
-                <div class="text-right whitespace-nowrap">
-                    <p class="font-semibold text-gray-900 text-sm">Rp {{ number_format($bundle->bundle_price, 0, ',', '.') }}</p>
-                    @if($savings > 0)
-                        <p class="text-xs text-gray-400 line-through">Rp {{ number_format($normalPrice, 0, ',', '.') }}</p>
-                    @endif
-                </div>
-                {{-- Status --}}
-                <div class="text-center">
-                    @if($isActive)
-                        <span class="text-xs font-semibold text-green-600">Aktif</span>
-                    @elseif(!$bundle->is_active)
-                        <span class="text-xs font-semibold text-gray-400">Nonaktif</span>
-                    @else
-                        <span class="text-xs font-semibold text-amber-500">Kadaluarsa</span>
-                    @endif
-                </div>
-                {{-- Aksi --}}
-                <div class="flex justify-center items-center gap-2">
-                    <a href="{{ route('manager.bundles.edit', $bundle) }}"
-                       class="inline-flex items-center justify-center transition-all p-1"
-                       style="color:#EF8F00;"
-                       onmouseover="this.style.color='#cc7a00';"
-                       onmouseout="this.style.color='#EF8F00';"
-                       title="Edit Paket">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </a>
-                    <form method="POST" action="{{ route('manager.bundles.destroy', $bundle) }}"
-                          onsubmit="return confirm('Hapus paket {{ addslashes($bundle->name) }}?')">
-                        @csrf @method('DELETE')
-                        <button type="submit"
-                                class="inline-flex items-center justify-center transition-all p-1"
-                                style="color:#dc2626; background:none; border:none;"
-                                onmouseover="this.style.color='#b91c1c';"
-                                onmouseout="this.style.color='#dc2626';"
-                                title="Hapus Paket">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        @endforeach
-    </div>
-    @endif
-
     <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
         <div class="pagination-custom">
             {{ $products->links() }}
         </div>
     </div>
+</div>
+
 </div>
 @endsection

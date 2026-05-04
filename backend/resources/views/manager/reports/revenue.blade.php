@@ -64,9 +64,6 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Total Revenue</p>
             </div>
             <p class="text-2xl font-bold text-gray-900">Rp {{ number_format($totalRev, 0, ',', '.') }}</p>
@@ -74,9 +71,6 @@
         </div>
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Jumlah Periode</p>
             </div>
             <p class="text-2xl font-bold text-indigo-600">{{ $rows->count() }}</p>
@@ -84,9 +78,6 @@
         </div>
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Rata-rata / Periode</p>
             </div>
             <p class="text-2xl font-bold text-gray-900">

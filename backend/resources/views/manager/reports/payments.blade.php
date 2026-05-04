@@ -79,9 +79,6 @@
         {{-- Lunas --}}
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Lunas</p>
             </div>
             <p class="text-2xl font-bold text-gray-900">Rp {{ number_format($summary->total ?? 0, 0, ',', '.') }}</p>
@@ -91,9 +88,6 @@
         {{-- Refund --}}
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Refund</p>
             </div>
             <p class="text-2xl font-bold text-orange-600">Rp {{ number_format($refundedStat->total ?? 0, 0, ',', '.') }}</p>
@@ -103,9 +97,6 @@
         {{-- Belum Bayar --}}
         <div class="card" style="{{ $unpaidOrders->count() > 0 ? 'border-left:3px solid #f97316;' : '' }}">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Belum Bayar</p>
             </div>
             <p class="text-2xl font-bold {{ $unpaidOrders->count() > 0 ? 'text-orange-500' : 'text-gray-300' }}">
@@ -117,9 +108,6 @@
         {{-- Pending --}}
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:#fefce8;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Pending</p>
             </div>
             <p class="text-2xl font-bold text-yellow-600">{{ $pendingPayStat->count ?? 0 }}</p>

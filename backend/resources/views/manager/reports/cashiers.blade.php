@@ -57,9 +57,6 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Total Penjualan</p>
             </div>
             <p class="text-2xl font-bold text-gray-900">Rp {{ number_format($totalSales, 0, ',', '.') }}</p>
@@ -67,18 +64,12 @@
         </div>
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Kasir Aktif</p>
             </div>
             <p class="text-2xl font-bold text-indigo-600">{{ $cashiers->count() }}</p>
         </div>
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Total Dibatalkan</p>
             </div>
             <p class="text-2xl font-bold {{ $totalCancelled > 0 ? 'text-red-500' : 'text-gray-300' }}">{{ $totalCancelled }}</p>
@@ -86,9 +77,6 @@
         </div>
         <div class="card" style="{{ $totalPending > 0 ? 'border-left:3px solid #fb923c;' : '' }}">
             <div class="flex items-center gap-2 mb-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </div>
                 <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Total Pending</p>
             </div>
             <p class="text-2xl font-bold {{ $totalPending > 0 ? 'text-orange-500' : 'text-gray-300' }}">{{ $totalPending }}</p>
@@ -119,8 +107,8 @@
             <h2 class="font-semibold text-gray-800 text-sm">Performa per Kasir</h2>
             <p class="text-xs text-gray-400 mt-0.5">
                 Kolom
-                <span class="font-medium" style="color:#ef4444;">Dibatalkan</span> dan
-                <span class="font-medium" style="color:#f97316;">Pending</span>
+                <span class="font-medium text-red-500">Dibatalkan</span> dan
+                <span class="font-medium text-green-600">Pending</span>
                 ditampilkan untuk transparansi penuh.
             </p>
         </div>
@@ -153,17 +141,17 @@
                         </td>
                         <td class="py-2.5 px-3 text-right">
                             @if($cancelled && $cancelled->cancelled_count > 0)
-                                <span style="color:#ef4444;font-weight:600;">{{ $cancelled->cancelled_count }}</span>
+                                <span class="text-gray-500 font-semibold">{{ $cancelled->cancelled_count }}</span>
                                 <span class="text-xs text-gray-400 block">Rp {{ number_format($cancelled->cancelled_amount, 0, ',', '.') }}</span>
                             @else
-                                <span class="text-gray-300">—</span>
+                                <span class="text-gray-500">—</span>
                             @endif
                         </td>
                         <td class="py-2.5 px-3 text-right">
                             @if($pending && $pending->pending_count > 0)
-                                <span style="color:#f97316;font-weight:600;">{{ $pending->pending_count }}</span>
+                                <span class="text-gray-500 font-semibold">{{ $pending->pending_count }}</span>
                             @else
-                                <span class="text-gray-300">—</span>
+                                <span class="text-gray-500">—</span>
                             @endif
                         </td>
                     </tr>
@@ -181,8 +169,8 @@
                         <td class="py-2.5 px-3 text-right font-bold text-gray-900">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
                         <td class="py-2.5 px-3"></td>
                         <td class="py-2.5 px-3"></td>
-                        <td class="py-2.5 px-3 text-right font-semibold" style="color:#ef4444;">{{ $totalCancelled ?: '—' }}</td>
-                        <td class="py-2.5 px-3 text-right font-semibold" style="color:#f97316;">{{ $totalPending ?: '—' }}</td>
+                        <td class="py-2.5 px-3 text-right font-semibold text-gray-500">{{ $totalCancelled ?: '—' }}</td>
+                        <td class="py-2.5 px-3 text-right font-semibold text-gray-500">{{ $totalPending ?: '—' }}</td>
                     </tr>
                 </tfoot>
                 @endif

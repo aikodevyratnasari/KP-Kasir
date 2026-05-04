@@ -46,9 +46,9 @@
 
             {{-- Logo + tulisan DePOS (hanya saat terbuka) --}}
             <a x-show="open" href="{{ auth()->user()->dashboardRoute() }}" class="flex items-center gap-2 min-w-0 overflow-hidden">
-                <div class="w-6 h-6 rounded-lg overflow-hidden flex-shrink-0">
-                    <img src="{{ $storeLogo }}" alt="Logo" class="w-full h-full object-contain">
-                </div>
+                <div class="w-8 h-8 overflow-hidden flex-shrink-0 bg-white" style="border-radius: 10px;">
+    <img src="{{ $storeLogo }}" alt="Logo" class="w-full h-full object-cover">
+</div>
                 <span class="font-bold text-base whitespace-nowrap overflow-hidden" style="color: #ffffff;">DePOS</span>
             </a>
 
@@ -270,43 +270,82 @@
             {{-- ADMIN --}}
             @if($role === 'admin')
                 <div x-show="open" class="px-4 pt-4 pb-1">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: rgba(255,255,255,0.5);">Akun</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: rgba(255,255,255,0.5);">Menu Admin</p>
                 </div>
                 <div x-show="!open" class="my-1 mx-2" style="border-top: 1px solid rgba(255,255,255,0.15);"></div>
+
+                {{-- Users --}}
                 @php $a = request()->routeIs('admin.users.*'); @endphp
                 <a href="{{ route('admin.users.index') }}" title="Users"
-   x-data="{ hovered: false, tipY: 0 }"
-   @mouseenter="if(!open){ hovered = true; tipY = $el.getBoundingClientRect().top + $el.getBoundingClientRect().height / 2 }"
-   @mouseleave="hovered = false"
-   class="relative flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-all mb-0.5"
-   :class="open ? 'px-3' : 'justify-center px-0'"
-   style="{{ $a ? 'background-color: rgba(255,255,255,0.2); color: white; font-weight: 600;' : 'color: rgba(255,255,255,0.75);' }}"
-   onmouseover="{{ $a ? '' : "this.style.backgroundColor='rgba(255,255,255,0.12)'; this.style.color='white';" }}"
-   onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='rgba(255,255,255,0.75)';" }}"
-   onmousedown="{{ $a ? '' : "this.style.transform='scale(0.98)';" }}"
-   onmouseup="{{ $a ? '' : "this.style.transform='scale(1)';" }}">
-    <span class="w-6 flex-shrink-0 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-        </svg>
-    </span>
-    <span x-show="open" class="whitespace-nowrap">Users</span>
-    <span x-show="hovered"
-          x-transition:enter="transition ease-out duration-150"
-          x-transition:enter-start="opacity-0"
-          x-transition:enter-end="opacity-100"
-          x-transition:leave="transition ease-in duration-100"
-          x-transition:leave-start="opacity-100"
-          x-transition:leave-end="opacity-0"
-          class="pointer-events-none fixed z-[9999]"
-          :style="'left: 72px; top: ' + tipY + 'px; transform: translateY(-50%);'">
-        <span style="position: absolute; left: -6px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 7px solid #181375;"></span>
-        <span class="block px-3 py-1.5 text-sm font-medium rounded-lg whitespace-nowrap"
-              style="background: #181375; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-            Users
-        </span>
-    </span>
-</a>
+                   x-data="{ hovered: false, tipY: 0 }"
+                   @mouseenter="if(!open){ hovered = true; tipY = $el.getBoundingClientRect().top + $el.getBoundingClientRect().height / 2 }"
+                   @mouseleave="hovered = false"
+                   class="relative flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-all mb-0.5"
+                   :class="open ? 'px-3' : 'justify-center px-0'"
+                   style="{{ $a ? 'background-color: rgba(255,255,255,0.2); color: white; font-weight: 600;' : 'color: rgba(255,255,255,0.75);' }}"
+                   onmouseover="{{ $a ? '' : "this.style.backgroundColor='rgba(255,255,255,0.12)'; this.style.color='white';" }}"
+                   onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='rgba(255,255,255,0.75)';" }}"
+                   onmousedown="{{ $a ? '' : "this.style.transform='scale(0.98)';" }}"
+                   onmouseup="{{ $a ? '' : "this.style.transform='scale(1)';" }}">
+                    <span class="w-6 flex-shrink-0 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </span>
+                    <span x-show="open" class="whitespace-nowrap">Users</span>
+                    <span x-show="hovered"
+                          x-transition:enter="transition ease-out duration-150"
+                          x-transition:enter-start="opacity-0"
+                          x-transition:enter-end="opacity-100"
+                          x-transition:leave="transition ease-in duration-100"
+                          x-transition:leave-start="opacity-100"
+                          x-transition:leave-end="opacity-0"
+                          class="pointer-events-none fixed z-[9999]"
+                          :style="'left: 72px; top: ' + tipY + 'px; transform: translateY(-50%);'">
+                        <span style="position: absolute; left: -6px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 7px solid #181375;"></span>
+                        <span class="block px-3 py-1.5 text-sm font-medium rounded-lg whitespace-nowrap"
+                              style="background: #181375; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                            Users
+                        </span>
+                    </span>
+                </a>
+
+                {{-- Toko — TAMBAHAN BARU --}}
+                @php $a = request()->routeIs('admin.stores.*'); @endphp
+                <a href="{{ route('admin.stores.index') }}" title="Toko"
+                   x-data="{ hovered: false, tipY: 0 }"
+                   @mouseenter="if(!open){ hovered = true; tipY = $el.getBoundingClientRect().top + $el.getBoundingClientRect().height / 2 }"
+                   @mouseleave="hovered = false"
+                   class="relative flex items-center gap-3 mx-1 py-2 rounded-lg text-sm transition-all mb-0.5"
+                   :class="open ? 'px-3' : 'justify-center px-0'"
+                   style="{{ $a ? 'background-color: rgba(255,255,255,0.2); color: white; font-weight: 600;' : 'color: rgba(255,255,255,0.75);' }}"
+                   onmouseover="{{ $a ? '' : "this.style.backgroundColor='rgba(255,255,255,0.12)'; this.style.color='white';" }}"
+                   onmouseout="{{ $a ? '' : "this.style.backgroundColor=''; this.style.color='rgba(255,255,255,0.75)';" }}"
+                   onmousedown="{{ $a ? '' : "this.style.transform='scale(0.98)';" }}"
+                   onmouseup="{{ $a ? '' : "this.style.transform='scale(1)';" }}">
+                    <span class="w-6 flex-shrink-0 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </span>
+                    <span x-show="open" class="whitespace-nowrap">Toko</span>
+                    <span x-show="hovered"
+                          x-transition:enter="transition ease-out duration-150"
+                          x-transition:enter-start="opacity-0"
+                          x-transition:enter-end="opacity-100"
+                          x-transition:leave="transition ease-in duration-100"
+                          x-transition:leave-start="opacity-100"
+                          x-transition:leave-end="opacity-0"
+                          class="pointer-events-none fixed z-[9999]"
+                          :style="'left: 72px; top: ' + tipY + 'px; transform: translateY(-50%);'">
+                        <span style="position: absolute; left: -6px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 7px solid #181375;"></span>
+                        <span class="block px-3 py-1.5 text-sm font-medium rounded-lg whitespace-nowrap"
+                              style="background: #181375; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                            Toko
+                        </span>
+                    </span>
+                </a>
             @endif
 
             <div class="h-4"></div>

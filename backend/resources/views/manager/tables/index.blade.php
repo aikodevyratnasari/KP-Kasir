@@ -188,14 +188,7 @@
                            class="form-input">
                 </div>
             </div>
-            <div class="flex justify-between mt-6">
-                <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
-    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-    style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
-    onmouseover="this.style.backgroundColor='#f3f4f6';"
-    onmouseout="this.style.backgroundColor='white';">
-    Batal
-</button>
+            <div class="flex justify-end mt-6">
     <button type="submit"
         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
         style="background-color: #2D54BF; border: 1px solid #2D54BF;"
@@ -222,8 +215,7 @@
         </div>
         <p class="text-xs text-gray-500 mb-5">
             Buat banyak meja sekaligus dengan awalan dan nomor urut.
-            Contoh: awalan <strong>A</strong>, nomor <strong>1–6</strong>, kapasitas <strong>4</strong>
-            → akan membuat <strong>A01, A02, A03, A04, A05, A06</strong>.
+            Contoh: awalan <strong>A</strong>, nomor <strong>1–6</strong>, kapasitas <strong>4</strong> akan membuat <strong>A01, A02, A03, A04, A05, A06</strong>.
         </p>
 
         <form method="POST" action="{{ route('manager.tables.bulk') }}">
@@ -304,14 +296,7 @@
                 </div>
             </div>
 
-            <div class="flex justify-between mt-6">
-                <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
-    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-    style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
-    onmouseover="this.style.backgroundColor='#f3f4f6';"
-    onmouseout="this.style.backgroundColor='white';">
-    Batal
-</button>
+            <div class="flex justify-end mt-6">
     <button type="submit"
         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
         style="background-color: #2D54BF; border: 1px solid #2D54BF;"
@@ -382,15 +367,8 @@
                     </select>
                 </div>
             </div>
-            <div class="flex justify-between mt-6">
-                <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
-    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-    style="border: 1.5px solid #dcdcdc; background-color: white; color: #374151;"
-    onmouseover="this.style.backgroundColor='#f3f4f6';"
-    onmouseout="this.style.backgroundColor='white';">
-    Batal
-</button>
-<button type="submit" 
+            <div class="flex justify-end mt-6">
+                <button type="submit" 
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
                     style="background-color: #2D54BF"
                     onmouseover="this.style.backgroundColor='#1e3d8f'"
