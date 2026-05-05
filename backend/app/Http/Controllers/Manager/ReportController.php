@@ -34,9 +34,6 @@ class ReportController extends Controller
 
         [$start, $end] = [now()->subYears(10)->startOfDay(), now()->endOfDay()];
 
-        // Gunakan dashboardAnalytics dengan range semua waktu agar
-        // stat cards (penjualan, total pesanan, rata-rata) konsisten dengan
-        // filter default "Total" yang terpilih di UI.
         $raw = $this->reportService->dashboardAnalytics($storeId, $start, $end);
 
         $data = [
@@ -131,37 +128,31 @@ class ReportController extends Controller
         [$from, $to] = $this->parseDates($request);
         $storeId = $request->get('_store_id');
 
-        $visiblePaymentFilter = $this->buildVisiblePaymentFilter();
+        // Ambil IDs representatif sekali, dipakai untuk tabel dan semua summary cards
+        $representativeIds = $this->getRepresentativePaymentIds($storeId, $from, $to, $request);
 
-        $payments = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
-            ->with(['order', 'cashier'])
-            ->tap($visiblePaymentFilter)
-            ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
+        $payments = \App\Models\Payment::with(['order', 'cashier'])
+            ->whereIn('id', $representativeIds)
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
-            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->latest()
             ->paginate(50)
             ->withQueryString();
 
-        $summary = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+        // Summary cards dihitung dari IDs representatif — konsisten dengan tabel
+        $summary = \App\Models\Payment::whereIn('id', $representativeIds)
             ->where('status', 'paid')
-            ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
-            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->selectRaw('SUM(amount) as total, COUNT(*) as count')
             ->first();
 
-        $summaryByStatus = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
-            ->tap($visiblePaymentFilter)
-            ->when($request->method, fn($q, $m) => $q->where('payment_method', $m))
-            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+        $summaryByStatus = \App\Models\Payment::whereIn('id', $representativeIds)
+            ->whereIn('status', ['paid', 'refunded', 'pending'])
             ->selectRaw('status, SUM(amount) as total, COUNT(*) as count')
             ->groupBy('status')
             ->get()
             ->keyBy('status');
 
-        $byMethodSummary = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
+        $byMethodSummary = \App\Models\Payment::whereIn('id', $representativeIds)
             ->where('status', 'paid')
-            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->selectRaw('payment_method, SUM(amount) as total, COUNT(*) as count')
             ->groupBy('payment_method')
             ->orderByRaw("CASE payment_method
@@ -299,16 +290,7 @@ class ReportController extends Controller
             })(),
 
             'payments' => (function () use ($storeId, $fromDate, $toDate, $from, $to, $request) {
-                $visiblePaymentFilter = $this->buildVisiblePaymentFilter();
-
-                $payments = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
-                    ->with(['order', 'cashier'])
-                    ->tap($visiblePaymentFilter)
-                    ->when($request?->method, fn($q, $m) => $q->where('payment_method', $m))
-                    ->when($request?->status, fn($q, $s) => $q->where('status', $s))
-                    ->whereBetween('created_at', [$fromDate, $toDate])
-                    ->latest()
-                    ->get();
+                $payments = $this->buildRepresentativePaymentCollection($storeId, $fromDate, $toDate, $request);
 
                 $unpaidOrders = \App\Models\Order::forStore($storeId)
                     ->whereIn('status', ['pending', 'cooking', 'ready'])
@@ -376,16 +358,7 @@ class ReportController extends Controller
             })()),
 
             'payments' => array_merge($base, (function () use ($storeId, $fromDate, $toDate, $request) {
-                $visiblePaymentFilter = $this->buildVisiblePaymentFilter();
-
-                $payments = \App\Models\Payment::whereHas('order', fn($q) => $q->where('store_id', $storeId))
-                    ->with(['order', 'cashier'])
-                    ->tap($visiblePaymentFilter)
-                    ->when($request?->method, fn($q, $m) => $q->where('payment_method', $m))
-                    ->when($request?->status, fn($q, $s) => $q->where('status', $s))
-                    ->whereBetween('created_at', [$fromDate, $toDate])
-                    ->latest()
-                    ->get();
+                $payments = $this->buildRepresentativePaymentCollection($storeId, $fromDate, $toDate, $request);
 
                 $unpaidOrders = \App\Models\Order::forStore($storeId)
                     ->whereIn('status', ['pending', 'cooking', 'ready'])
@@ -405,30 +378,80 @@ class ReportController extends Controller
         };
     }
 
-    // ── Visible Payment Filter ────────────────────────────────────────────
-    private function buildVisiblePaymentFilter(): \Closure
-    {
-        return function ($q) {
-            $q->where(function ($inner) {
-                $inner->whereIn('status', ['paid', 'refunded'])
-                    ->orWhere(function ($pending) {
-                        $pending->where('status', 'pending')
-                            ->whereDoesntHave('order.payments', function ($pq) {
-                                $pq->where('status', 'paid');
-                            });
-                    });
-            });
-        };
+    /**
+     * Ambil IDs payment representatif per order (1 payment terbaik per order).
+     *
+     * Prioritas: paid=1, refunded=2, pending=3 — cancelled tidak pernah masuk.
+     * Filter method diterapkan di sini agar summary cards konsisten dengan tabel.
+     * Filter status TIDAK diterapkan di sini — dipakai setelah DISTINCT ON agar
+     * pemilihan "wakil" tetap melihat semua kandidat.
+     */
+    private function getRepresentativePaymentIds(
+        int $storeId,
+        \Carbon\Carbon $from,
+        \Carbon\Carbon $to,
+        ?\Illuminate\Http\Request $request = null
+    ): \Illuminate\Support\Collection {
+        $fromStr = $from->copy()->startOfDay()->toDateTimeString();
+        $toStr   = $to->copy()->endOfDay()->toDateTimeString();
+
+        $orderIds = \App\Models\Order::forStore($storeId)
+            ->whereBetween('created_at', [$fromStr, $toStr])
+            ->pluck('id');
+
+        return DB::table('payments')
+            ->selectRaw("DISTINCT ON (order_id) id")
+            ->whereIn('order_id', $orderIds)
+            ->whereIn('status', ['paid', 'refunded', 'pending'])
+            ->when($request?->method, fn($q, $m) => $q->where('payment_method', $m))
+            ->orderByRaw("order_id, CASE status
+                WHEN 'paid'     THEN 1
+                WHEN 'refunded' THEN 2
+                WHEN 'pending'  THEN 3
+                ELSE 4 END, created_at DESC")
+            ->pluck('id');
+    }
+
+    /**
+     * Query paginated — untuk tampilan tabel laporan pembayaran web.
+     * Filter status diterapkan di luar DISTINCT ON (setelah IDs representatif dipilih).
+     */
+    private function buildRepresentativePaymentQuery(
+        int $storeId,
+        \Carbon\Carbon $from,
+        \Carbon\Carbon $to,
+        ?\Illuminate\Http\Request $request = null
+    ): \Illuminate\Pagination\LengthAwarePaginator {
+        $representativeIds = $this->getRepresentativePaymentIds($storeId, $from, $to, $request);
+
+        return \App\Models\Payment::with(['order', 'cashier'])
+            ->whereIn('id', $representativeIds)
+            ->when($request?->status, fn($q, $s) => $q->where('status', $s))
+            ->latest()
+            ->paginate(50)
+            ->withQueryString();
+    }
+
+    /**
+     * Versi Collection (tanpa paginate) — dipakai untuk export.
+     */
+    private function buildRepresentativePaymentCollection(
+        int $storeId,
+        \Carbon\Carbon $from,
+        \Carbon\Carbon $to,
+        ?\Illuminate\Http\Request $request = null
+    ): \Illuminate\Support\Collection {
+        $representativeIds = $this->getRepresentativePaymentIds($storeId, $from, $to, $request);
+
+        return \App\Models\Payment::with(['order', 'cashier'])
+            ->whereIn('id', $representativeIds)
+            ->when($request?->status, fn($q, $s) => $q->where('status', $s))
+            ->latest()
+            ->get();
     }
 
     // ── Dashboard helpers ─────────────────────────────────────────────────
 
-    /**
-     * Tren harian pesanan — hanya status completed & cancelled.
-     *
-     * Format output:
-     *   [['date' => '2024-04-01', 'completed' => 5, 'cancelled' => 1], ...]
-     */
     private function trendByStatus(int $storeId, $start, $end): array
     {
         $rows = \App\Models\Order::forStore($storeId)
@@ -449,12 +472,6 @@ class ReportController extends Controller
             ->toArray();
     }
 
-    /**
-     * Breakdown metode pembayaran berdasarkan total nilai transaksi lunas.
-     *
-     * Format output:
-     *   [['payment_method' => 'cash', 'total' => 500000], ...]
-     */
     private function paymentBreakdown(int $storeId, $start, $end): array
     {
         return \App\Models\Payment::whereHas(

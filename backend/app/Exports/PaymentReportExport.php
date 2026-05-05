@@ -23,39 +23,39 @@ class PaymentReportExport implements FromCollection, WithStyles, WithTitle, Shou
 
     public function collection(): Collection
     {
-        $rows         = collect();
-        $payCol       = collect($this->payments);
-        $unpaid       = collect($this->unpaidOrders);
-        $byStatus     = $payCol->groupBy('status');
-        $paidGroup    = $byStatus->get('paid',     collect());
-        $refundGroup  = $byStatus->get('refunded', collect());
-        $pendingGroup = $byStatus->get('pending',  collect());
+        $rows       = collect();
+        $payCol     = collect($this->payments);
+        $unpaid     = collect($this->unpaidOrders);
 
-        // ──────────────────────────────────────────────────────────────────
-        // HEADER
-        // ──────────────────────────────────────────────────────────────────
+        // Sudah 1 payment per order, tinggal kelompokkan per status
+        $paidGroup    = $payCol->where('status', 'paid');
+        $refundGroup  = $payCol->where('status', 'refunded');
+        $pendingGroup = $payCol->where('status', 'pending');
+
+        // ── HEADER ────────────────────────────────────────────────────────────
         $rows->push(['LAPORAN PEMBAYARAN', '', '', '', '', '', '', '']);
         $rows->push(['Periode', $this->from . ' s/d ' . $this->to, '', '', '', '', '', '']);
         $rows->push(['Dicetak', now()->format('d M Y, H:i'), '', '', '', '', '', '']);
+        $rows->push(['Catatan', '1 baris = 1 pesanan (payment status terbaru)', '', '', '', '', '', '']);
         $rows->push(['', '', '', '', '', '', '', '']);
 
-        // ──────────────────────────────────────────────────────────────────
-        // RINGKASAN EKSEKUTIF
-        // ──────────────────────────────────────────────────────────────────
+        // ── RINGKASAN EKSEKUTIF ───────────────────────────────────────────────
         $rows->push(['RINGKASAN EKSEKUTIF', '', '', '', '', '', '', '']);
-        $rows->push(['Keterangan', 'Jumlah Transaksi', 'Total (Rp)', '', '', '', '', '']);
+        $rows->push(['Keterangan', 'Jumlah Pesanan', 'Total (Rp)', '', '', '', '', '']);
         $rows->push(['Pembayaran Lunas',      $paidGroup->count(),    (float) $paidGroup->sum('amount'),    '', '', '', '', '']);
         $rows->push(['Refund',                $refundGroup->count(),  (float) $refundGroup->sum('amount'),  '', '', '', '', '']);
         $rows->push(['Pending (belum bayar)', $pendingGroup->count(), (float) $pendingGroup->sum('amount'), '', '', '', '', '']);
-        $rows->push(['Pesanan Belum Bayar',   $unpaid->count(),       (float) $unpaid->sum('total_amount'), '', '', '', '', '']);
-        $rows->push(['TOTAL LUNAS (NET)',      $paidGroup->count(),   (float) $paidGroup->sum('amount') - (float) $refundGroup->sum('refund_amount'), '', '', '', '', '']);
+        $rows->push(['Pesanan Aktif Belum Bayar', $unpaid->count(),   (float) $unpaid->sum('total_amount'), '', '', '', '', '']);
+        $rows->push(['TOTAL LUNAS (NET)',
+            $paidGroup->count(),
+            (float) $paidGroup->sum('amount') - (float) $refundGroup->sum('refund_amount'),
+            '', '', '', '', '',
+        ]);
         $rows->push(['', '', '', '', '', '', '', '']);
 
-        // ──────────────────────────────────────────────────────────────────
-        // RINGKASAN PER METODE PEMBAYARAN (hanya paid)
-        // ──────────────────────────────────────────────────────────────────
+        // ── RINGKASAN PER METODE (hanya paid) ────────────────────────────────
         $rows->push(['RINGKASAN PER METODE PEMBAYARAN (Lunas)', '', '', '', '', '', '', '']);
-        $rows->push(['Metode', 'Jumlah Transaksi', 'Total (Rp)', '', '', '', '', '']);
+        $rows->push(['Metode', 'Jumlah Pesanan', 'Total (Rp)', '', '', '', '', '']);
 
         $methodLabels = [
             'cash'          => 'Tunai',
@@ -65,7 +65,7 @@ class PaymentReportExport implements FromCollection, WithStyles, WithTitle, Shou
             'bank_transfer' => 'Transfer Bank',
         ];
 
-        $byMethod = $paidGroup->groupBy('payment_method');
+        $byMethod    = $paidGroup->groupBy('payment_method');
         $methodOrder = ['cash', 'card', 'qris', 'ewallet', 'bank_transfer'];
         foreach ($methodOrder as $method) {
             $group = $byMethod->get($method, collect());
@@ -78,7 +78,6 @@ class PaymentReportExport implements FromCollection, WithStyles, WithTitle, Shou
                 ]);
             }
         }
-        // Method lain yang tidak ada di list
         foreach ($byMethod as $method => $group) {
             if (! in_array($method, $methodOrder)) {
                 $rows->push([ucfirst($method), $group->count(), (float) $group->sum('amount'), '', '', '', '', '']);
@@ -87,15 +86,9 @@ class PaymentReportExport implements FromCollection, WithStyles, WithTitle, Shou
         $rows->push(['TOTAL', $paidGroup->count(), (float) $paidGroup->sum('amount'), '', '', '', '', '']);
         $rows->push(['', '', '', '', '', '', '', '']);
 
-        // ──────────────────────────────────────────────────────────────────
-        // BAGIAN A: TRANSAKSI LUNAS
-        // ──────────────────────────────────────────────────────────────────
+        // ── BAGIAN A: TRANSAKSI LUNAS ─────────────────────────────────────────
         $rows->push(['A. TRANSAKSI LUNAS', '', '', '', '', '', '', '']);
-        $rows->push([
-            'No. Pesanan', 'Pelanggan', 'Kasir',
-            'Metode', 'Detail Metode',
-            'Jumlah (Rp)', 'Status', 'Waktu',
-        ]);
+        $rows->push(['No. Pesanan', 'Pelanggan', 'Kasir', 'Metode', 'Detail Metode', 'Jumlah (Rp)', 'Status', 'Waktu']);
 
         foreach ($paidGroup->sortByDesc('created_at') as $p) {
             $rows->push([
@@ -117,15 +110,9 @@ class PaymentReportExport implements FromCollection, WithStyles, WithTitle, Shou
         }
         $rows->push(['', '', '', '', '', '', '', '']);
 
-        // ──────────────────────────────────────────────────────────────────
-        // BAGIAN B: REFUND
-        // ──────────────────────────────────────────────────────────────────
+        // ── BAGIAN B: REFUND ──────────────────────────────────────────────────
         $rows->push(['B. TRANSAKSI REFUND', '', '', '', '', '', '', '']);
-        $rows->push([
-            'No. Pesanan', 'Pelanggan', 'Kasir',
-            'Metode', 'Detail Metode',
-            'Jumlah Refund (Rp)', 'Alasan Refund', 'Waktu Refund',
-        ]);
+        $rows->push(['No. Pesanan', 'Pelanggan', 'Kasir', 'Metode', 'Detail Metode', 'Jumlah Refund (Rp)', 'Alasan Refund', 'Waktu Refund']);
 
         foreach ($refundGroup->sortByDesc('refunded_at') as $p) {
             $rows->push([
@@ -152,15 +139,9 @@ class PaymentReportExport implements FromCollection, WithStyles, WithTitle, Shou
         }
         $rows->push(['', '', '', '', '', '', '', '']);
 
-        // ──────────────────────────────────────────────────────────────────
-        // BAGIAN C: PENDING GATEWAY (menunggu konfirmasi)
-        // ──────────────────────────────────────────────────────────────────
+        // ── BAGIAN C: PENDING GATEWAY ─────────────────────────────────────────
         $rows->push(['C. PENDING GATEWAY (Menunggu Konfirmasi)', '', '', '', '', '', '', '']);
-        $rows->push([
-            'No. Pesanan', 'Pelanggan', 'Kasir',
-            'Metode', 'Detail Metode',
-            'Jumlah (Rp)', 'Gateway', 'Waktu Inisiasi',
-        ]);
+        $rows->push(['No. Pesanan', 'Pelanggan', 'Kasir', 'Metode', 'Detail Metode', 'Jumlah (Rp)', 'Gateway', 'Waktu Inisiasi']);
 
         foreach ($pendingGroup->sortByDesc('created_at') as $p) {
             $rows->push([
@@ -182,22 +163,12 @@ class PaymentReportExport implements FromCollection, WithStyles, WithTitle, Shou
         }
         $rows->push(['', '', '', '', '', '', '', '']);
 
-        // ──────────────────────────────────────────────────────────────────
-        // BAGIAN D: PESANAN AKTIF BELUM BAYAR
-        // ──────────────────────────────────────────────────────────────────
+        // ── BAGIAN D: PESANAN AKTIF BELUM BAYAR ──────────────────────────────
         $rows->push(['D. PESANAN AKTIF BELUM BAYAR', '', '', '', '', '', '', '']);
-        $rows->push([
-            'No. Pesanan', 'Pelanggan', 'Kasir',
-            'Tipe Pesanan', 'Meja',
-            'Total Tagihan (Rp)', 'Status Pesanan', 'Dibuat',
-        ]);
+        $rows->push(['No. Pesanan', 'Pelanggan', 'Kasir', 'Tipe Pesanan', 'Meja', 'Total Tagihan (Rp)', 'Status Pesanan', 'Dibuat']);
 
         foreach ($unpaid->sortByDesc('created_at') as $o) {
-            $statusLabels = [
-                'pending' => 'Pending',
-                'cooking' => 'Dimasak',
-                'ready'   => 'Siap Saji',
-            ];
+            $statusLabels = ['pending' => 'Pending', 'cooking' => 'Dimasak', 'ready' => 'Siap Saji'];
             $rows->push([
                 $o->order_number   ?? '-',
                 $o->customer_name  ?? '-',
@@ -213,12 +184,7 @@ class PaymentReportExport implements FromCollection, WithStyles, WithTitle, Shou
         if ($unpaid->isEmpty()) {
             $rows->push(['Tidak ada pesanan aktif yang belum dibayar', '', '', '', '', '', '', '']);
         } else {
-            $rows->push([
-                'Total Belum Bayar',
-                $unpaid->count() . ' pesanan',
-                (float) $unpaid->sum('total_amount'),
-                '', '', '', '', '',
-            ]);
+            $rows->push(['Total Belum Bayar', $unpaid->count() . ' pesanan', (float) $unpaid->sum('total_amount'), '', '', '', '', '']);
         }
 
         return $rows;

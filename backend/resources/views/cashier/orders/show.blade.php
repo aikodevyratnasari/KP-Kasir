@@ -7,7 +7,7 @@
     @php $hasKitchen = $order->store?->has_kitchen ?? true; @endphp
 
     {{-- Header --}}
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between px-2" style="min-width: 400px;">
         <h1 class="page-title">Pesanan #{{ $order->order_number }}</h1>
         <span id="order-status-badge"
               class="badge badge-{{ $order->status }} text-sm px-3 py-1 inline-flex items-center gap-1.5">
@@ -24,12 +24,12 @@
 
     {{-- ── STATUS TRACKER ── --}}
     @if(!$order->isCancelled())
-    <div class="card py-4" id="status-tracker">
+    <div class="card py-4 overflow-x-auto" id="status-tracker">
         @php
             $steps = [
-                ['key' => 'pending',   'label' => 'Pesanan Dibuat'],
+                ['key' => 'pending',   'label' => 'Dibuat'],
                 ['key' => 'paid',      'label' => 'Lunas'],
-                ['key' => 'cooking',   'label' => $hasKitchen ? 'Dimasak Dapur' : 'Dimasak'],
+               ['key' => 'cooking', 'label' => $hasKitchen ? 'Dimasak' : 'Dimasak'],
                 ['key' => 'ready',     'label' => 'Siap Disajikan'],
                 ['key' => 'completed', 'label' => 'Selesai'],
             ];
@@ -48,8 +48,8 @@
                 <div class="flex flex-col items-center flex-1 relative">
                     @if($i < count($steps) - 1)
                         <div id="tracker-line-{{ $i }}"
-                    class="absolute top-4 left-1/2 w-full h-1 rounded-full"
-                    style="z-index:0; background-color:{{ $i < $currentStep ? '#2D54BF' : '#e5e7eb' }};"></div>
+    class="absolute top-4 left-1/2 w-full h-1 rounded-full"
+    style="z-index:0; background-color:{{ $i < $currentStep ? '#2D54BF' : '#e5e7eb' }}; right:0; width:100%;"></div>
                                     @endif
                                     <div id="tracker-circle-{{ $i }}"
                     class="relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2"
@@ -57,10 +57,10 @@
                     {{ $i + 1 }}
                 </div>
                 <span id="tracker-label-{{ $i }}"
-                    class="text-xs mt-1 text-center"
-                    style="{{ $done ? 'color:#2D54BF; font-weight:600;' : 'color:#9ca3af;' }}">
-                    {{ $step['label'] }}
-                </span>
+    class="text-xs mt-1 text-center whitespace-nowrap"
+    style="{{ $done ? 'color:#2D54BF; font-weight:600;' : 'color:#9ca3af;' }}">
+    {{ $step['label'] }}
+</span>
                 </div>
             @endforeach
         </div>
@@ -211,42 +211,80 @@
             </dl>
 
             @php
-                $hasPaidPayment = $order->payments->whereIn('status', ['paid', 'refunded'])->isNotEmpty();
-                $visiblePayments = $order->payments->filter(function ($p) use ($hasPaidPayment) {
+            $hasPaidPayment = $order->payments->whereIn('status', ['paid', 'refunded'])->isNotEmpty();
+                $visiblePayments = $order->payments->filter(function ($p) use ($hasPaidPayment, $order) {
+                    if ($order->isCancelled()) {
+                        return true; // tampilkan semua payment di pesanan yang dibatalkan
+                    }
+                    // Sembunyikan 'pending' jika sudah ada yang paid (sudah dihandle sebelumnya)
                     if ($hasPaidPayment && $p->status === 'pending') {
                         return false;
                     }
                     return true;
-                });
+                })->sortBy('created_at');
             @endphp
 
             @if($visiblePayments->count() > 0)
-            <div class="mt-3 pt-3 border-t border-gray-100 space-y-1.5" id="payment-list">
+            <div class="mt-3 pt-3 border-t border-gray-100 space-y-1" id="payment-list">
                 @foreach($visiblePayments as $p)
-                <div class="flex justify-between text-xs items-center gap-2" id="payment-row-{{ $p->id }}">
-                    <span class="text-gray-500 flex items-center gap-1.5 flex-1 min-w-0">
+                @php
+                    $rowStyle = match($p->status) {
+                        'paid'      => 'background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:6px 10px;',
+                        'refunded'  => 'background:#fff7ed; border:1px solid #fdba74; border-radius:8px; padding:6px 10px;',
+                        'cancelled' => 'background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:6px 10px; opacity:0.75;',
+                        'pending'   => 'background:#fefce8; border:1px solid #fde047; border-radius:8px; padding:6px 10px;',
+                        default     => 'background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:6px 10px;',
+                    };
+                    $methodColor = match($p->status) {
+                        'paid'      => 'color:#15803d; font-weight:600;',
+                        'refunded'  => 'color:#9a3412;',
+                        'cancelled' => 'color:#dc2626; text-decoration:line-through;',
+                        'pending'   => 'color:#854d0e;',
+                        default     => 'color:#374151;',
+                    };
+                    $amountColor = match($p->status) {
+                        'paid'      => 'color:#15803d; font-weight:600;',
+                        'refunded'  => 'color:#9a3412;',
+                        'cancelled' => 'color:#dc2626; text-decoration:line-through;',
+                        'pending'   => 'color:#854d0e;',
+                        default     => 'color:#374151;',
+                    };
+                @endphp
+                <div class="flex justify-between items-center gap-2 text-xs" id="payment-row-{{ $p->id }}"
+                    style="{{ $rowStyle }}">
+                    <span class="flex items-center gap-1.5 flex-1 min-w-0" style="{{ $methodColor }}">
+                        {{-- Ikon status --}}
+                        @if($p->status === 'paid')
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#15803d;"><polyline points="20 6 9 17 4 12"/></svg>
+                        @elseif($p->status === 'cancelled')
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#dc2626;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        @elseif($p->status === 'refunded')
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#9a3412;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.96"/></svg>
+                        @elseif($p->status === 'pending')
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#854d0e;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        @endif
                         <span class="truncate">{{ $p->methodLabel() }} — {{ $p->created_at->format('H:i') }}</span>
                         @if($p->status === 'pending')
-                            <span class="flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-700">Menunggu</span>
+                            <span style="flex-shrink:0; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; background:#fef08a; color:#713f12; border:1px solid #fde047;">Menunggu</span>
+                        @elseif($p->status === 'cancelled')
+                            <span style="flex-shrink:0; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;">Dibatalkan</span>
+                        @elseif($p->status === 'refunded')
+                            <span style="flex-shrink:0; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; background:#ffedd5; color:#9a3412; border:1px solid #fdba74;">Refund</span>
                         @endif
                     </span>
-                    <span class="flex items-center gap-2 flex-shrink-0">
+                    <span class="flex items-center gap-2 flex-shrink-0" style="{{ $amountColor }}">
                         <span>Rp {{ number_format($p->amount, 0, ',', '.') }}</span>
-                        @if($p->status === 'refunded')
-                            <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-700">Refund</span>
-                        @endif
                         @if($p->status === 'pending')
                             <button type="button"
                                     onclick="cancelPendingPayment({{ $p->id }})"
                                     class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors flex-shrink-0"
-                                    style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;"
-                                    onmouseover="this.style.background='#fecaca'; this.style.borderColor='#f87171';"
-                                    onmouseout="this.style.background='#fee2e2'; this.style.borderColor='#fca5a5';">
+                                    style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; text-decoration:none;"
+                                    onmouseover="this.style.background='#fecaca';"
+                                    onmouseout="this.style.background='#fee2e2';">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
-                                     fill="none" stroke="currentColor" stroke-width="2.5"
-                                     stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                    fill="none" stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                                 </svg>
                                 Batalkan
                             </button>
@@ -397,7 +435,7 @@
                                 <p class="text-xs text-indigo-500">{{ $item->variant_name }}</p>
                             @endif
                             @if($item->discount_label && $item->discount_amount > 0)
-                                <p class="text-xs text-red-500">🏷 {{ $item->discount_label }}</p>
+                                <p class="text-xs text-red-500">{{ $item->discount_label }}</p>
                             @endif
                             @if($item->special_notes)
                                 <p class="text-xs text-gray-400">{{ $item->special_notes }}</p>
