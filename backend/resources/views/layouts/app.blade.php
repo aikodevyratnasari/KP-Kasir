@@ -379,12 +379,12 @@
                     <div class="px-4 pt-3 pb-1"></div>
 
                     <a href="{{ route('profile.edit') }}"
-                       class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                       style="color: #374151;"
-                       onmouseover="this.style.backgroundColor='#f3f4f6';"
-                       onmouseout="this.style.backgroundColor='';"
-                       onmousedown="this.style.backgroundColor='#e5e7eb';"
-                       onmouseup="this.style.backgroundColor='#f3f4f6';">
+                        class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors rounded-lg"
+                        style="color: #374151;"
+                        onmouseover="this.style.backgroundColor='#f3f4f6';"
+                        onmouseout="this.style.backgroundColor='';"
+                        onmousedown="this.style.backgroundColor='#e5e7eb';"
+                        onmouseup="this.style.backgroundColor='#f3f4f6';">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
@@ -394,7 +394,7 @@
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"
-                            class="flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors"
+                            class="flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors rounded-lg"
                             style="color: #ef4444;"
                             onmouseover="this.style.backgroundColor='#fff1f2';"
                             onmouseout="this.style.backgroundColor='';"

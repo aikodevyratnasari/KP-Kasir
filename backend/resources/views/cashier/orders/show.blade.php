@@ -75,7 +75,6 @@
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                         <p class="font-semibold text-blue-800 flex items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
                             Pesanan sudah lunas
                         </p>
                         <p class="text-sm text-blue-600 mt-0.5">Kasir dapat menandai pesanan mulai dimasak tanpa display dapur</p>
@@ -97,7 +96,6 @@
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                         <p class="font-semibold text-orange-800 flex items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m16 6-4 4-4-4"/></svg>
                             Pesanan sedang dimasak
                         </p>
                         <p class="text-sm text-orange-600 mt-0.5">Tandai siap jika pesanan sudah dapat disajikan atau diambil</p>
@@ -105,9 +103,13 @@
                     <form method="POST" action="{{ route('cashier.orders.status', $order) }}" class="flex-shrink-0">
                         @csrf @method('PATCH')
                         <input type="hidden" name="status" value="ready">
-                        <button type="submit" class="btn-success w-full sm:w-auto justify-center inline-flex items-center gap-1.5">
-                            Tandai Siap
-                        </button>
+                        <button type="submit"
+        class="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg transition-colors"
+        style="background-color:#ea580c; color:white; border:1px solid #ea580c;"
+        onmouseover="this.style.backgroundColor='#c2410c';"
+        onmouseout="this.style.backgroundColor='#ea580c';">
+    Tandai Siap
+</button>
                     </form>
                 </div>
             </div>
