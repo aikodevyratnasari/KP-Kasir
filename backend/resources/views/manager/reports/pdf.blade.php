@@ -254,7 +254,7 @@
 
     @if(isset($cancelledSummary) && $cancelledSummary && $cancelledSummary->count > 0)
     <div class="section">
-        <div class="section-title red">⚠ Ringkasan Pesanan Dibatalkan</div>
+        <div class="section-title red">Ringkasan Pesanan Dibatalkan</div>
         <div class="alert alert-red">
             Terdapat <strong>{{ $cancelledSummary->count }} pesanan dibatalkan</strong>
             dengan total nilai <strong>Rp {{ number_format($cancelledSummary->total_amount, 0, ',', '.') }}</strong> dalam periode ini.
@@ -280,7 +280,7 @@
     @endif
 
     <div class="section">
-        <div class="section-title">🔥 Top Produk (Qty)</div>
+        <div class="section-title">Top Produk (Qty)</div>
         <table>
             <thead><tr><th>Produk</th><th class="right">Qty Terjual</th><th class="right">Pendapatan</th></tr></thead>
             <tbody>
@@ -296,7 +296,7 @@
     </div>
 
     <div class="section">
-        <div class="section-title">💰 Top Produk (Revenue)</div>
+        <div class="section-title">Top Produk (Revenue)</div>
         <table>
             <thead><tr><th>Produk</th><th class="right">Pendapatan</th><th class="right">Qty</th></tr></thead>
             <tbody>

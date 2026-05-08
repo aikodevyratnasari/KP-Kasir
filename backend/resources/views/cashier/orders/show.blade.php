@@ -257,19 +257,16 @@
                     <span class="flex items-center gap-1.5 flex-1 min-w-0" style="{{ $methodColor }}">
                         {{-- Ikon status --}}
                         @if($p->status === 'paid')
-                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#15803d;"><polyline points="20 6 9 17 4 12"/></svg>
                         @elseif($p->status === 'cancelled')
-                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#dc2626;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         @elseif($p->status === 'refunded')
-                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#9a3412;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.96"/></svg>
                         @elseif($p->status === 'pending')
-                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#854d0e;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            
                         @endif
                         <span class="truncate">{{ $p->methodLabel() }} — {{ $p->created_at->format('H:i') }}</span>
                         @if($p->status === 'pending')
                             <span style="flex-shrink:0; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; background:#fef08a; color:#713f12; border:1px solid #fde047;">Menunggu</span>
                         @elseif($p->status === 'cancelled')
-                            <span style="flex-shrink:0; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;">Dibatalkan</span>
+                            <span style="flex-shrink:0; font-size:10px; color:#dc2626;">Dibatalkan</span>
                         @elseif($p->status === 'refunded')
                             <span style="flex-shrink:0; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; background:#ffedd5; color:#9a3412; border:1px solid #fdba74;">Refund</span>
                         @endif
@@ -748,8 +745,8 @@ function handleSendEmail(e) {
         feedback.style.display = 'block';
         if (data.success) {
             feedback.className   = 'mt-3 text-sm rounded-lg px-3 py-2 bg-green-50 text-green-700 border border-green-200';
-            feedback.textContent = '✓ Struk berhasil dikirim ke ' + email;
-            btn.textContent      = 'Terkirim ✓';
+            feedback.textContent = 'Struk berhasil dikirim ke ' + email;
+            btn.textContent      = 'Terkirim';
             btn.style.backgroundColor = '#22c55e';
         } else {
             feedback.className   = 'mt-3 text-sm rounded-lg px-3 py-2 bg-red-50 text-red-700 border border-red-200';
