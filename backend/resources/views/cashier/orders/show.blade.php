@@ -264,13 +264,13 @@
                         @endif
                         <span class="truncate">{{ $p->methodLabel() }} — {{ $p->created_at->format('H:i') }}</span>
                         @if($p->status === 'pending')
-                            <span style="flex-shrink:0; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; background:#fef08a; color:#713f12; border:1px solid #fde047;">Menunggu</span>
+                            <span style="flex-shrink:0; padding:1px 8px; border-radius:999px; font-size:10px; font-weight:600; background:#fef08a; color:#713f12; border:1px solid #fde047;">Menunggu</span>
                         @elseif($p->status === 'cancelled')
-                            <span style="flex-shrink:0; font-size:10px; color:#dc2626;">Dibatalkan</span>
+                            <span style="flex-shrink:0; padding:1px 8px; border-radius:999px; font-size:10px; font-weight:600; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;">Dibatalkan</span>
                         @elseif($p->status === 'refunded')
-                            <span style="flex-shrink:0; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; background:#ffedd5; color:#9a3412; border:1px solid #fdba74;">Refund</span>
+                            <span style="flex-shrink:0; padding:1px 8px; border-radius:999px; font-size:10px; font-weight:600; background:#ffedd5; color:#9a3412; border:1px solid #fdba74;">Refund</span>
                         @endif
-                    </span>
+                        </span>
                     <span class="flex items-center gap-2 flex-shrink-0" style="{{ $amountColor }}">
                         <span>Rp {{ number_format($p->amount, 0, ',', '.') }}</span>
                         @if($p->status === 'pending')
