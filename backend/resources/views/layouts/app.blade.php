@@ -370,16 +370,15 @@
 </button>
 
                 <div x-show="menuOpen"
-                     x-transition:enter="transition ease-out duration-150"
-                     x-transition:enter-start="opacity-0 translate-y-2"
-                     x-transition:enter-end="opacity-100 translate-y-0"
-                     @click.outside="menuOpen = false"
-                     class="absolute bottom-full left-2 right-2 mb-2 bg-white border border-gray-100 rounded-xl shadow-lg z-[9999]"
-                     style="position: absolute; bottom: 100%; left: 8px; right: 8px; margin-bottom: 8px;">
-                    <div class="px-4 pt-3 pb-1"></div>
+                x-transition:enter="transition ease-out duration-150"
+                x-transition:enter-start="opacity-0 translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                @click.outside="menuOpen = false"
+                class="absolute bottom-full left-2 right-2 mb-2 bg-white border border-gray-100 rounded-xl shadow-lg z-[9999] p-1"
+                style="position: absolute; bottom: 100%; left: 8px; right: 8px; margin-bottom: 8px;">
 
-                    <a href="{{ route('profile.edit') }}"
-                        class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors rounded-lg"
+                     <a href="{{ route('profile.edit') }}"
+                        class="flex items-center gap-3 px-3 py-2.5 text-sm transition-colors rounded-lg w-full"
                         style="color: #374151;"
                         onmouseover="this.style.backgroundColor='#f3f4f6';"
                         onmouseout="this.style.backgroundColor='';"
@@ -394,7 +393,7 @@
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"
-                            class="flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors rounded-lg"
+                            class="flex items-center gap-3 w-full px-3 py-2.5 text-sm transition-colors rounded-lg"
                             style="color: #ef4444;"
                             onmouseover="this.style.backgroundColor='#fff1f2';"
                             onmouseout="this.style.backgroundColor='';"
