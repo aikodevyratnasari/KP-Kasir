@@ -151,10 +151,26 @@ class TableManagerController extends Controller
             'Tidak dapat menghapus meja yang sedang digunakan.'
         );
 
-        ActivityLogService::logDeleted($table);
-        $table->delete();
+        $tableNumber = $table->number;
+
+        DB::transaction(function () use ($table) {
+            // Lepaskan referensi FK dari reservasi yang sudah selesai / dibatalkan
+            // agar tidak melanggar constraint reservations_table_id_foreign
+            $table->reservations()
+                ->whereIn('status', ['completed', 'cancelled'])
+                ->update(['table_id' => null]);
+
+            // Safety-net: batalkan reservasi aktif yang tersisa (seharusnya
+            // tidak ada karena status meja sudah dicek di atas, tapi jaga-jaga)
+            $table->reservations()
+                ->whereNotIn('status', ['completed', 'cancelled'])
+                ->update(['status' => 'cancelled', 'table_id' => null]);
+
+            ActivityLogService::logDeleted($table);
+            $table->delete();
+        });
 
         return redirect()->route('manager.tables.index')
-            ->with('success', "Meja {$table->number} berhasil dihapus.");
+            ->with('success', "Meja {$tableNumber} berhasil dihapus.");
     }
 }

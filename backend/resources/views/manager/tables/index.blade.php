@@ -65,7 +65,7 @@
                                 </span>
                             </td>
                             <td class="py-2.5 px-4 text-center">
-    <div class="flex justify-center items-center gap-2">
+                                <div class="flex justify-center items-center gap-2">
                                     <button onclick="openEdit({{ $table->id }}, '{{ $table->number }}', {{ $table->capacity }}, '{{ $table->section }}', '{{ $table->status }}')"
                                             class="inline-flex items-center justify-center transition-all p-1"
                                             style="color: #EF8F00;"
@@ -79,7 +79,7 @@
                                     </button>
                                     @if($table->status === 'available')
                                         <form method="POST" action="{{ route('manager.tables.destroy', $table) }}"
-                                              onsubmit="return confirm('Hapus meja {{ $table->number }}?')">
+                                              onsubmit="return confirmDeleteTable('{{ addslashes($table->number) }}')">
                                             @csrf @method('DELETE')
                                             <button type="submit"
                                                     class="inline-flex items-center justify-center transition-all p-1"
@@ -98,7 +98,7 @@
                                     @else
                                         <span class="inline-flex items-center justify-center p-1 cursor-not-allowed"
                                               style="color: #d1d5db;"
-                                              title="Tidak bisa dihapus">
+                                              title="Tidak bisa dihapus — meja sedang {{ $table->status === 'occupied' ? 'terisi' : 'direservasi' }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="3 6 5 6 21 6"/>
                                                 <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
@@ -154,7 +154,6 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Jumlah Kursi <span class="text-red-500">*</span>
                         </label>
-                        {{-- Input bebas, bukan dropdown --}}
                         <input type="number" name="capacity" placeholder="mis. 4"
                                min="1" max="100" value="{{ old('capacity', 4) }}"
                                class="form-input @error('capacity') border-red-400 @enderror" required>
@@ -163,7 +162,6 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Seksi / Area</label>
-                    {{-- Shortcut pilih seksi yang sudah ada --}}
                     <div class="flex gap-2 flex-wrap mb-2">
                         @foreach($sections as $sec)
                         <button type="button"
@@ -177,7 +175,7 @@
                                 this.style.backgroundColor = '#1e3d8f';
                                 this.style.color = 'white';
                                 this.style.borderColor = '#1e3d8f';"
-                            class="edit-section-btn px-3 py-1 text-xs rounded-full border transition"
+                            class="add-section-btn px-3 py-1 text-xs rounded-full border transition"
                             style="border-color: #d1d5db; color: #374151; background-color: white;">
                         {{ $sec }}
                     </button>
@@ -189,14 +187,14 @@
                 </div>
             </div>
             <div class="flex justify-end mt-6">
-    <button type="submit"
-        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
-        onmouseover="this.style.backgroundColor='#1e3d8f'"
-        onmouseout="this.style.backgroundColor='#2D54BF'">
-        Simpan
-    </button>
-</div>
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                    style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                    onmouseover="this.style.backgroundColor='#1e3d8f'"
+                    onmouseout="this.style.backgroundColor='#2D54BF'">
+                    Simpan
+                </button>
+            </div>
         </form>
     </div>
 </div>
@@ -227,20 +225,20 @@
                     <div class="flex gap-2 flex-wrap mb-2">
                         @foreach($sections as $sec)
                             <button type="button"
-    onclick="
-        document.getElementById('bulk-section').value = '{{ $sec }}';
-        this.parentElement.querySelectorAll('button').forEach(b => {
-            b.style.backgroundColor = 'white';
-            b.style.color = '#374151';
-            b.style.borderColor = '#d1d5db';
-        });
-        this.style.backgroundColor = '#1e3d8f';
-        this.style.color = 'white';
-        this.style.borderColor = '#1e3d8f';"
-    class="add-section-btn px-3 py-1 text-xs rounded-full border transition"
-    style="border-color: #d1d5db; color: #374151; background-color: white;">
-{{ $sec }}
-</button>
+                                onclick="
+                                    document.getElementById('bulk-section').value = '{{ $sec }}';
+                                    this.parentElement.querySelectorAll('button').forEach(b => {
+                                        b.style.backgroundColor = 'white';
+                                        b.style.color = '#374151';
+                                        b.style.borderColor = '#d1d5db';
+                                    });
+                                    this.style.backgroundColor = '#1e3d8f';
+                                    this.style.color = 'white';
+                                    this.style.borderColor = '#1e3d8f';"
+                                class="bulk-section-btn px-3 py-1 text-xs rounded-full border transition"
+                                style="border-color: #d1d5db; color: #374151; background-color: white;">
+                            {{ $sec }}
+                            </button>
                         @endforeach
                     </div>
                     <input type="text" name="section" id="bulk-section"
@@ -297,14 +295,14 @@
             </div>
 
             <div class="flex justify-end mt-6">
-    <button type="submit"
-        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-        style="background-color: #2D54BF; border: 1px solid #2D54BF;"
-        onmouseover="this.style.backgroundColor='#1e3d8f'"
-        onmouseout="this.style.backgroundColor='#2D54BF'">
-        Buat Semua Meja
-    </button>
-</div>
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                    style="background-color: #2D54BF; border: 1px solid #2D54BF;"
+                    onmouseover="this.style.backgroundColor='#1e3d8f'"
+                    onmouseout="this.style.backgroundColor='#2D54BF'">
+                    Buat Semua Meja
+                </button>
+            </div>
         </form>
     </div>
 </div>
@@ -331,7 +329,6 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Kursi <span class="text-red-500">*</span></label>
-                        {{-- Input bebas --}}
                         <input type="number" name="capacity" id="edit-capacity"
                                min="1" max="100" class="form-input" required>
                     </div>
@@ -341,20 +338,20 @@
                     <div class="flex gap-2 flex-wrap mb-2">
                         @foreach($sections as $sec)
                             <button type="button"
-        onclick="
-            document.getElementById('edit-section').value = '{{ $sec }}';
-            this.parentElement.querySelectorAll('button').forEach(b => {
-                b.style.backgroundColor = 'white';
-                b.style.color = '#374151';
-                b.style.borderColor = '#d1d5db';
-            });
-            this.style.backgroundColor = '#1e3d8f';
-            this.style.color = 'white';
-            this.style.borderColor = '#1e3d8f';"
-        class="px-3 py-1 text-xs rounded-full border transition"
-        style="border-color: #d1d5db; color: #374151; background-color: white;">
-    {{ $sec }}
-</button>
+                                onclick="
+                                    document.getElementById('edit-section').value = '{{ $sec }}';
+                                    this.parentElement.querySelectorAll('button').forEach(b => {
+                                        b.style.backgroundColor = 'white';
+                                        b.style.color = '#374151';
+                                        b.style.borderColor = '#d1d5db';
+                                    });
+                                    this.style.backgroundColor = '#1e3d8f';
+                                    this.style.color = 'white';
+                                    this.style.borderColor = '#1e3d8f';"
+                                class="edit-section-btn px-3 py-1 text-xs rounded-full border transition"
+                                style="border-color: #d1d5db; color: #374151; background-color: white;">
+                            {{ $sec }}
+                            </button>
                         @endforeach
                     </div>
                     <input type="text" name="section" id="edit-section" class="form-input">
@@ -368,7 +365,7 @@
                 </div>
             </div>
             <div class="flex justify-end mt-6">
-                <button type="submit" 
+                <button type="submit"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
                     style="background-color: #2D54BF"
                     onmouseover="this.style.backgroundColor='#1e3d8f'"
@@ -381,6 +378,11 @@
 </div>
 
 <script>
+// ── Konfirmasi hapus meja ──
+function confirmDeleteTable(number) {
+    return confirm('Hapus meja ' + number + '?\n\nRiwayat reservasi meja ini akan dilepas referensinya secara otomatis.');
+}
+
 // ── Buka modal edit dan isi form ──
 function openEdit(id, number, capacity, section, status) {
     document.getElementById('form-edit').action = `/manager/tables/${id}`;
@@ -391,11 +393,14 @@ function openEdit(id, number, capacity, section, status) {
 
     // Highlight tombol seksi yang sesuai
     document.querySelectorAll('.edit-section-btn').forEach(btn => {
-        btn.classList.remove('bg-indigo-600', 'text-white');
-        btn.classList.add('border-gray-300', 'text-gray-600');
         if (btn.textContent.trim() === section) {
-            btn.classList.add('bg-indigo-600', 'text-white');
-            btn.classList.remove('border-gray-300', 'text-gray-600');
+            btn.style.backgroundColor = '#1e3d8f';
+            btn.style.color           = 'white';
+            btn.style.borderColor     = '#1e3d8f';
+        } else {
+            btn.style.backgroundColor = 'white';
+            btn.style.color           = '#374151';
+            btn.style.borderColor     = '#d1d5db';
         }
     });
 
