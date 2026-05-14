@@ -133,11 +133,6 @@
 
             {{-- Email --}}
             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-indigo-500" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="4" width="20" height="16" rx="2"/>
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                </svg>
                 Alamat Email
             </label>
             <div class="flex gap-2">
@@ -239,8 +234,8 @@ function sendLaporanEmail(type, from, to, period) {
         feedback.style.display = 'block';
         if (d.success) {
             feedback.className   = 'mt-3 text-sm rounded-lg px-3 py-2 bg-green-50 text-green-700 border border-green-200';
-            feedback.textContent = '✓ Laporan berhasil dikirim ke ' + email;
-            btn.textContent      = 'Terkirim ✓';
+            feedback.textContent = 'Laporan berhasil dikirim ke ' + email;
+            btn.textContent      = 'Terkirim';
             btn.style.backgroundColor = '#22c55e';
             btn.onmouseover = null;
             btn.onmouseout  = null;
